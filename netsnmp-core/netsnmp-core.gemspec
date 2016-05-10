@@ -8,6 +8,7 @@ This library allows one to use the net-snmp methods within the ruby VM. It doesn
 DESC
   gem.requirements = []
   gem.version     = NETSNMP::Core::VERSION
+  gem.license     = "Apache-2.0"
   gem.authors     = ["Tiago Cardoso"]
   gem.email       = "cardoso_tiago@hotmail.com"
   gem.homepage    = ""
