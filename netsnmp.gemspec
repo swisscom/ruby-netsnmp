@@ -1,13 +1,14 @@
-require File.expand_path('../lib/netsnmp/core/version',__FILE__)
+require File.expand_path('../lib/netsnmp/version',__FILE__)
 
 Gem::Specification.new do |gem|
-  gem.name        = "netsnmp-core"
-  gem.summary     = "Ruby Wrapper to the net-snmp C library, focused on the v3"
+  gem.name        = "netsnmp"
+  gem.summary     = "SNMP Client library"
   gem.description = <<DESC
-This library allows one to use the net-snmp methods within the ruby VM. It doesn't try to do much more than that though. 
+Wraps the net-snmp core usage into idiomatic ruby.
+It is designed to support as many environments and concurrency frameworks as possible.
 DESC
-  gem.requirements = []
-  gem.version     = NETSNMP::Core::VERSION
+  gem.requirements = ['net-snmp']
+  gem.version     = NETSNMP::VERSION
   gem.license     = "Apache-2.0"
   gem.authors     = ["Tiago Cardoso"]
   gem.email       = "cardoso_tiago@hotmail.com"
@@ -28,4 +29,7 @@ DESC
   gem.add_development_dependency "rake", ["~> 10.4.2"]
   gem.add_development_dependency "rspec", ["~> 3.3.0"]
   gem.add_development_dependency "simplecov", ["~> 0.10.0"]
+
+  gem.add_development_dependency "em-synchrony", ["~> 1.0.4"]
+  gem.add_development_dependency "celluloid-io", ["~> 0.17.2"]
 end
