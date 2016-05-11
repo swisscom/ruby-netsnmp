@@ -1,6 +1,9 @@
-require 'netsnmp/core/version'
-
 require 'ffi'
+
+module NETSNMP
+  module Core
+  end
+end
 
 require 'netsnmp/core/libc'
 require 'netsnmp/core/constants'
