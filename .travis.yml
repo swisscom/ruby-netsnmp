@@ -4,10 +4,13 @@ services:
 
 before_install:
   - sudo apt-get update
-  - sudo apt-get install -y net-snmp
+  - sudo apt-get install -y snmp
+  - sudo apt-get install -y snmpd
   - sudo apt-get install -o Dpkg::Options::="--force-confold" --force-yes -y docker-engine
 
-before_script: spec/support/start_docker.sh
+before_script: 
+  - spec/support/start_docker.sh
+  - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
 after_script: spec/support/stop_docker.sh
 
 install:
