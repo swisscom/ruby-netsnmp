@@ -5,7 +5,7 @@ services:
 before_install:
   - sudo apt-get update
   - sudo apt-get install -y snmp
-  - sudo pat-get install docker-engine
+  - sudo apt-get install docker-engine
 
 before_script: spec/support/start_docker.sh
 after_script: spec/support/stop_docker.sh
