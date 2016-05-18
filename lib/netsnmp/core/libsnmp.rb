@@ -1,7 +1,7 @@
 module NETSNMP::Core
   module LibSNMP
     extend FFI::Library
-    ffi_lib ["libnetsnmp", "netsnmp"]
+    ffi_lib ["libnetsnmp", "netsnmp", "snmp"]
   
     callback(:snmp_callback, [ :int, :pointer, :int, :pointer, :pointer ], :int)
     callback(:netsnmp_callback, [ :int, :pointer, :int, :pointer, :pointer ], :int)
