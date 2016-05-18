@@ -1,0 +1,25 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - sudo apt-get install snmp=5.7
+
+before_script: spec/support/start_docker.sh
+after_script: spec/support/stop_docker.sh
+
+install:
+  - bundle install --path .bundle
+
+script:
+  - bundle exec rake
+
+language: ruby
+rvm:
+  - 2.0
+  - 2.1
+  - 2.2
+  - 2.3
+  - ruby-head
+  - jruby
+  - rbx-3
