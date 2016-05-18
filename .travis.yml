@@ -3,7 +3,7 @@ services:
   - docker
 
 before_install:
-  - sudo apt-get install net-snmp=5.7
+  - sudo apt-get install snmp
 
 before_script: spec/support/start_docker.sh
 after_script: spec/support/stop_docker.sh
