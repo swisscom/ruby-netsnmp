@@ -1,7 +1,5 @@
 FROM python:2
 Maintainer Tiago Cardoso <tiago.cardoso@swisscom.com>
-ENV http_proxy serverproxy.corproot.net:8080
-ENV https_proxy serverproxy.corproot.net:8080
 
 RUN easy_install snmpsim
 RUN easy_install pycrypto 
