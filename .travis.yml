@@ -10,7 +10,6 @@ before_install:
 
 before_script: 
   - spec/support/start_docker.sh
-  - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/usr/lib
 after_script: spec/support/stop_docker.sh
 
 install:
