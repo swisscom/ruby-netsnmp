@@ -11,7 +11,7 @@ before_install:
 
 before_script: 
   - net-snmp-config --default-mibdirs
-  - ls /usr/share/snmp/mibs
+  - cat /usr/share/snmp/mibs/*-SYSTEM*
   - spec/support/start_docker.sh
 after_script: spec/support/stop_docker.sh
 
