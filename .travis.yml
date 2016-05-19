@@ -6,6 +6,7 @@ before_install:
   - sudo apt-get update
   - sudo apt-get install -y snmp
   - sudo apt-get install -y libsnmp-dev
+  - sudo apt-get install -y net-snmp-utils 
   - sudo apt-get install -o Dpkg::Options::="--force-confold" --force-yes -y docker-engine
 
 before_script: 
