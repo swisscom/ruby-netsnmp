@@ -27,7 +27,7 @@ RSpec.describe NETSNMP::Varbind do
           it { expect(NETSNMP::Core::LibSNMP).to receive(:snmp_pdu_add_variable).with(p1, p2, 2, instance_of(Fixnum), value, 5).and_return(pointer) }
         end
         context "and the value is a oid" do
-          let(:value) { NETSNMP::OID.new("sysDescr.0") }
+          let(:value) { NETSNMP::OID.new("SNMPv2-MIB::sysDescr.0") }
           let(:p3) { double(:value_pointer) }
           let(:len) { double(:length) }
           before do

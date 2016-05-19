@@ -1,5 +1,5 @@
 RSpec.describe NETSNMP::OID do
-  let(:code) { "sysDescr.0" }
+  let(:code) { "SNMPv2-MIB::sysDescr.0" }
   let(:oid_code) { "1.3.6.1.2.1.1.1.0" }
   subject { described_class.new(code) }
 
