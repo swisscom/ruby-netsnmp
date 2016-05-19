@@ -11,6 +11,7 @@ before_install:
 
 before_script: 
   - net-snmp-config --default-mibdirs
+  - snmpwalk -v 2c -c public 1.1.1.1
   - spec/support/start_docker.sh
 after_script: spec/support/stop_docker.sh
 
