@@ -10,7 +10,7 @@ before_install:
   - sudo apt-get install -y snmpd
   - wget http://archive.ubuntu.com/ubuntu/pool/multiverse/s/snmp-mibs-downloader/snmp-mibs-downloader_1.1.dsc
   - wget http://archive.ubuntu.com/ubuntu/pool/multiverse/s/snmp-mibs-downloader/snmp-mibs-downloader_1.1.tar.gz
-  - sudo dpkg -i snmp-mibs-downloader_1.1.dsc
+  - sudo dpkg-source -x snmp-mibs-downloader_1.1.dsc
   - sudo apt-get install -o Dpkg::Options::="--force-confold" --force-yes -y docker-engine
 
 before_script:
