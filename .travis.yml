@@ -3,6 +3,7 @@ services:
   - docker
 
 before_install:
+  - sudo apt-add-repository multiverse 
   - sudo apt-get update
   - sudo apt-get install -y sed
   - sudo apt-get install -y snmp
@@ -11,7 +12,7 @@ before_install:
   - sudo apt-get install -y snmp-mibs-downloader 
 #  - wget http://archive.ubuntu.com/ubuntu/pool/multiverse/s/snmp-mibs-downloader/snmp-mibs-downloader_1.1.dsc
 #  - wget http://archive.ubuntu.com/ubuntu/pool/multiverse/s/snmp-mibs-downloader/snmp-mibs-downloader_1.1.tar.gz
-#  - sudo gpg --keyserver keyserver.ubuntu.com --recv-keys 7ADF9466
+  - sudo gpg --keyserver keyserver.ubuntu.com --recv-keys 7ADF9466
 #  - sudo dpkg-source -x snmp-mibs-downloader_1.1.dsc
   - sudo apt-get install -o Dpkg::Options::="--force-confold" --force-yes -y docker-engine
 
