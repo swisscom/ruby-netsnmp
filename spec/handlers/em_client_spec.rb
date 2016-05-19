@@ -16,7 +16,7 @@ RSpec.describe NETSNMP::EM::Client do
   subject { described_class.new(host, options) }
 
   describe "#get" do
-    let(:oid) { "sysName.0" }
+    let(:oid) { "1.3.6.1.2.1.1.5.0" } # sysName.0
     let(:options) { host_options.merge(context: "a172334d7d97871b72241397f713fa12") }
     it "fetches the varbinds for a given oid" do
       value = nil
