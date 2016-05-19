@@ -10,7 +10,7 @@ before_install:
   - sudo apt-get install -o Dpkg::Options::="--force-confold" --force-yes -y docker-engine
 
 before_script: 
-  - cat /etc/snmp/snmp.conf
+  - echo '' > /etc/snmp/snmp.conf
   - spec/support/start_docker.sh
 after_script: spec/support/stop_docker.sh
 
