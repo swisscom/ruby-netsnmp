@@ -18,8 +18,10 @@ before_script:
   - spec/support/start_docker.sh
 after_script: spec/support/stop_docker.sh
 
-install:
+before_install:
   - gem install bundler
+  - gem update bundler
+install:
   - bundle install --path .bundle
 
 script:
