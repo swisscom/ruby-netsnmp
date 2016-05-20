@@ -11,6 +11,8 @@ before_install:
   - sudo apt-get install -y snmpd
   - sudo apt-get install -y snmp-mibs-downloader 
   - sudo apt-get install -o Dpkg::Options::="--force-confold" --force-yes -y docker-engine
+  - gem install bundler
+  - gem update bundler
 
 before_script:
   - sudo download-mibs 
@@ -18,9 +20,6 @@ before_script:
   - spec/support/start_docker.sh
 after_script: spec/support/stop_docker.sh
 
-before_install:
-  - gem install bundler
-  - gem update bundler
 install:
   - bundle install --path .bundle
 
