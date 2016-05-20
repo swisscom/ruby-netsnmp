@@ -20,7 +20,7 @@ before_script:
 after_script: spec/support/stop_docker.sh
 
 install:
-  - bundle install --path .bundle
+  - bundle install --path .bundle --without development
 
 script:
   - bundle exec rake
