@@ -35,9 +35,8 @@ rvm:
   - rbx-2
 matrix:
   allow_failures:
-  - rvm:
-    - ruby-head
-    - jruby-head
+  - rvm: ruby-head
+  - rvm: jruby-head
     # to figure out later
-    - jruby-9.1.1.0
-    - rbx-2
+  - rvm: jruby-9.1.1.0
+  - rvm: rbx-2
