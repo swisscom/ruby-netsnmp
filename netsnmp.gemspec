@@ -24,7 +24,9 @@ DESC
 
   gem.executables = Dir["bin/*"].map { |e| File.basename e }
   gem.add_runtime_dependency "ffi", ["~> 1.9"]
-  gem.add_runtime_dependency "RubyInline", ["~> 3.12"]
+  unless RUBY_PLATFORM == "java"
+    gem.add_runtime_dependency "RubyInline", ["~> 3.12"]
+  end
 
   gem.add_development_dependency "rake", ["~> 10.4.2"]
   gem.add_development_dependency "rspec", ["~> 3.3.0"]
