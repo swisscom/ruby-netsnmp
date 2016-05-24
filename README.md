@@ -56,7 +56,7 @@ Do one thing and do it well. There's only an interface to interact with an SNMP 
 
 ## Examples
 
-You can use the docker container provided under spec/support to test against these examples. 
+You can use the docker container provided under spec/support to test against these examples (the port used in the examples should be the docker external port mapped to port 161). 
 
 ```ruby
 require 'netsnmp'
@@ -95,6 +95,28 @@ manager2.set("sysUpTimeInstance", 43)
 manager2.close
 ```
 
+## Tests
+
+This library uses RSpec. The client specs are "integration" tests, in that we communicate with an snmp agent simulator. 
+
+To start the simulator locally, you'll need docker 1.9 or higher (Why 1.9? ```--build-arg``` parameter support was needed for our builds in the CI. You could use a lower version by providing the proxy environment variables in the Dockerfile directly, provided you don't merge these changes to master, thereby exposing your proxy). 
+
+```
+> spec/support/start_docker.sh
+```
+
+this builds and starts the docker image in deamonized mode. You can afterwards run your specs:
+
+```
+> bundle exec rspec
+```
+
+To stop the image, you can just:
+
+```
+> spec/supoprt/stop_docker.sh
+```
+
 ## Notes
 
 This library provides support for C net-snmp 5.5 or higher, as this has been considered the most stable SNMP v3 implementation.
@@ -106,17 +128,32 @@ To install it in your environment, just use your package manager:
 > brew install net-snmp  
 
 # Linux
+# centOS
 > sudo yum install net-snmp
+# Ubuntu
 > sudo apt-get install net-snmp
+> sudo apt-get install libsnmp-dev
+```
+
+Ubuntu doesn't come with the default mibs, you might have to download the mibs downloader package:
+
+```
+> sudo apt-get install -y snmp-mibs-downloader
+> sudo download-mibs
 ```
 
 TODO: on Windows(?)
 
-# Contributing
+## Contributing
 
 * Fork this repository
 * Make your changes and send me a pull request
 * If I like them I'll merge them
 * If I've accepted a patch, feel free to ask for a commit bit!
 
+## TODO
+
+There are a few features still to be added, like:
+
+* [JRuby Support](https://github.com/celluloid/nio4r/issues/94)
 
