@@ -8,7 +8,6 @@ before_install:
   - sudo apt-get install -y sed
   - sudo apt-get install -y snmp
   - sudo apt-get install -y libsnmp-dev
-  - sudo apt-get install -y snmpd
   - sudo apt-get install -y snmp-mibs-downloader 
   - sudo apt-get install -o Dpkg::Options::="--force-confold" --force-yes -y docker-engine
 
