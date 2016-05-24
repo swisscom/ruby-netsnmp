@@ -44,13 +44,5 @@ module NETSNMP::Core
         def clear; super; end
       end
     end
-  
-    # Standard IO functions
-    #@blocking = true  # some undocumented voodoo that tells the next attach_function to release the GIL
-    attach_function :malloc, [:size_t], :pointer
-    attach_function :calloc, [:size_t, :size_t], :pointer
-    attach_function :memcpy, [:pointer, :pointer, :size_t], :pointer
-    attach_function :free, [:pointer], :void
-
   end
 end
