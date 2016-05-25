@@ -1,6 +1,7 @@
 # netsnmp 
 
 [![Build Status](https://travis-ci.org/swisscom/ruby-netsnmp.svg?branch=master)](https://travis-ci.org/swisscom/ruby-netsnmp)
+[![Coverage Status](https://coveralls.io/repos/github/swisscom/ruby-netsnmp/badge.svg?branch=master)](https://coveralls.io/github/swisscom/ruby-netsnmp?branch=master)
 
 The netsnmp gem provides a ruby DSL to handle SNMP queries. It currently uses the net-snmp C library using the FFI interface. 
 
