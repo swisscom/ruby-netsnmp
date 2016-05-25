@@ -21,7 +21,7 @@ install:
   - bundle install --path .bundle
 
 script:
-  - bundle exec rake
+  - bundle exec rake spec:ci
 
 language: ruby
 rvm:

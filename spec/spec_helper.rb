@@ -1,4 +1,12 @@
-require 'simplecov' if ENV['COVERAGE'] == "true"
+require 'simplecov' if ENV["COVERAGE"]
+require 'coveralls'
+Coveralls.wear!
+
+SimpleCov.start do   
+  minimum_coverage 85
+  add_filter ".bundle"
+  add_filter "/spec/"
+end if defined?(SimpleCov)
 
 require 'bundler/setup'
 Bundler.require(:default, :test)
