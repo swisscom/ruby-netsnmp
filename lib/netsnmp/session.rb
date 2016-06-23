@@ -215,6 +215,9 @@ module NETSNMP
                                        auth_pass.length,
                                        session[:securityAuthKey],
                                        auth_len_ptr)
+      unless auth_key_result == Core::Constants::SNMPERR_SUCCESS  
+        raise AuthenticationFailed, "failed to authenticate #{auth_user} in #{@host}"
+      end
       session[:securityAuthKeyLen] = auth_len_ptr.read_int
 
       priv_len_ptr = FFI::MemoryPointer.new(:size_t)
@@ -229,12 +232,11 @@ module NETSNMP
                                                   priv_pass.length,
                                                   session[:securityPrivKey],
                                                   priv_len_ptr)
-      session[:securityPrivKeyLen] = priv_len_ptr.read_int
 
-      unless auth_key_result == Core::Constants::SNMPERR_SUCCESS and 
-             priv_key_result == Core::Constants::SNMPERR_SUCCESS
+      unless priv_key_result == Core::Constants::SNMPERR_SUCCESS
         raise AuthenticationFailed, "failed to authenticate #{auth_user} in #{@host}"
       end
+      session[:securityPrivKeyLen] = priv_len_ptr.read_int
     end
 
 
