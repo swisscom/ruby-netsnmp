@@ -22,6 +22,10 @@ module NETSNMP
     # 
     def initialize(host, opts)
       @host = host
+      # this is because other evented clients might discover IP first, but hostnames
+      # give you better trackability of errors. Give the opportunity to the users to
+      # pass it, by setting the hostname explicitly. If not, fallback to the host. 
+      @hostname = opts.fetch(:hostname, @host)
       @options = opts
       @request = nil
       # For now, let's eager load the signature
@@ -44,7 +48,7 @@ module NETSNMP
         transport.close rescue nil
       end
       if Core::LibSNMP.snmp_sess_close(@signature) == 0
-        raise Error, "#@host: Couldn't clean up session properly"
+        raise Error, "#@hostname: Couldn't clean up session properly"
       end
     end
 
@@ -73,7 +77,7 @@ module NETSNMP
       if ( @reqid = Core::LibSNMP.snmp_sess_async_send(@signature, pdu.pointer, session_callback, nil) ) == 0
         # it's interesting, pdu's are only fred if the async send is successful... netsnmp 1 - me 0
         Core::LibSNMP.snmp_free_pdu(pdu.pointer)
-        raise SendError, "#@host: Failed to send pdu"
+        raise SendError, "#@hostname: Failed to send pdu"
       end
     end
 
@@ -86,13 +90,13 @@ module NETSNMP
       operation, response_pdu = @requests.delete(@reqid)
       case operation
         when :send_failed
-          raise ReceiveError, "#@host: Failed to receive pdu"
+          raise ReceiveError, "#@hostname: Failed to receive pdu"
         when :timeout
-          raise Timeout::Error, "#@host: timed out while waiting for pdu response"
+          raise Timeout::Error, "#@hostname: timed out while waiting for pdu response"
         when :success
           response_pdu
         else
-          raise Error, "#@host: unrecognized operation for request #{@reqid}: #{operation} for #{response_pdu}"
+          raise Error, "#@hostname: unrecognized operation for request #{@reqid}: #{operation} for #{response_pdu}"
       end
     end
 
@@ -105,13 +109,13 @@ module NETSNMP
         when 0
           Core::LibSNMP.snmp_sess_timeout(@signature)
         else
-          raise ReceiveError, "#@host: error receiving data"
+          raise ReceiveError, "#@hostname: error receiving data"
       end
     end
     
     def async_read
       if Core::LibSNMP.snmp_sess_read(@signature, get_selectable_sockets.pointer) != 0
-        raise ReceiveError, "#@host: Failed to receive pdu response"
+        raise ReceiveError, "#@hostname: Failed to receive pdu response"
       end
     end
 
@@ -170,7 +174,7 @@ module NETSNMP
         when :md5   then MD5OID.new
         when :sha1  then SHA1OID.new
         when nil    then NoAuthOID.new
-        else raise Error, "#@host: #{options[:auth_protocol]} is an unsupported authorization protocol"
+        else raise Error, "#@hostname: #{options[:auth_protocol]} is an unsupported authorization protocol"
       end
 
       session[:securityAuthProto] = auth_protocol_oid.pointer
@@ -180,7 +184,7 @@ module NETSNMP
         when :aes then AESOID.new 
         when :des then DESOID.new
         when nil  then NoPrivOID.new
-        else raise Error, "#@host: #{options[:priv_protocol]} is an unsupported privacy protocol"
+        else raise Error, "#@hostname: #{options[:priv_protocol]} is an unsupported privacy protocol"
       end
       session[:securityPrivProto] = priv_protocol_oid.pointer
 
@@ -199,7 +203,7 @@ module NETSNMP
       # Authentication
       # Do not generate_Ku, unless we're Auth or AuthPriv
       auth_user, auth_pass = options.values_at(:username, :auth_password)
-      raise Error, "#@host: no given Authorization User" unless auth_user
+      raise Error, "#@hostname: no given Authorization User" unless auth_user
       session[:securityName] = FFI::MemoryPointer.from_string(auth_user)
       session[:securityNameLen] = auth_user.length
 
