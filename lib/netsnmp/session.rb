@@ -27,11 +27,12 @@ module NETSNMP
       # pass it, by setting the hostname explicitly. If not, fallback to the host. 
       @hostname = opts.fetch(:hostname, @host)
       @options = opts
+      @logged_at = nil
       @request = nil
       # For now, let's eager load the signature
       @signature = build_signature(@options)
       if @signature.null?
-        raise ConnectionFailed, "could not connect to #{host}"
+        raise ConnectionFailed, "could not build signature for #@hostname"
       end
       @requests ||= {}
     end
@@ -64,6 +65,26 @@ module NETSNMP
 
     private
 
+    LoggedInTimeout = Class.new(Timeout::Error)
+    def try_login
+      return yield unless @logged_at.nil?
+
+      begin
+        # problem for snmp is, there is no login process.
+        # signature is sent on first packet. As we are not using the synch interface, this will not
+        # be handled by the core library. Which sucks. But even core library would just retry and timeout
+        # at some point.
+        # we do something similar: before any PDU succeeds, after first PDU is async-sent, we wait for reads, but we can't block. If 
+        # the socket hasn't anything to read, we can assume it was the wrong USERNAME (?).
+        # TODO: research if this is true. 
+        Timeout.timeout(@timeout, LoggedInTimeout) do
+          yield
+        end
+      rescue LoggedInTimeout
+        raise ConnectionFailed, "failed to login to #@hostname"
+      end
+    end
+
     def transport
       @transport ||= fetch_transport
     end
@@ -77,31 +98,40 @@ module NETSNMP
       if ( @reqid = Core::LibSNMP.snmp_sess_async_send(@signature, pdu.pointer, session_callback, nil) ) == 0
         # it's interesting, pdu's are only fred if the async send is successful... netsnmp 1 - me 0
         Core::LibSNMP.snmp_free_pdu(pdu.pointer)
-        raise SendError, "#@hostname: Failed to send pdu"
+        # if it's the first time we're passing here and send fails, we can (?) assume that
+        # AUTH_PASSWORD is wrong
+        if @logged_at.nil?
+          raise ConnectionFailed, "failed to login to #@hostname"
+        else
+          raise SendError, "#@hostname: Failed to send pdu"
+        end
       end
     end
 
     def read
       receive # trigger callback ahead of time and wait for it
+      # Sounds a bit unreasonable, but only after we arrived here we know for sure that the credentials are proper.
+      # So we can set this variable, so further errors can be safely ignored.
+      @logged_at ||= Time.now
       handle_response
     end
 
     def handle_response
       operation, response_pdu = @requests.delete(@reqid)
       case operation
+        when :success
+          response_pdu
         when :send_failed
           raise ReceiveError, "#@hostname: Failed to receive pdu"
         when :timeout
           raise Timeout::Error, "#@hostname: timed out while waiting for pdu response"
-        when :success
-          response_pdu
         else
           raise Error, "#@hostname: unrecognized operation for request #{@reqid}: #{operation} for #{response_pdu}"
       end
     end
 
     def receive
-      readers, _ = wait_readable
+      readers, _ = try_login { wait_readable }
       case readers.size
         when 1..Float::INFINITY
           # triggers callback
@@ -115,7 +145,13 @@ module NETSNMP
     
     def async_read
       if Core::LibSNMP.snmp_sess_read(@signature, get_selectable_sockets.pointer) != 0
-        raise ReceiveError, "#@hostname: Failed to receive pdu response"
+        # if it's the first time we're passing here and send fails, we can (?) assume that
+        # PRIV_PASSWORD is wrong
+        if @logged_at.nil?
+          raise ConnectionFailed, "failed to login to #@hostname"
+        else
+          raise ReceiveError, "#@hostname: Failed to receive pdu response"
+        end
       end
     end
 
@@ -242,7 +278,7 @@ module NETSNMP
 
     # @param [Hash] options options to open the net-snmp session
     # @option options [String] :community the snmp community string (defaults to public)
-    # @option options [Integer] :timeout number of millisecs until first timeout
+    # @option options [Integer] :timeout number of sec until first timeout
     # @option options [Integer] :retries number of retries before timeout
     # @return [FFI::Pointer] a pointer to the validated session signature, which will therefore be used in all _sess_ methods from libnetsnmp
     def build_signature(options)
@@ -265,9 +301,9 @@ module NETSNMP
       
       session[:peername] = FFI::MemoryPointer.from_string(peername)
 
-      session[:timeout] = options[:timeout] if options.has_key?(:timeout)
-      session[:retries] = options[:retries] if options.has_key?(:retries)
-
+      @timeout =  options[:timeout] || 10
+      session[:timeout] = @timeout * 1000
+      session[:retries] = options[:retries] || 5
       session_authorization(session, options)
       Core::LibSNMP.snmp_sess_open(session.pointer)
     end
@@ -295,14 +331,14 @@ module NETSNMP
 
         # TODO: pass exception in case of failure
 
+        response_pdu = ResponsePDU.new(pdu_ptr)
+        @requests[@reqid] = [op, response_pdu]
         if reqid == @reqid
-          response_pdu = ResponsePDU.new(pdu_ptr)
           # probably pass the result as a yield from a fiber
-          @requests[@reqid] = [op, response_pdu]
-
           op.eql?(:unrecognized_operation) ? 0 : 1
         else  
-          puts "wow, unexpected #{op}.... #{reqid} different than #{@reqid}"
+          # this is happening when user is unknown(????)
+          #puts "wow, unexpected #{op}.... #{reqid} different than #{@reqid}"
           0
         end
       end
