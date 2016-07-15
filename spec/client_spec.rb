@@ -12,6 +12,35 @@ RSpec.describe NETSNMP::Client do
 
   subject { described_class.new(host, options) }
 
+  describe "establishing session" do
+    let(:oid) { "1.3.6.1.2.1.1.5.0" } # sysName.0
+    context "with a wrong auth password" do
+      let(:options) { host_options.merge( auth_password: "auctoritas2", timeout: 5) }
+      it { 
+        expect { 
+          subject.get(oid)
+        }.to raise_error(NETSNMP::ConnectionFailed) 
+      }
+    end
+    context "with a wrong priv password" do
+      let(:options) { host_options.merge( priv_password: "privatus2", timeout: 5) }
+      it { 
+        expect { 
+          subject.get(oid)
+        }.to raise_error(NETSNMP::ConnectionFailed) 
+      }
+    end
+
+    context "with an unexisting user" do
+      let(:options) { host_options.merge(username: "simulata", timeout: 5) }
+      it { 
+        expect { 
+          subject.get(oid)
+        }.to raise_error(NETSNMP::ConnectionFailed) 
+      }
+    end
+  end
+
   describe "#get" do
     let(:oid) { "1.3.6.1.2.1.1.5.0" } # sysName.0
     let(:value) { subject.get(oid) }
