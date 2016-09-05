@@ -204,6 +204,11 @@ module NETSNMP
       return unless session[:version] == Core::Constants::SNMP_VERSION_3 
 
 
+      session[:securityAuthProtoLen] = 10
+      session[:securityAuthKeyLen] = Core::Constants::USM_AUTH_KU_LEN
+      session[:securityPrivProtoLen] = 10
+      session[:securityPrivKeyLen] = Core::Constants::USM_PRIV_KU_LEN
+
       # Security Authorization
       session[:securityLevel] =  case options[:security_level] 
         when /noauth/         then Core::Constants::SNMP_SEC_LEVEL_NOAUTH
@@ -220,66 +225,24 @@ module NETSNMP
         else raise Error, "#@hostname: #{options[:auth_protocol]} is an unsupported authorization protocol"
       end
 
-      session[:securityAuthProto] = auth_protocol_oid.pointer
-
-      # Priv Protocol
+       # Priv Protocol
       priv_protocol_oid = case options[:priv_protocol]
         when :aes then AESOID.new 
         when :des then DESOID.new
         when nil  then NoPrivOID.new
         else raise Error, "#@hostname: #{options[:priv_protocol]} is an unsupported privacy protocol"
       end
-      session[:securityPrivProto] = priv_protocol_oid.pointer
-
-      # other necessary lengths
-      session[:securityAuthProtoLen] = 10
-      session[:securityAuthKeyLen] = Core::Constants::USM_AUTH_KU_LEN
-      session[:securityPrivProtoLen] = 10
-      session[:securityPrivKeyLen] = Core::Constants::USM_PRIV_KU_LEN
-
+   
+      user, auth_pass, priv_pass = options.values_at(:username, :auth_password, :priv_password)
+      auth_protocol_oid.generate_key(session, user, auth_pass)
+      priv_protocol_oid.generate_key(session, user, priv_pass )
 
       if options[:context]
         session[:contextName] = FFI::MemoryPointer.from_string(options[:context])
         session[:contextNameLen] = options[:context].length
       end
 
-      # Authentication
-      # Do not generate_Ku, unless we're Auth or AuthPriv
-      auth_user, auth_pass = options.values_at(:username, :auth_password)
-      raise Error, "#@hostname: no given Authorization User" unless auth_user
-      session[:securityName] = FFI::MemoryPointer.from_string(auth_user)
-      session[:securityNameLen] = auth_user.length
 
-      auth_len_ptr = FFI::MemoryPointer.new(:size_t)
-      auth_len_ptr.write_int(Core::Constants::USM_AUTH_KU_LEN)
-      auth_key_result = Core::LibSNMP.generate_Ku(session[:securityAuthProto],
-                                       session[:securityAuthProtoLen],
-                                       auth_pass,
-                                       auth_pass.length,
-                                       session[:securityAuthKey],
-                                       auth_len_ptr)
-      unless auth_key_result == Core::Constants::SNMPERR_SUCCESS  
-        raise AuthenticationFailed, "failed to authenticate #{auth_user} in #{@host}"
-      end
-      session[:securityAuthKeyLen] = auth_len_ptr.read_int
-
-      priv_len_ptr = FFI::MemoryPointer.new(:size_t)
-      priv_len_ptr.write_int(Core::Constants::USM_PRIV_KU_LEN)
-
-      priv_pass = options[:priv_password]
-      # NOTE I know this is handing off the AuthProto, but generates a proper
-      # key for encryption, and using PrivProto does not.
-      priv_key_result = Core::LibSNMP.generate_Ku(session[:securityAuthProto],
-                                                  session[:securityAuthProtoLen],
-                                                  priv_pass,
-                                                  priv_pass.length,
-                                                  session[:securityPrivKey],
-                                                  priv_len_ptr)
-
-      unless priv_key_result == Core::Constants::SNMPERR_SUCCESS
-        raise AuthenticationFailed, "failed to authenticate #{auth_user} in #{@host}"
-      end
-      session[:securityPrivKeyLen] = priv_len_ptr.read_int
     end
 
 
