@@ -214,7 +214,8 @@ module NETSNMP
         when /noauth/         then Core::Constants::SNMP_SEC_LEVEL_NOAUTH
         when /auth_?no_?priv/ then Core::Constants::SNMP_SEC_LEVEL_AUTHNOPRIV
         when /auth_?priv/     then Core::Constants::SNMP_SEC_LEVEL_AUTHPRIV 
-        when Integer then options[:security_level]
+        when Integer
+          options[:security_level]
         else Core::Constants::SNMP_SEC_LEVEL_AUTHPRIV
       end
 
