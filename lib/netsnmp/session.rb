@@ -205,7 +205,14 @@ module NETSNMP
 
 
       # Security Authorization
-      session[:securityLevel] =  options[:security_level] || Core::Constants::SNMP_SEC_LEVEL_AUTHPRIV
+      session[:securityLevel] =  case options[:security_level] 
+        when /noauth/         then Core::Constants::SNMP_SEC_LEVEL_NOAUTH
+        when /auth_?no_?priv/ then Core::Constants::SNMP_SEC_LEVEL_AUTHNOPRIV
+        when /auth_?priv/     then Core::Constants::SNMP_SEC_LEVEL_AUTHPRIV 
+        when Integer then options[:security_level]
+        else Core::Constants::SNMP_SEC_LEVEL_AUTHPRIV
+      end
+
       auth_protocol_oid = case options[:auth_protocol]
         when :md5   then MD5OID.new
         when :sha1  then SHA1OID.new
