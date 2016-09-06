@@ -272,8 +272,8 @@ module NETSNMP
       
       session[:peername] = FFI::MemoryPointer.from_string(peername)
 
-      @timeout =  options[:timeout] || 10
-      session[:timeout] = @timeout * 1000
+      @timeout = options[:timeout] || 10
+      session[:timeout] = @timeout * 1000000
       session[:retries] = options[:retries] || 5
       session_authorization(session, options)
       Core::LibSNMP.snmp_sess_open(session.pointer)
