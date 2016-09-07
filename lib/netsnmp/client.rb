@@ -75,16 +75,20 @@ module NETSNMP
       walkoid = oid_code.is_a?(OID) ? oid_code : OID.new(oid_code)
       Enumerator.new do |y|
         code = walkoid.code
+        first_response_code = nil
         catch(:walk) do
           loop do
             response_pdu = get_next(code, options)
             response_pdu.varbinds.each do |varbind|
               code = varbind.oid_code
-              if !walkoid.parent_of?(code) or varbind.value.eql?(:endofmibview)
+              if !walkoid.parent_of?(code) or 
+                  varbind.value.eql?(:endofmibview) or
+                  code == first_response_code
                 throw(:walk)             
               else
                 y << [code, varbind.value]
               end
+              first_response_code ||= code
             end
           end
         end
