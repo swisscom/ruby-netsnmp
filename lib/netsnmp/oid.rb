@@ -37,11 +37,16 @@ module NETSNMP
       @struct = FFI::MemoryPointer.new(OID::default_size * Core::Constants::MAX_OID_LEN)
       @length_pointer = FFI::MemoryPointer.new(:size_t)
       @length_pointer.write_int(Core::Constants::MAX_OID_LEN)
-      existing_oid = case code
-        when OIDREGEX then Core::LibSNMP.read_objid(code, @struct, @length_pointer)
-        else Core::LibSNMP.get_node(code, @struct, @length_pointer)
+      case code
+        when OIDREGEX 
+          if Core::LibSNMP.read_objid(code, @struct, @length_pointer) == 0
+            Core::LibSNMP.snmp_perror(code)
+          end
+        else 
+          if Core::LibSNMP.get_node(code, @struct, @length_pointer) == 0
+            raise Error, "unsupported oid: #{code}"
+          end
       end
-      raise Error, "unsupported oid: #{code}" if existing_oid.zero?
     end
 
     # @return [String] the oid code
