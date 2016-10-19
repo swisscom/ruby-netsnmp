@@ -1,6 +1,10 @@
 RSpec.describe NETSNMP::BER do
   describe ".encoding" do
     context "of primitive types" do
+      describe "booleans" do
+        it { expect(subject.encode(true)).to eq("\x01\x01\xFF".b) }
+        it { expect(subject.encode(false)).to eq("\x01\x01\x00".b) }
+      end
       describe "integer" do
         {
           0           => "\x02\x01\x00",
@@ -40,8 +44,24 @@ RSpec.describe NETSNMP::BER do
           it { expect(subject.encode(i)).to eq(ber.b) }
         end
       end
-      describe "string"
-      describe "null"
+      describe "string" do
+        it { expect(subject.encode("\u00e5".force_encoding("UTF-8"))).to eq("\x04\x02\xC3\xA5".b) }
+        it { expect(subject.encode("teststring".encode("US-ASCII"))).to eq("\x04\nteststring".b) }
+        it { expect(subject.encode(["6a31b4a12aa27a41aca9603f27dd5116"].pack("H*"))).
+               to eq("\x04\x10" + "j1\xB4\xA1*\xA2zA\xAC\xA9`?'\xDDQ\x16".b) }
+        it { expect(subject.encode("\x81")).to eq("\x04\x01\x81".b) }
+
+        context "if wanting to encode the data as it is" do
+          it { expect(subject.encode(["6a31b4a12aa27a41aca9603f27dd5116"].pack("H*"), raw: true)).
+                 to eq("\x04\x10" + "j1\xB4\xA1*\xA2zA\xAC\xA9`?'\xDDQ\x16".b) }
+        end
+      end
+      describe "nil" do
+        it { expect(subject.encode(nil)).to eq("\x05\x00".b) }
+      end
+    end
+
+    context "of complex types" do
       describe "oid" do
 #        let(:val) { ".1.3.6.1.2.1.1.1.0" }
 #        # ASCII
@@ -49,9 +69,6 @@ RSpec.describe NETSNMP::BER do
 #        # HEXA
 #        it { is_expected.to eq("") }
       end
-    end
-
-    context "of complex types" do
 
     end
   end
