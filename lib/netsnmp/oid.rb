@@ -31,6 +31,25 @@ module NETSNMP
 
     attr_reader :code
 
+    def to_ary
+      @ary ||= begin
+        ary = code.split('.')
+        ary = ary[1..-1] if ary[0].empty?
+        ary.map(&:to_i)
+      end
+    end
+
+    def to_ber
+      fst, scd, *rest = to_ary
+      raise Error, "Invalid OID" unless (0..2).include?(fst)
+      beg = fst * 40 + scd
+      rest.unshift(beg)
+      encoded = rest.pack("w*")
+      encoded.prepend([6, encoded.length].pack("CC"))
+      encoded
+    end
+    
+
     # @param [String] code the oid code 
     #
     def initialize(code)
