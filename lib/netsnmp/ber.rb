@@ -3,7 +3,14 @@ module NETSNMP
   module BER
     extend self
 
-    # PUBLIC API
+    def encode_sequence(seq, code: 0, internal: 0x30)
+      [internal + code].pack("C") << encode_length(seq.length) << seq
+    end
+
+
+    def encode_context(seq, code: 0)
+      encode_sequence(seq, code: code, internal: 0xa0) 
+    end
 
     def encode(obj, **opts)
       case obj
@@ -77,14 +84,6 @@ module NETSNMP
       encoded = encoded.prepend(encode_length(encoded.length))
       encoded = encoded.prepend("\x04")
       encoded
-    end
-
-    def encode_null
-
-    end
-
-    def encode_oid(oid)
-
     end
 
     def encode_length(len)

@@ -63,11 +63,9 @@ RSpec.describe NETSNMP::BER do
 
     context "of complex types" do
       describe "oid" do
-#        let(:val) { ".1.3.6.1.2.1.1.1.0" }
-#        # ASCII
-#        it { is_expected.to eq("") }
-#        # HEXA
-#        it { is_expected.to eq("") }
+        # ASCII
+        let(:val) { ".1.3.6.1.2.1.1.1.0" }
+        it { subject.encode(".1.3.6.1.2.1.1.1.0", oid: true).to eq("") }
       end
 
     end

@@ -31,20 +31,59 @@ module NETSNMP
     # @param [FFI::Pointer] the pointer to the initialized structure
     #
     def initialize(pointer)
-      @struct = Core::Structures::PDU.new(pointer)
+    #  @struct = Core::Structures::PDU.new(pointer)
       @varbinds = []
     end
 
 
+    def to_ber
+      sequence = String.new 
+      sequence << BER.encode(@options[:version])
+      sequence << BER.encode(@options[:community])
+      sequence << encode_payload
+      BER.encode_sequence(sequence)
+    end
+
+
+    private
+
+    def type_ber_code(type: @type)
+      typ = case type
+      when Integer then type
+      when :get then 0
+      when :getnext then 1
+      when :response then 2
+      when :set then 3
+      when :getbulk then 5
+      else 
+        raise Error, "#{type}: unsupported type"
+      end
+      0xa0 + type
+    end
+
+    def encode_payload
+
+      code = type_ber_code
+      payload_sequence = String.new
+
+      payload_sequence << BER.encode(@options[:request_id])
+      payload_sequence << BER.encode(0) # error
+      payload_sequence << BER.encode(0) # error_index
+
+      payload_sequence << BER.encode_sequence(@varbinds.map(&:to_ber).join)
+       BER.encode_context(payload_sequence, code: 0)
+    end
   end
 
   # Abstracts the request PDU
   # Main characteristic is that it has a write-only API, in that you can add varbinds to it.
   #
   class RequestPDU < PDU
-    def initialize(type)
-      pointer = Core::LibSNMP.snmp_pdu_create(type)
-      super(pointer)
+    def initialize(type, **options)
+      @type = type
+      @options = options
+      #pointer = Core::LibSNMP.snmp_pdu_create(type)
+      super(@type)
     end
 
     # Adds a request varbind to the pdu
