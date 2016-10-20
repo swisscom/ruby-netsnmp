@@ -10,6 +10,14 @@ module NETSNMP
     def initialize(pointer)
       @struct = Core::Structures::VariableList.new(pointer)
     end
+
+
+    def to_ber
+      encoded = String.new
+      encoded << @oid.to_ber
+      encoded << BER.encode(@value)
+      BER.encode_sequence(encoded)
+    end
   end
 
 
@@ -24,6 +32,8 @@ module NETSNMP
     #   type-label for value (see #convert_type), if not set it's inferred from the value
     #
     def initialize(pdu, oid, value, options={})
+      @oid = OID.new(oid)
+      @value = value
       type = case options[:type]
         when Integer then options[:type] # assume that the code is properly passed
         when Symbol  then convert_type(options[:type]) # DSL-specific API
@@ -42,8 +52,8 @@ module NETSNMP
       end
       value = convert_value(value, type)
 
-      pointer = Core::LibSNMP.snmp_pdu_add_variable(pdu.pointer, oid.pointer, oid.length, type, value, value_length) 
-      super(pointer)
+#      pointer = Core::LibSNMP.snmp_pdu_add_variable(pdu.pointer, oid.pointer, oid.length, type, value, value_length) 
+#      super(pointer)
     end
 
 

@@ -26,4 +26,25 @@ RSpec.describe NETSNMP::PDU do
     end
   end
 
+
+
+
+
+  describe "#to_ber" do
+    let(:encoded_get_request) { "0'\002\001\000\004\006public\240\032\002\002?*\002\001\000\002\001\0000\0160\f\006\b+\006\001\002\001\001\001\000\005\000" }
+    context "v2c" do
+      subject { described_class.build(:get, 
+                                        version: 0,
+                                        request_id: 16170,
+                                        community: "public") }
+      let(:struct) { double(:structure) }
+      before { allow(NETSNMP::Core::LibSNMP).to receive(:snmp_pdu_create).and_return(pointer) }
+      before do
+     $result = encoded_get_request.b
+        subject.add_varbind(".1.3.6.1.2.1.1.1.0")
+      end
+      it { expect(subject.to_ber).to eq(encoded_get_request.b) }
+    end
+
+  end
 end
