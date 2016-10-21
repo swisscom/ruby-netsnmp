@@ -31,13 +31,13 @@ module NETSNMP
     # @option options [Symbol, Integer, nil] :type C net-snmp type flag,  
     #   type-label for value (see #convert_type), if not set it's inferred from the value
     #
-    def initialize(pdu, oid, value, options={})
+    def initialize(pdu, oid, options={})
       @oid = OID.new(oid)
-      @value = value
+      @value = options[:value]
       type = case options[:type]
         when Integer then options[:type] # assume that the code is properly passed
         when Symbol  then convert_type(options[:type]) # DSL-specific API
-        when nil     then infer_from_value(value)
+        when nil     then infer_from_value(@value)
         else 
           raise Error, "#{options[:type]} is an unsupported type"
       end
@@ -48,9 +48,9 @@ module NETSNMP
              Core::Constants::SNMP_NOSUCHINSTANCE,
              Core::Constants::SNMP_ENDOFMIBVIEW
           0
-        else value ? value.size : 0 
+        else @value ? @value.size : 0 
       end
-      value = convert_value(value, type)
+      value = convert_value(@value, type)
 
 #      pointer = Core::LibSNMP.snmp_pdu_add_variable(pdu.pointer, oid.pointer, oid.length, type, value, value_length) 
 #      super(pointer)
