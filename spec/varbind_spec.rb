@@ -8,8 +8,9 @@ RSpec.describe NETSNMP::Varbind do
 
   it { is_expected.to respond_to(:struct) }
 
+
   describe NETSNMP::RequestVarbind do
-    subject {  NETSNMP::RequestVarbind.new(pdu, oid, value) }
+    subject {  NETSNMP::RequestVarbind.new(pdu, oid, value: value) }
     let(:p1) { double(:pdu_pointer) }
     let(:p2) { double(:oid_pointer) }
     let(:pdu) { double(:pdu, pointer: p1) }
@@ -42,6 +43,9 @@ RSpec.describe NETSNMP::Varbind do
         end
 
       end
+    end
+    describe "#to_ber" do
+      it { expect(described_class.new(nil, ".1.3.6.1.2.1.1.1.0").to_ber).to eq("0\f\006\b+\006\001\002\001\001\001\000\005\000".b) }
     end
   end
 
