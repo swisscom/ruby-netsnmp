@@ -2,6 +2,7 @@
 require 'stringio'
 module NETSNMP
   module BER
+    include Core::Constants
     extend self
 
     def encode(obj, **opts)
@@ -33,14 +34,13 @@ module NETSNMP
     # stream has to implement #getbyte
     # for the sake of simplification (tests), let's assume a full bytestream is already here as array
     def decode(stream, syntax: nil)
-      str = StringIO.new(stream)
+      str = stream.respond_to?(:read) ? stream : StringIO.new(stream)
       type = str.getbyte or return nil
-      
       length = decode_length(str) 
       
       object = str.read(length)
 
-      decode_by_asn_type(type, length, object)      
+      decode_by_asn_type(type, length, object)
     end
 
     # PRIVATE API
@@ -136,22 +136,22 @@ module NETSNMP
  
     def decode_by_asn_type(type, length, object)
       case type
-        when 4, 13 # string, 13 is relative oid
+        when 0x04, 0x13 # 4 -> octet string, 13 is relative oid
           str = String.new(object)
           if (current_encoding = str.encoding) == Encoding::BINARY # don't touch raw strings
             str.force_encoding("UTF-8")
             str.force_encoding(current_encoding) unless str.valid_encoding?
           end
-          type == 13 ? OID.new(str) : str
-        when 6 
+          type == 13 ? OID.build(str) : str
+        when 0x06 # 6 -> ASN Object ID
           oid = object.unpack("w*")
           f = oid[0]
           f < 40 ? [0, f, *oid[1..-1]] :
           f < 80 ? [1, f - 40, *oid[1..-1]] :
                    [2, f - 80, *oid[1..-1]]
-        when 1 # boolean
+        when 0x01 # ASN boolean
           object != "\000"
-        when 2, 10 # integer
+        when 0x02, 0x10, 0x8a # 2 -> integer, 10 -> sequence, 138 -> 
           neg = !(object.unpack("C").first & 0x80).zero?
           int = 0
 
@@ -160,12 +160,23 @@ module NETSNMP
           end
 
           neg ? (int + 1) * -1 : int
-        when 5
+        when 0x05
           nil 
-        when 16, 17
-
-        else
-          raise Error, "#{type_id}: unsupported ASN type"
+        when 0x30, 0x31  # sequence
+          Enumerator.new do |y|
+            str = StringIO.new(object)
+            while (decoded = decode(str)) != nil
+              y << decoded
+            end
+          end
+        # out of the primitives
+        when SNMP_MSG_GET,
+             SNMP_MSG_GETNEXT,
+             SNMP_MSG_RESPONSE,
+             SNMP_MSG_SET
+          [type, object]
+        else 
+          raise Error, "#{type}: unsupported ASN type"
       end
     end
   end

@@ -11,8 +11,18 @@ module NETSNMP
     #
     def initialize(code)
       @code = code
+    end
+
+    def self.build(o)
+      case o
+      when OID then o
+      when Array
+        self.new(".#{o.join('.')}")
+      when OIDREGEX
+        self.new(o)
       # TODO: MIB to OID
-      raise Error, "#{@code}: unvalid oid" if not OIDREGEX.match(@code)
+      else raise Error, "#{o}: can't convert to OID"
+      end
     end
 
     def to_ary
@@ -37,6 +47,12 @@ module NETSNMP
 
     def to_s ; code ; end
 
+    def ==(other)
+      case other
+      when String then code == other
+      else super
+      end
+    end
     # @param [OID, String] child oid another oid
     # @return [true, false] whether the given OID belongs to the sub-tree
     #
