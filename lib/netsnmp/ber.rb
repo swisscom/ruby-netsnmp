@@ -1,16 +1,8 @@
 # mostly adapted from https://github.com/ruby-ldap/ruby-net-ldap/blob/master/lib/net/ber/core_ext/
+require 'stringio'
 module NETSNMP
   module BER
     extend self
-
-    def encode_sequence(seq, code: 0, internal: 0x30)
-      [internal + code].pack("C") << encode_length(seq.length) << seq
-    end
-
-
-    def encode_context(seq, code: 0)
-      encode_sequence(seq, code: code, internal: 0xa0) 
-    end
 
     def encode(obj, **opts)
       case obj
@@ -27,8 +19,51 @@ module NETSNMP
       end
     end
 
+
+    def encode_sequence(seq, code: 0, internal: 0x30)
+      [internal + code].pack("C") << encode_length(seq.length) << seq
+    end
+
+
+    def encode_context(seq, code: 0)
+      encode_sequence(seq, code: code, internal: 0xa0) 
+    end
+
+
+    # stream has to implement #getbyte
+    # for the sake of simplification (tests), let's assume a full bytestream is already here as array
+    def decode(stream, syntax: nil)
+      str = StringIO.new(stream)
+      type = str.getbyte or return nil
+      
+      length = decode_length(str) 
+      
+      object = str.read(length)
+
+      decode_by_asn_type(type, length, object)      
+    end
+
     # PRIVATE API
     
+    # when the length byte is <127, it's the full one. all others will indicate edge cases
+    def decode_length(stream)
+      n = stream.getbyte
+
+      if n <= 0x7f
+        n
+      elsif n == 0x80
+        raise Error, "Indeterminate BER length (-1), not implemented"
+      elsif n == 0xff
+        raise Error, "Invalid BER length 0xFF detected"
+      else
+        v = 0
+        read(n & 0x7f).each_byte do |b|
+          v = (v << 8) + b
+        end
+        v
+      end
+    end
+
     def encode_integer(integer, code: "\x02")
       # Compute the byte length, accounting for negative values requiring two's
       # complement.
@@ -94,6 +129,43 @@ module NETSNMP
       else
         i = [len].pack('N').sub(/^[\0]+/, "")
         [0x80 + i.length].pack('C') + i
+      end
+    end
+
+
+ 
+    def decode_by_asn_type(type, length, object)
+      case type
+        when 4, 13 # string, 13 is relative oid
+          str = String.new(object)
+          if (current_encoding = str.encoding) == Encoding::BINARY # don't touch raw strings
+            str.force_encoding("UTF-8")
+            str.force_encoding(current_encoding) unless str.valid_encoding?
+          end
+          type == 13 ? OID.new(str) : str
+        when 6 
+          oid = object.unpack("w*")
+          f = oid[0]
+          f < 40 ? [0, f, *oid[1..-1]] :
+          f < 80 ? [1, f - 40, *oid[1..-1]] :
+                   [2, f - 80, *oid[1..-1]]
+        when 1 # boolean
+          object != "\000"
+        when 2, 10 # integer
+          neg = !(object.unpack("C").first & 0x80).zero?
+          int = 0
+
+          object.each_byte do |b|
+            int = (int << 8) + (neg ? 255 - b : b)
+          end
+
+          neg ? (int + 1) * -1 : int
+        when 5
+          nil 
+        when 16, 17
+
+        else
+          raise Error, "#{type_id}: unsupported ASN type"
       end
     end
   end

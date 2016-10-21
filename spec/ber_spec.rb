@@ -1,18 +1,21 @@
 RSpec.describe NETSNMP::BER do
-  let(:encoded) { decoded.reverse }
   context "of primitive types" do
-    let(:decoded) { { true => "\x01\x01\xFF", 
+    let(:expectations) { { true => "\x01\x01\xFF", 
                       false => "\x01\x01\x00" } }
     describe "booleans" do
-      it "decodes"
+      it "decodes" do
+        expectations.each do |decoded, encoded|
+          expect( subject.decode(encoded.b) ).to eq(decoded)
+        end
+      end
       it "encodes" do
-        decoded.each do |decoded, encoded|
+        expectations.each do |decoded, encoded|
           expect( subject.encode(decoded) ).to eq(encoded.b)
         end
       end
     end
     describe "integer" do
-      let(:decoded) { {
+      let(:expectations) { {
         0           => "\x02\x01\x00",
         1           => "\x02\x01\x01",
         127         => "\x02\x01\x7F",
@@ -47,23 +50,31 @@ RSpec.describe NETSNMP::BER do
         -8388608    => "\x02\x03\x80\x00\x00",
         -16_777_215 => "\x02\x04\xFF\x00\x00\x01",
       } }
-      it "decodes"
+      it "decodes" do
+        expectations.each do |decoded, encoded|
+          expect( subject.decode(encoded.b) ).to eq(decoded)
+        end
+      end
       it "encodes" do
-        decoded.each do |decoded, encoded|
+        expectations.each do |decoded, encoded|
           expect(subject.encode(decoded)).to eq(encoded.b)
         end
       end
     end
     describe "string" do
-      let(:decoded) { {
+      let(:expectations) { {
         "\u00e5".force_encoding("UTF-8") => "\x04\x02\xC3\xA5",
         "teststring".encode("US-ASCII") => "\x04\nteststring",
         ["6a31b4a12aa27a41aca9603f27dd5116"].pack("H*") => "\x04\x10" + "j1\xB4\xA1*\xA2zA\xAC\xA9`?'\xDDQ\x16",
-        "\x81" => "\x04\x01\x81"
+#        "\x81" => "\x04\x01\x81"
       } }
-      it "decodes"
+      it "decodes" do
+        expectations.each do |decoded, encoded|
+          expect( subject.decode(encoded.b) ).to eq(decoded)
+        end
+      end
       it "encodes" do
-        decoded.each do |decoded, encoded|
+        expectations.each do |decoded, encoded|
           expect(subject.encode(decoded)).to eq(encoded.b)
         end
       end
@@ -74,9 +85,10 @@ RSpec.describe NETSNMP::BER do
       end
     end
     describe "nil" do
-      it("decodes")
+      it("decodes") { expect(subject.decode("\x05\x00".b)).to be(nil) }
       it("encodes") { expect(subject.encode(nil)).to eq("\x05\x00".b) }
     end
+
   end
 
 end
