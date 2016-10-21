@@ -70,17 +70,19 @@ module NETSNMP
     # @param [true, false] raw false by default; set to true if you don't want to encode 
     #   the string to utf8
     def encode_string(str, code: "0x04", raw: false)
-      encoded = raw ? str : if str.respond_to?(:encode)
-        begin
-          str.encode('UTF-8').force_encoding('ASCII-8BIT')
-        rescue Encoding::UndefinedConversionError
-          str
-        rescue Encoding::ConverterNotFoundError
-          str
-        rescue Encoding::InvalidByteSequenceError
-          str
-        end
-      end 
+      encoded = String.new(
+        raw ? str : if str.respond_to?(:encode)
+          begin
+            str.encode('UTF-8').force_encoding('ASCII-8BIT')
+          rescue Encoding::UndefinedConversionError
+            str
+          rescue Encoding::ConverterNotFoundError
+            str
+          rescue Encoding::InvalidByteSequenceError
+            str
+          end
+        end 
+      )
       encoded = encoded.prepend(encode_length(encoded.length))
       encoded = encoded.prepend("\x04")
       encoded
