@@ -24,15 +24,21 @@ module NETSNMP
       end
     end
 
-    attr_reader :struct, :varbinds
+    attr_reader :options, :varbinds
 
-    def_delegators :@struct, :[], :[]=, :pointer
+    def_delegators :@options, :[]
 
     # @param [FFI::Pointer] the pointer to the initialized structure
     #
-    def initialize(pointer)
-    #  @struct = Core::Structures::PDU.new(pointer)
+    def initialize(type, obj)
+      @type = type
       @varbinds = []
+      if obj.is_a?(Hash)
+        @options = obj
+      else
+        @options = {}
+        decode_ber(obj)
+      end
     end
 
 
@@ -44,6 +50,15 @@ module NETSNMP
       BER.encode_sequence(sequence)
     end
 
+    # Adds a request varbind to the pdu
+    # 
+    # @param [OID] oid a valid oid
+    # @param [Hash] options additional request varbind options
+    # @option options [Object] :value the value for the oid
+    def add_varbind(oid, **options)
+      @varbinds << RequestVarbind.new(oid, options)
+    end
+    alias_method :<<, :add_varbind
 
     private
 
@@ -73,28 +88,39 @@ module NETSNMP
       payload_sequence << BER.encode_sequence(@varbinds.map(&:to_ber).join)
        BER.encode_context(payload_sequence, code: 0)
     end
+
+
+    def decode_ber(stream)
+
+      str = StringIO.new(stream)
+      #sequence
+      sequence = BER.decode(str)
+      options[:version] = sequence.next
+      options[:community] = sequence.next
+      pdu_type, requeststream = sequence.next 
+      # validate if this pdu type is the same as the one set
+
+      str = StringIO.new(requeststream)
+      options[:request_id] = BER.decode(str)
+      options[:error_status] = BER.decode(str)
+      options[:error_index] = BER.decode(str)
+   
+      #sequence
+      varsequence = BER.decode(str)
+      varsequence.each do |varbind|
+        oid, value = Array(varbind)
+        add_varbind(oid, value: value) 
+      end
+
+
+    end
   end
 
   # Abstracts the request PDU
   # Main characteristic is that it has a write-only API, in that you can add varbinds to it.
   #
   class RequestPDU < PDU
-    def initialize(type, **options)
-      @type = type
-      @options = options
-      #pointer = Core::LibSNMP.snmp_pdu_create(type)
-      super(@type)
-    end
 
-    # Adds a request varbind to the pdu
-    # 
-    # @param [OID] oid a valid oid
-    # @param [Hash] options additional request varbind options
-    # @option options [Object] :value the value for the oid
-    def add_varbind(oid, **options)
-      @varbinds << RequestVarbind.new(oid, options)
-    end
-    alias_method :<<, :add_varbind
   end
 
   # Abstracts the response PDU
@@ -103,42 +129,6 @@ module NETSNMP
   #
   class ResponsePDU < PDU
 
-    # @param [FFI::Pointer] the pointer to the response pdu structure
-    #
-    # @note it loads the variable as well.
-    # 
-    def initialize(pointer)
-      super
-      load_variables
-    end
-
-    # @return [String] the concatenation of the varbind values (usually, it's only one)
-    # 
-    def value
-      case @varbinds.size
-        when 0 then nil
-        when 1 then @varbinds.first.value
-        else 
-          # assume that they're all strings
-          @varbinds.map(&:value).join(' ')
-      end  
-    end
-
-    private
-
-    # loads the C-level structure variables into ruby ResponseVarbind objects, 
-    # and store them as state in {{@varbinds}} 
-    def load_variables
-      variable = @struct[:variables]
-      unless variable.null?
-        @varbinds << ResponseVarbind.new(variable)
-        variable = Core::Structures::VariableList.new(variable)
-        while( !(variable = variable[:next_variable]).null? )
-          variable = Core::Structures::VariableList.new(variable)
-          @varbinds << ResponseVarbind.new(variable.pointer)
-        end
-      end
-    end
 
   end
 end

@@ -8,7 +8,7 @@ module NETSNMP
 
     # @param [FFI::Pointer] pointer to the variable list
     def initialize(oid, value: nil)
-      @oid = oid.is_a?(OID) ? oid : OID.new(oid)
+      @oid = oid.is_a?(OID) ? oid : OID.build(oid)
       @value = value
     end
 
