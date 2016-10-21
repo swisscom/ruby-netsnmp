@@ -5,31 +5,15 @@ module NETSNMP
     Error = Class.new(Error)
     OIDREGEX = /^[\d\.]*$/
 
-    class << self
-
-      # @return [Integer] the default oid size in bytes
-      def default_size
-        @default_size ||= Core::Inline.oid_size
-      end
-  
-      # @param [FFI::Pointer] pointer the pointer to the beginning ot the memory octet
-      # @param [Integer] length the length of the oid
-      # @return [String] the oid code (ex: "1.2.4.56.3.4.5"...)
-      #
-      def read_pointer(pointer, length)
-        pointer.__send__(:"read_array_of_uint#{default_size * 8}", length).join('.')
-      end
-  
-      # @see read_pointer
-      # @return [OID] an OID object initialized from a code read from memory
-      #
-      def from_pointer(pointer, length)
-        new(read_pointer(pointer, length))
-      end
-
-    end
-
     attr_reader :code
+
+    # @param [String] code the oid code 
+    #
+    def initialize(code)
+      @code = code
+      # TODO: MIB to OID
+      raise Error, "#{@code}: unvalid oid" if not OIDREGEX.match(@code)
+    end
 
     def to_ary
       @ary ||= begin
@@ -50,39 +34,6 @@ module NETSNMP
     end
     
 
-    # @param [String] code the oid code 
-    #
-    def initialize(code)
-      @struct = FFI::MemoryPointer.new(OID::default_size * Core::Constants::MAX_OID_LEN)
-      @length_pointer = FFI::MemoryPointer.new(:size_t)
-      @length_pointer.write_int(Core::Constants::MAX_OID_LEN)
-      case code
-        when OIDREGEX 
-          if Core::LibSNMP.read_objid(code, @struct, @length_pointer) == 0
-            Core::LibSNMP.snmp_perror(code)
-          end
-        else 
-          if Core::LibSNMP.get_node(code, @struct, @length_pointer) == 0
-            raise Error, "unsupported oid: #{code}"
-          end
-      end
-    end
-
-    # @return [String] the oid code
-    # 
-    def code ; @code ||= OID.read_pointer(pointer, length) ; end 
-    
-    # @return [String] the pointer to the structure 
-    # 
-    def pointer ; @struct ; end
-
-    # @return [Integer] length of the oid 
-    #     
-    def length ; @length_pointer.read_int ; end
-
-    # @return [Integer] size of the oid 
-    #     
-    def size ; length * NETSNMP::OID.default_size ; end
 
     def to_s ; code ; end
 
