@@ -12,18 +12,6 @@ RSpec.describe NETSNMP::PDU do
   describe NETSNMP::RequestPDU do
     before { allow(NETSNMP::Core::LibSNMP).to receive(:snmp_pdu_create).and_return(pointer) }
     subject { NETSNMP::PDU.build(:get) }
-
-    describe "#add_varbind" do
-      let(:oid) { double(:oid) }
-      let(:value) { double(:value) }
-      let(:varbind) { double(:varbind) }
-      before { allow(NETSNMP::RequestVarbind).to receive(:new).with(subject, oid, hash_including(value: value)).and_return(varbind) }
-      it "creates a new varbind and adds it to the structure" do
-        subject.add_varbind(oid, { value: value }) 
-        expect(subject.varbinds).not_to be_empty
-        expect(subject.varbinds).to include(varbind) 
-      end
-    end
   end
 
 

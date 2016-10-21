@@ -4,11 +4,12 @@ module NETSNMP
   class Varbind
     Error = Class.new(Error)
 
-    attr_reader :struct
+    attr_reader :oid, :value
 
     # @param [FFI::Pointer] pointer to the variable list
-    def initialize(pointer)
-      @struct = Core::Structures::VariableList.new(pointer)
+    def initialize(oid, value: nil)
+      @oid = oid.is_a?(OID) ? oid : OID.new(oid)
+      @value = value
     end
 
 
@@ -23,55 +24,6 @@ module NETSNMP
 
   # Abstracts the Varbind used for the PDU Request
   class RequestVarbind < Varbind
-
-    # @param [RequestPDU] pdu the request pdu for this varbind
-    # @param [OID] oid the oid for this varbind
-    # @param [Object] value the value for the oid
-    # @param [Hash] options additional options
-    # @option options [Symbol, Integer, nil] :type C net-snmp type flag,  
-    #   type-label for value (see #convert_type), if not set it's inferred from the value
-    #
-    def initialize(pdu, oid, options={})
-      @oid = OID.new(oid)
-      @value = options[:value]
-      type = case options[:type]
-        when Integer then options[:type] # assume that the code is properly passed
-        when Symbol  then convert_type(options[:type]) # DSL-specific API
-        when nil     then infer_from_value(@value)
-        else 
-          raise Error, "#{options[:type]} is an unsupported type"
-      end
-
-      value_length = case type
-        when Core::Constants::ASN_NULL,
-             Core::Constants::SNMP_NOSUCHOBJECT,
-             Core::Constants::SNMP_NOSUCHINSTANCE,
-             Core::Constants::SNMP_ENDOFMIBVIEW
-          0
-        else @value ? @value.size : 0 
-      end
-      value = convert_value(@value, type)
-
-#      pointer = Core::LibSNMP.snmp_pdu_add_variable(pdu.pointer, oid.pointer, oid.length, type, value, value_length) 
-#      super(pointer)
-    end
-
-
-    private
-
-    # @param [Object] value value to infer the type from
-    # @return [Integer] the C net-snmp flag indicating the type
-    # @raise [Error] when the value is from an unexpected type
-    #
-    def infer_from_value(value)
-      case value
-        when String then Core::Constants::ASN_OCTET_STR
-        when Fixnum then Core::Constants::ASN_INTEGER
-        when OID then Core::Constants::ASN_OBJECT_ID
-        when nil then Core::Constants::ASN_NULL
-        else raise Error, "#{value} is from an unsupported type"
-      end
-    end
 
     # @param [Symbol] symbol_type symbol representing the type
     # @return [Integer] the C net-snmp flag indicating the type
@@ -137,17 +89,14 @@ module NETSNMP
     # 
     # @note it loads the value and oid code on initialization
     #
-    def initialize(pointer)
-      super
-      @value    = load_varbind_value
-      @oid_code = load_oid_code
+    def initialize(encoded)
+      oid, value = decode(encoded)
+      super(oid, value)
     end
 
     private
 
-    # @return [String] the oid code from the varbind
-    def load_oid_code
-      OID.read_pointer(@struct[:name], @struct[:name_length])
+    def decode(encoded)
     end
 
     # @return [Object] the value for the varbind (a ruby type, a string, an integer, a symbol etc...)
