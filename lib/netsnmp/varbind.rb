@@ -12,6 +12,9 @@ module NETSNMP
       @value = value
     end
 
+    def oid_code
+      @oid.code.to_s
+    end
 
     def to_ber
       to_asn.to_der
