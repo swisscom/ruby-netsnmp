@@ -17,8 +17,9 @@ module NETSNMP
       case o
       when OID then o
       when Array
-        self.new(".#{o.join('.')}")
+        self.new(o.join('.'))
       when OIDREGEX
+        o = o[1..-1] if o.start_with?('.')
         self.new(o)
       # TODO: MIB to OID
       else raise Error, "#{o}: can't convert to OID"
@@ -34,16 +35,13 @@ module NETSNMP
     end
 
     def to_ber
-      fst, scd, *rest = to_ary
-      raise Error, "Invalid OID" unless (0..2).include?(fst)
-      beg = fst * 40 + scd
-      rest.unshift(beg)
-      encoded = rest.pack("w*")
-      encoded.prepend([6, encoded.length].pack("CC"))
-      encoded
+      to_asn.to_der
     end
     
 
+    def to_asn
+      OpenSSL::ASN1::ObjectId.new(@code)
+    end
 
     def to_s ; code ; end
 

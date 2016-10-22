@@ -14,11 +14,11 @@ module NETSNMP
       # 
       def build(type, *args)
         case type
-          when :get       then RequestPDU.new(Core::Constants::SNMP_MSG_GET, *args)
-          when :getnext   then RequestPDU.new(Core::Constants::SNMP_MSG_GETNEXT, *args)
-          when :getbulk   then RequestPDU.new(Core::Constants::SNMP_MSG_GETBULK, *args)
-          when :set       then RequestPDU.new(Core::Constants::SNMP_MSG_SET, *args)
-          when :response  then ResponsePDU.new(Core::Constants::SNMP_MSG_RESPONSE, *args)
+          when :get       then new(0, *args)
+          when :getnext   then new(1, *args)
+          when :getbulk   then new(5, *args)
+          when :set       then new(3, *args)
+          when :response  then new(2, *args)
           else raise Error, "#{type} is not supported as type"
         end
       end
@@ -42,12 +42,9 @@ module NETSNMP
     end
 
 
+
     def to_ber
-      sequence = String.new 
-      sequence << BER.encode(@options[:version])
-      sequence << BER.encode(@options[:community])
-      sequence << encode_payload
-      BER.encode_sequence(sequence)
+      to_asn.to_der
     end
 
     # Adds a request varbind to the pdu
@@ -62,73 +59,45 @@ module NETSNMP
 
     private
 
-    def type_ber_code(type: @type)
-      typ = case type
-      when Integer then type
-      when :get then 0
-      when :getnext then 1
-      when :response then 2
-      when :set then 3
-      when :getbulk then 5
-      else 
-        raise Error, "#{type}: unsupported type"
-      end
-      0xa0 + type
+    def to_asn
+      version_asn = OpenSSL::ASN1::Integer.new( @options[:version] )
+      community_asn = OpenSSL::ASN1::OctetString.new( @options[:community] )
+    
+      request_id_asn = OpenSSL::ASN1::Integer.new( @options[:request_id] )
+      error_asn = OpenSSL::ASN1::Integer.new( @options[:error_status] || 0 )
+      error_index_asn = OpenSSL::ASN1::Integer.new( @options[:error_index] || 0 )
+
+      varbind_asns = OpenSSL::ASN1::Sequence.new( @varbinds.map(&:to_asn) )
+
+      request_asn = OpenSSL::ASN1::ASN1Data.new( [request_id_asn,
+                                                  error_asn, error_index_asn,
+                                                  varbind_asns], @type,
+                                                  :CONTEXT_SPECIFIC )
+
+      OpenSSL::ASN1::Sequence.new( [ version_asn, community_asn, request_asn ] )
     end
-
-    def encode_payload
-
-      code = type_ber_code
-      payload_sequence = String.new
-
-      payload_sequence << BER.encode(@options[:request_id])
-      payload_sequence << BER.encode(0) # error
-      payload_sequence << BER.encode(0) # error_index
-
-      payload_sequence << BER.encode_sequence(@varbinds.map(&:to_ber).join)
-       BER.encode_context(payload_sequence, code: 0)
-    end
-
 
     def decode_ber(stream)
+      asn_tree = OpenSSL::ASN1.decode(stream)
+      *headers, request = asn_tree.value
 
-      str = StringIO.new(stream)
-      #sequence
-      sequence = BER.decode(str)
-      options[:version] = sequence.next
-      options[:community] = sequence.next
-      pdu_type, requeststream = sequence.next 
-      # validate if this pdu type is the same as the one set
+      options[:version] = headers[0].value.to_i
+      options[:community] = headers[1].value
 
-      str = StringIO.new(requeststream)
-      options[:request_id] = BER.decode(str)
-      options[:error_status] = BER.decode(str)
-      options[:error_index] = BER.decode(str)
-   
-      #sequence
-      varsequence = BER.decode(str)
-      varsequence.each do |varbind|
-        oid, value = Array(varbind)
-        add_varbind(oid, value: value) 
+      @type = request.tag
+
+      *request_headers, varbinds = request.value
+
+      options[:request_id] = request_headers[0].value.to_i
+      options[:error_status] = request_headers[1].value.to_i
+      options[:error_index] = request_headers[2].value.to_i
+ 
+      varbinds.value.each do |varbind|
+        oid_asn, val_asn  = varbind.value
+        oid = oid_asn.value
+        val = val_asn.value
+        add_varbind(oid, value: val) 
       end
-
-
     end
-  end
-
-  # Abstracts the request PDU
-  # Main characteristic is that it has a write-only API, in that you can add varbinds to it.
-  #
-  class RequestPDU < PDU
-
-  end
-
-  # Abstracts the response PDU
-  # Main characteristic is: it reads the values on initialization (because the response structure
-  # is at some point free'd). It is therefore a read-only entity
-  #
-  class ResponsePDU < PDU
-
-
   end
 end
