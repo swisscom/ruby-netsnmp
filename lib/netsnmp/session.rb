@@ -25,33 +25,34 @@ module NETSNMP
       # this is because other evented clients might discover IP first, but hostnames
       # give you better trackability of errors. Give the opportunity to the users to
       # pass it, by setting the hostname explicitly. If not, fallback to the host. 
-      @hostname = opts.fetch(:hostname, @host)
-      @options = opts
+      @hostname = opts.delete(:hostname) || @host
+      @port = (opts.delete(:port) || 161).to_i
+      @options = validate_options(opts)
       @logged_at = nil
       @request = nil
       # For now, let's eager load the signature
-      @signature = build_signature(@options)
-      if @signature.null?
-        raise ConnectionFailed, "could not build signature for #@hostname"
-      end
+#      @signature = build_signature(@options)
+#      if @signature.null?
+#        raise ConnectionFailed, "could not build signature for #@hostname"
+#      end
       @requests ||= {}
-    end
-
-    # TODO: do we need this?
-    def reachable?
-      !!transport
     end
 
     # Closes the session
     def close
-      return unless @signature
-      if @transport
-        transport.close rescue nil
-      end
-      if Core::LibSNMP.snmp_sess_close(@signature) == 0
-        raise Error, "#@hostname: Couldn't clean up session properly"
-      end
+      @transport.close if defined?(@transport)
+#      return unless @signature
+#      if @transport
+#        transport.close rescue nil
+#      end
+#      if Core::LibSNMP.snmp_sess_close(@signature) == 0
+#        raise Error, "#@hostname: Couldn't clean up session properly"
+#      end
     end
+
+    def build_pdu(type, opts={})
+      PDU.build(type, @options.merge(opts))
+    end 
 
     # sends a request PDU and waits for the response
     # 
@@ -65,122 +66,165 @@ module NETSNMP
 
     private
 
-    LoggedInTimeout = Class.new(Timeout::Error)
-    def try_login
-      return yield unless @logged_at.nil?
-
-      begin
-        # problem for snmp is, there is no login process.
-        # signature is sent on first packet. As we are not using the synch interface, this will not
-        # be handled by the core library. Which sucks. But even core library would just retry and timeout
-        # at some point.
-        # we do something similar: before any PDU succeeds, after first PDU is async-sent, we wait for reads, but we can't block. If 
-        # the socket hasn't anything to read, we can assume it was the wrong USERNAME (?).
-        # TODO: research if this is true. 
-        Timeout.timeout(@timeout, LoggedInTimeout) do
-          yield
-        end
-      rescue LoggedInTimeout
-        raise ConnectionFailed, "failed to login to #@hostname"
+    def validate_options(options)
+      options[:version] = case options[:version]
+        when Integer then options[:version] # assume the use know what he's doing
+        when /v?1/ then 0 
+        when /v?2c?/ then 1 
+        when /v?3/, nil then 3
       end
+      options[:community] ||= "public" # v1/v2 default community
+      options[:timeout] ||= 10
+      options[:retries] ||= 5
+      options
     end
 
+#    LoggedInTimeout = Class.new(Timeout::Error)
+#    def try_login
+#      return yield unless @logged_at.nil?
+#
+#      begin
+#        # problem for snmp is, there is no login process.
+#        # signature is sent on first packet. As we are not using the synch interface, this will not
+#        # be handled by the core library. Which sucks. But even core library would just retry and timeout
+#        # at some point.
+#        # we do something similar: before any PDU succeeds, after first PDU is async-sent, we wait for reads, but we can't block. If 
+#        # the socket hasn't anything to read, we can assume it was the wrong USERNAME (?).
+#        # TODO: research if this is true. 
+#        Timeout.timeout(@timeout, LoggedInTimeout) do
+#          yield
+#        end
+#      rescue LoggedInTimeout
+#        raise ConnectionFailed, "failed to login to #@hostname"
+#      end
+#    end
+#
     def transport
-      @transport ||= fetch_transport
+      @transport ||= begin
+        tr = UDPSocket.new
+        tr.connect( @host, @port )
+        tr
+      end
     end
 
     def write(pdu)
-      wait_writable
-      async_send(pdu)
+      transport.send( pdu.to_ber, 0 )
     end
-
-    def async_send(pdu)
-      if ( @reqid = Core::LibSNMP.snmp_sess_async_send(@signature, pdu.pointer, session_callback, nil) ) == 0
-        # it's interesting, pdu's are only fred if the async send is successful... netsnmp 1 - me 0
-        Core::LibSNMP.snmp_free_pdu(pdu.pointer)
-        # if it's the first time we're passing here and send fails, we can (?) assume that
-        # AUTH_PASSWORD is wrong
-        if @logged_at.nil?
-          raise ConnectionFailed, "failed to login to #@hostname"
-        else
-          raise SendError, "#@hostname: Failed to send pdu"
-        end
-      end
-    end
+#
+#    def async_send(pdu)
+#      if ( @reqid = Core::LibSNMP.snmp_sess_async_send(@signature, pdu.pointer, session_callback, nil) ) == 0
+#        # it's interesting, pdu's are only fred if the async send is successful... netsnmp 1 - me 0
+#        Core::LibSNMP.snmp_free_pdu(pdu.pointer)
+#        # if it's the first time we're passing here and send fails, we can (?) assume that
+#        # AUTH_PASSWORD is wrong
+#        if @logged_at.nil?
+#          raise ConnectionFailed, "failed to login to #@hostname"
+#        else
+#          raise SendError, "#@hostname: Failed to send pdu"
+#        end
+#      end
+#    end
+#
+    MAXPDUSIZE = 2048
 
     def read
-      receive # trigger callback ahead of time and wait for it
-      # Sounds a bit unreasonable, but only after we arrived here we know for sure that the credentials are proper.
-      # So we can set this variable, so further errors can be safely ignored.
-      @logged_at ||= Time.now
-      handle_response
-    end
-
-    def handle_response
-      operation, response_pdu = @requests.delete(@reqid)
-      case operation
-        when :success
-          response_pdu
-        when :send_failed
-          raise ReceiveError, "#@hostname: Failed to receive pdu"
-        when :timeout
-          raise Timeout::Error, "#@hostname: timed out while waiting for pdu response"
-        else
-          raise Error, "#@hostname: unrecognized operation for request #{@reqid}: #{operation} for #{response_pdu}"
-      end
-    end
-
-    def receive
-      readers, _ = try_login { wait_readable }
-      case readers.size
-        when 1..Float::INFINITY
-          # triggers callback
-          async_read
-        when 0
-          Core::LibSNMP.snmp_sess_timeout(@signature)
-        else
-          raise ReceiveError, "#@hostname: error receiving data"
-      end
-    end
-    
-    def async_read
-      if Core::LibSNMP.snmp_sess_read(@signature, get_selectable_sockets.pointer) != 0
-        # if it's the first time we're passing here and send fails, we can (?) assume that
-        # PRIV_PASSWORD is wrong
-        if @logged_at.nil?
-          raise ConnectionFailed, "failed to login to #@hostname"
-        else
-          raise ReceiveError, "#@hostname: Failed to receive pdu response"
+      stream = String.new
+      perform_io do
+        begin
+          buffer, _ = transport.recvfrom_nonblock(MAXPDUSIZE, 0)
+          @logged_at ||= Time.now
+          stream << buffer
+          PDU.build(:response, stream)
+        rescue OpenSSL::ASN1::ASN1Error
+          # assume this happened because we still don't have the full pdu, so read more
+          retry
         end
       end
     end
 
-    def timeout
-      Core::LibSNMP.snmp_sess_timeout(@signature)
+
+    def perform_io
+      loop do
+        begin
+          return yield
+        rescue IO::WaitReadable
+          wait_readable
+        end
+      end
     end
 
-    def wait_writable
-      IO.select([],[transport])
-    end
 
-    def wait_readable
-      IO.select([transport])
+    def wait_readable(timeout: @options[:timeout])
+      unless transport.wait_readable(timeout)
+        raise TimeoutError, "Timeout after #{timeout} seconds"
+      end   
     end
-
-    def get_selectable_sockets
-      fdset = Core::C::FDSet.new
-      fdset.clear
-      num_fds = FFI::MemoryPointer.new(:int)
-      tv_sec = 0
-      tv_usec = 0
-      tval = Core::C::Timeval.new
-      tval[:tv_sec] = tv_sec
-      tval[:tv_usec] = tv_usec
-      block = FFI::MemoryPointer.new(:int)
-      block.write_int(0)
-      Core::LibSNMP.snmp_sess_select_info(@signature, num_fds, fdset.pointer, tval.pointer, block )
-      fdset
-    end
+#
+#    def handle_response
+#      operation, response_pdu = @requests.delete(@reqid)
+#      case operation
+#        when :success
+#          response_pdu
+#        when :send_failed
+#          raise ReceiveError, "#@hostname: Failed to receive pdu"
+#        when :timeout
+#          raise Timeout::Error, "#@hostname: timed out while waiting for pdu response"
+#        else
+#          raise Error, "#@hostname: unrecognized operation for request #{@reqid}: #{operation} for #{response_pdu}"
+#      end
+#    end
+#
+#    def receive
+#      readers, _ = try_login { wait_readable }
+#      case readers.size
+#        when 1..Float::INFINITY
+#          # triggers callback
+#          async_read
+#        when 0
+#          Core::LibSNMP.snmp_sess_timeout(@signature)
+#        else
+#          raise ReceiveError, "#@hostname: error receiving data"
+#      end
+#    end
+#    
+#    def async_read
+#      if Core::LibSNMP.snmp_sess_read(@signature, get_selectable_sockets.pointer) != 0
+#        # if it's the first time we're passing here and send fails, we can (?) assume that
+#        # PRIV_PASSWORD is wrong
+#        if @logged_at.nil?
+#          raise ConnectionFailed, "failed to login to #@hostname"
+#        else
+#          raise ReceiveError, "#@hostname: Failed to receive pdu response"
+#        end
+#      end
+#    end
+#
+#    def timeout
+#      Core::LibSNMP.snmp_sess_timeout(@signature)
+#    end
+#
+#    def wait_writable
+#      IO.select([],[transport])
+#    end
+#
+#    def wait_readable
+#      IO.select([transport])
+#    end
+#
+#    def get_selectable_sockets
+#      fdset = Core::C::FDSet.new
+#      fdset.clear
+#      num_fds = FFI::MemoryPointer.new(:int)
+#      tv_sec = 0
+#      tv_usec = 0
+#      tval = Core::C::Timeval.new
+#      tval[:tv_sec] = tv_sec
+#      tval[:tv_usec] = tv_usec
+#      block = FFI::MemoryPointer.new(:int)
+#      block.write_int(0)
+#      Core::LibSNMP.snmp_sess_select_info(@signature, num_fds, fdset.pointer, tval.pointer, block )
+#      fdset
+#    end
 
 
     # @param [Core::Structures::Session] session the snmp session structure
@@ -194,57 +238,57 @@ module NETSNMP
     # @option options [String] :username the username to login with
     # @option options [String] :auth_password the authorization password
     # @option options [String] :priv_password the privacy password
-    def session_authorization(session, options)
-      # we support version 3 by default      
-      session[:version] = case options[:version]
-        when /v?1/ then  Core::Constants::SNMP_VERSION_1
-        when /v?2c?/ then  Core::Constants::SNMP_VERSION_2c
-        when /v?3/, nil then Core::Constants::SNMP_VERSION_3
-      end
-      return unless session[:version] == Core::Constants::SNMP_VERSION_3 
-
-
-      session[:securityAuthProtoLen] = 10
-      session[:securityAuthKeyLen] = Core::Constants::USM_AUTH_KU_LEN
-      session[:securityPrivProtoLen] = 10
-      session[:securityPrivKeyLen] = Core::Constants::USM_PRIV_KU_LEN
-
-      # Security Authorization
-      session[:securityLevel] =  case options[:security_level] 
-        when /noauth/         then Core::Constants::SNMP_SEC_LEVEL_NOAUTH
-        when /auth_?no_?priv/ then Core::Constants::SNMP_SEC_LEVEL_AUTHNOPRIV
-        when /auth_?priv/     then Core::Constants::SNMP_SEC_LEVEL_AUTHPRIV 
-        when Integer
-          options[:security_level]
-        else Core::Constants::SNMP_SEC_LEVEL_AUTHPRIV
-      end
-
-      auth_protocol_oid = case options[:auth_protocol]
-        when :md5   then MD5OID.new
-        when :sha1  then SHA1OID.new
-        when nil    then NoAuthOID.new
-        else raise Error, "#@hostname: #{options[:auth_protocol]} is an unsupported authorization protocol"
-      end
-
-       # Priv Protocol
-      priv_protocol_oid = case options[:priv_protocol]
-        when :aes then AESOID.new 
-        when :des then DESOID.new
-        when nil  then NoPrivOID.new
-        else raise Error, "#@hostname: #{options[:priv_protocol]} is an unsupported privacy protocol"
-      end
-   
-      user, auth_pass, priv_pass = options.values_at(:username, :auth_password, :priv_password)
-      auth_protocol_oid.generate_key(session, user, auth_pass)
-      priv_protocol_oid.generate_key(session, user, priv_pass )
-
-      if options[:context]
-        session[:contextName] = FFI::MemoryPointer.from_string(options[:context])
-        session[:contextNameLen] = options[:context].length
-      end
-
-
-    end
+#    def session_authorization(session, options)
+#      # we support version 3 by default      
+#      session[:version] = case options[:version]
+#        when /v?1/ then  Core::Constants::SNMP_VERSION_1
+#        when /v?2c?/ then  Core::Constants::SNMP_VERSION_2c
+#        when /v?3/, nil then Core::Constants::SNMP_VERSION_3
+#      end
+#      return unless session[:version] == Core::Constants::SNMP_VERSION_3 
+#
+#
+#      session[:securityAuthProtoLen] = 10
+#      session[:securityAuthKeyLen] = Core::Constants::USM_AUTH_KU_LEN
+#      session[:securityPrivProtoLen] = 10
+#      session[:securityPrivKeyLen] = Core::Constants::USM_PRIV_KU_LEN
+#
+#      # Security Authorization
+#      session[:securityLevel] =  case options[:security_level] 
+#        when /noauth/         then Core::Constants::SNMP_SEC_LEVEL_NOAUTH
+#        when /auth_?no_?priv/ then Core::Constants::SNMP_SEC_LEVEL_AUTHNOPRIV
+#        when /auth_?priv/     then Core::Constants::SNMP_SEC_LEVEL_AUTHPRIV 
+#        when Integer
+#          options[:security_level]
+#        else Core::Constants::SNMP_SEC_LEVEL_AUTHPRIV
+#      end
+#
+#      auth_protocol_oid = case options[:auth_protocol]
+#        when :md5   then MD5OID.new
+#        when :sha1  then SHA1OID.new
+#        when nil    then NoAuthOID.new
+#        else raise Error, "#@hostname: #{options[:auth_protocol]} is an unsupported authorization protocol"
+#      end
+#
+#       # Priv Protocol
+#      priv_protocol_oid = case options[:priv_protocol]
+#        when :aes then AESOID.new 
+#        when :des then DESOID.new
+#        when nil  then NoPrivOID.new
+#        else raise Error, "#@hostname: #{options[:priv_protocol]} is an unsupported privacy protocol"
+#      end
+#   
+#      user, auth_pass, priv_pass = options.values_at(:username, :auth_password, :priv_password)
+#      auth_protocol_oid.generate_key(session, user, auth_pass)
+#      priv_protocol_oid.generate_key(session, user, priv_pass )
+#
+#      if options[:context]
+#        session[:contextName] = FFI::MemoryPointer.from_string(options[:context])
+#        session[:contextNameLen] = options[:context].length
+#      end
+#
+#
+#    end
 
 
     # @param [Hash] options options to open the net-snmp session
@@ -252,68 +296,68 @@ module NETSNMP
     # @option options [Integer] :timeout number of sec until first timeout
     # @option options [Integer] :retries number of retries before timeout
     # @return [FFI::Pointer] a pointer to the validated session signature, which will therefore be used in all _sess_ methods from libnetsnmp
-    def build_signature(options)
-      # allocate new session
-      session = Core::Structures::Session.new(nil)
-      Core::LibSNMP.snmp_sess_init(session.pointer)
+#    def build_signature(options)
+#      # allocate new session
+#      session = Core::Structures::Session.new(nil)
+#      Core::LibSNMP.snmp_sess_init(session.pointer)
+#
+#      # initialize session
+#      if options[:community]
+#        community = options[:community]
+#        session[:community] = FFI::MemoryPointer.from_string(community)
+#        session[:community_len] = community.length
+#      end
+#      
+#      peername = host
+#      unless peername[':']
+#        port = options[:port] || '161'.freeze
+#        peername = "#{peername}:#{port}"
+#      end 
+#      
+#      session[:peername] = FFI::MemoryPointer.from_string(peername)
+#
+#      @timeout = options[:timeout] || 10
+#      session[:timeout] = @timeout * 1000000
+#      session[:retries] = options[:retries] || 5
+#      session_authorization(session, options)
+#      Core::LibSNMP.snmp_sess_open(session.pointer)
+#    end
 
-      # initialize session
-      if options[:community]
-        community = options[:community]
-        session[:community] = FFI::MemoryPointer.from_string(community)
-        session[:community_len] = community.length
-      end
-      
-      peername = host
-      unless peername[':']
-        port = options[:port] || '161'.freeze
-        peername = "#{peername}:#{port}"
-      end 
-      
-      session[:peername] = FFI::MemoryPointer.from_string(peername)
-
-      @timeout = options[:timeout] || 10
-      session[:timeout] = @timeout * 1000000
-      session[:retries] = options[:retries] || 5
-      session_authorization(session, options)
-      Core::LibSNMP.snmp_sess_open(session.pointer)
-    end
-
-    def fetch_transport
-      return unless @signature
-      list = Core::Structures::SessionList.new @signature
-      return if not list or list.pointer.null?
-      t = Core::Structures::Transport.new list[:transport]
-      IO.new(t[:sock]) 
-    end
-
-    # @param [Core::Structures::Session] session the snmp session structure
-    def session_callback
-      @callback ||= FFI::Function.new(:int, [:int, :pointer, :int, :pointer, :pointer]) do |operation, session, reqid, pdu_ptr, magic|
-        op = case operation
-          when Core::Constants::NETSNMP_CALLBACK_OP_RECEIVED_MESSAGE then :success
-          when Core::Constants::NETSNMP_CALLBACK_OP_TIMED_OUT then :timeout
-          when Core::Constants::NETSNMP_CALLBACK_OP_SEND_FAILED then :send_failed
-          when Core::Constants::NETSNMP_CALLBACK_OP_CONNECT then :connect
-          when Core::Constants::NETSNMP_CALLBACK_OP_DISCONNECT then :disconnect
-          else :unrecognized_operation 
-        end
-
-
-        # TODO: pass exception in case of failure
-
-        response_pdu = ResponsePDU.new(pdu_ptr)
-        @requests[@reqid] = [op, response_pdu]
-        if reqid == @reqid
-          # probably pass the result as a yield from a fiber
-          op.eql?(:unrecognized_operation) ? 0 : 1
-        else  
-          # this is happening when user is unknown(????)
-          #puts "wow, unexpected #{op}.... #{reqid} different than #{@reqid}"
-          0
-        end
-      end
-
-    end
+#    def fetch_transport
+#      return unless @signature
+#      list = Core::Structures::SessionList.new @signature
+#      return if not list or list.pointer.null?
+#      t = Core::Structures::Transport.new list[:transport]
+#      IO.new(t[:sock]) 
+#    end
+#
+#    # @param [Core::Structures::Session] session the snmp session structure
+#    def session_callback
+#      @callback ||= FFI::Function.new(:int, [:int, :pointer, :int, :pointer, :pointer]) do |operation, session, reqid, pdu_ptr, magic|
+#        op = case operation
+#          when Core::Constants::NETSNMP_CALLBACK_OP_RECEIVED_MESSAGE then :success
+#          when Core::Constants::NETSNMP_CALLBACK_OP_TIMED_OUT then :timeout
+#          when Core::Constants::NETSNMP_CALLBACK_OP_SEND_FAILED then :send_failed
+#          when Core::Constants::NETSNMP_CALLBACK_OP_CONNECT then :connect
+#          when Core::Constants::NETSNMP_CALLBACK_OP_DISCONNECT then :disconnect
+#          else :unrecognized_operation 
+#        end
+#
+#
+#        # TODO: pass exception in case of failure
+#
+#        response_pdu = ResponsePDU.new(pdu_ptr)
+#        @requests[@reqid] = [op, response_pdu]
+#        if reqid == @reqid
+#          # probably pass the result as a yield from a fiber
+#          op.eql?(:unrecognized_operation) ? 0 : 1
+#        else  
+#          # this is happening when user is unknown(????)
+#          #puts "wow, unexpected #{op}.... #{reqid} different than #{@reqid}"
+#          0
+#        end
+#      end
+#
+#    end
   end
 end

@@ -23,27 +23,25 @@ module NETSNMP
 
     # Performs an SNMP GET Request
     # 
-    # @param [OID, String] oid_code the oid to get
+    # @param [String] oid the oid to get
     # @param [Hash] options the varbind options (see Varbind)
     # @option options [true, false] :response_pdu if true, the method returns a PDU
     #
     # @return [String] the value for the oid
     #
-    def get(oid_code, **options)
-      request_pdu = RequestPDU.build(:get)
-      oid = oid_code.is_a?(OID) ? oid_code : OID.new(oid_code)
-      request_pdu.add_varbind(oid, options)
-      yield request_pdu if block_given? 
+    def get(oid, **options)
+      request_pdu = @session.build_pdu(:get)
+      request_pdu.add_varbind(oid, value: options[:value])
       response_pdu = @session.send(request_pdu)
       case options[:response_type] 
         when :pdu then response_pdu
-        else response_pdu.value
+        else response_pdu.varbinds.first.value
       end
     end
 
     # Performs an SNMP GETNEXT Request
     # 
-    # @param [OID, String] oid_code the oid to get
+    # @param [String] oid the oid to get
     # @param [Hash] options the varbind options (see Varbind)
     # @option options [true, false] :response_pdu if true, the method returns a PDU
     #
@@ -51,30 +49,28 @@ module NETSNMP
     # 
     # @note this method is used as a sub-routine for the walk
     #
-    def get_next(oid_code, **options)
-      request_pdu = RequestPDU.build(:getnext)
-      oid = oid_code.is_a?(OID) ? oid_code : OID.new(oid_code)
-      request_pdu.add_varbind(oid, options)
-      yield request_pdu if block_given? 
+    def get_next(oid, **options)
+      request_pdu = @session.build_pdu(:getnext)
+      request_pdu.add_varbind(oid, value: options[:value])
       response_pdu = @session.send(request_pdu)
       case options[:response_type] 
         when :pdu then response_pdu
-        else response_pdu.value
+        else response_pdu.varbinds.first.value
       end
     end
 
     # Perform a SNMP Walk (issues multiple subsequent GENEXT requests within the subtree rooted on an OID)
     #
-    # @param [OID, String] oid_code the root oid from the subtree
+    # @param [String] oid the root oid from the subtree
     # @param [Hash] options the varbind options 
     #
     # @return [Enumerator] the enumerator-collection of the oid-value pairs
     #
-    def walk(oid_code, **options)
+    def walk(oid, **options)
       options[:response_type] = :pdu
-      walkoid = oid_code.is_a?(OID) ? oid_code : OID.new(oid_code)
+      walkoid = OID.build(oid)
       Enumerator.new do |y|
-        code = walkoid.code
+        code = walkoid
         first_response_code = nil
         catch(:walk) do
           loop do
@@ -97,19 +93,18 @@ module NETSNMP
 
     # Perform a SNMP GETBULK Request (performs multiple GETNEXT)
     #
-    # @param [OID, String] oid_code the first oid
+    # @param [String] oid the first oid
     # @param [Hash] options the varbind options 
     # @option options [Integer] :errstat sets the number of objects expected for the getnext instance
     # @option options [Integer] :errindex number of objects repeating for all the repeating IODs. 
     #
     # @return [Enumerator] the enumerator-collection of the oid-value pairs
     #
-    def get_bulk(oid_code, **options)
-      request_pdu = RequestPDU.build(:getbulk)
-      request_pdu[:errstat]  = options.delete(:non_repeaters) || 0
-      request_pdu[:errindex] = options.delete(:max_repetitions) || 10
-      request_pdu.add_varbind(OID.new(oid_code), options)
-      yield request_pdu if block_given? 
+    def get_bulk(oid, **options)
+      request_pdu = @session.build_pdu(:getbulk)
+      request_pdu[:error_status]  = options.delete(:non_repeaters) || 0
+      request_pdu[:error_index] = options.delete(:max_repetitions) || 10
+      request_pdu.add_varbind(oid, value: options[:value])
       response_pdu = @session.send(request_pdu)
       Enumerator.new do |y|
         response_pdu.varbinds.each do |varbind|
@@ -120,16 +115,16 @@ module NETSNMP
 
     # Perform a SNMP SET Request
     #
-    # @param [OID, String] oid_code the oid to update
+    # @param [String] oid the oid to update
     # @param [Hash] options the varbind options 
     # @option options [Object] :value value to update the oid with. 
     #
-    def set(oid_code, **options)
-      request_pdu = PDU.build(:set)
-      request_pdu.add_varbind(OID.new(oid_code), options)
+    def set(oid, **options)
+      request_pdu = @session.build_pdu(:set)
+      request_pdu.add_varbind(oid, value: options[:value])
       yield request_pdu if block_given? 
       response_pdu = @session.send(request_pdu)
-      response_pdu.value
+      response_pdu.varbinds.map(&:value)
     end
   end
 end
