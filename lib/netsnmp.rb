@@ -1,5 +1,8 @@
 require "netsnmp/version"
 require "openssl"
+require "socket"
+require "io/wait"
+require "securerandom"
 
 # core structures
 require 'netsnmp/core'
