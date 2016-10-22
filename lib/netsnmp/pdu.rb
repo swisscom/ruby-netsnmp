@@ -3,8 +3,18 @@ module NETSNMP
   # Abstracts the PDU base structure into a ruby object. It gives access to its varbinds.
   #
   class PDU
-    extend Forwardable 
+    @request_id_counter = 0
+    @counter_monitor = Mutex.new
+    MAXREQUESTS = 1024
+    def self.generate_request_id
+      @counter_monitor.synchronize do
+        current = @request_id_counter   
+        @request_id_counter = current >= MAXREQUESTS ? 0 : current + 1
+        current
+      end
+    end
 
+    extend Forwardable 
     Error = Class.new(Error)
     class << self
       # factory method that abstracts initialization of the pdu types that the library supports.
@@ -26,7 +36,7 @@ module NETSNMP
 
     attr_reader :options, :varbinds
 
-    def_delegators :@options, :[]
+    def_delegators :@options, :[], :[]=
 
     # @param [FFI::Pointer] the pointer to the initialized structure
     #
@@ -35,6 +45,7 @@ module NETSNMP
       @varbinds = []
       if obj.is_a?(Hash)
         @options = obj
+        @options[:request_id] ||= PDU.generate_request_id
       else
         @options = {}
         decode_ber(obj)
@@ -53,7 +64,7 @@ module NETSNMP
     # @param [Hash] options additional request varbind options
     # @option options [Object] :value the value for the oid
     def add_varbind(oid, **options)
-      @varbinds << RequestVarbind.new(oid, options)
+      @varbinds << Varbind.new(oid, options)
     end
     alias_method :<<, :add_varbind
 
