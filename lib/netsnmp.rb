@@ -1,4 +1,5 @@
-require 'netsnmp/version'
+require "netsnmp/version"
+require "openssl"
 
 # core structures
 require 'netsnmp/core'
