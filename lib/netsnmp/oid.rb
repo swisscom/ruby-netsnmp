@@ -56,7 +56,7 @@ module NETSNMP
     #
     def parent_of?(child_oid)
       child_code = child_oid.is_a?(OID) ? child_oid.code : child_oid
-      child_code.start_with?(code)
+      child_code.match(%r/\A#{code}\./)
     end
   end
 
