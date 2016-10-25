@@ -121,7 +121,7 @@ module NETSNMP
     #
     def set(oid, **options)
       request_pdu = @session.build_pdu(:set)
-      request_pdu.add_varbind(oid, value: options[:value])
+      request_pdu.add_varbind(oid, **options)
       yield request_pdu if block_given? 
       response_pdu = @session.send(request_pdu)
       response_pdu.varbinds.map(&:value)
