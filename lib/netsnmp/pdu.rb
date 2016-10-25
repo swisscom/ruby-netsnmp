@@ -106,8 +106,7 @@ module NETSNMP
       varbinds.value.each do |varbind|
         oid_asn, val_asn  = varbind.value
         oid = oid_asn.value
-        val = val_asn.value
-        add_varbind(oid, value: val) 
+        add_varbind(oid, value: val_asn) 
       end
     end
   end
