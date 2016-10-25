@@ -34,7 +34,7 @@ module NETSNMP
       end
     end
 
-    def to_ber
+    def to_der
       to_asn.to_der
     end
     

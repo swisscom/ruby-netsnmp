@@ -21,7 +21,7 @@ module NETSNMP
       "#<#{self.class}:0x#{object_id.to_s(16)} @oid=#{@oid.to_s} @value=#{@value}>"
     end
 
-    def to_ber
+    def to_der
       to_asn.to_der
     end
 
