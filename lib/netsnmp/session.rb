@@ -108,7 +108,9 @@ module NETSNMP
     end
 
     def write(pdu)
-      transport.send( pdu.to_ber, 0 )
+      perform_io do
+        transport.send( pdu.to_ber, 0 )
+      end
     end
 #
 #    def async_send(pdu)
@@ -125,13 +127,13 @@ module NETSNMP
 #      end
 #    end
 #
-    MAXPDUSIZE = 2048
+    MAXPDUSIZE = 65536 
 
     def read
       stream = String.new
       perform_io do
         begin
-          buffer, _ = transport.recvfrom_nonblock(MAXPDUSIZE, 0)
+          buffer, _ = transport.recvfrom_nonblock(MAXPDUSIZE)
           @logged_at ||= Time.now
           stream << buffer
           PDU.build(:response, stream)
@@ -148,14 +150,20 @@ module NETSNMP
         begin
           return yield
         rescue IO::WaitReadable
-          wait_readable
+          wait(:r)
+        rescue IO::WaitWritable
+          wait(:w)
         end
       end
     end
 
 
-    def wait_readable(timeout: @options[:timeout])
-      unless transport.wait_readable(timeout)
+    def wait(mode, timeout: @options[:timeout])
+      meth = case mode
+        when :r then :wait_readable
+        when :w then :wait_writable
+      end
+      unless transport.__send__(meth, timeout)
         raise TimeoutError, "Timeout after #{timeout} seconds"
       end   
     end
