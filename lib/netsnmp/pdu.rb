@@ -22,15 +22,16 @@ module NETSNMP
       # @param [Symbol] type the type of pdu structure to build
       # @return [RequestPDU] a fully-formed request pdu
       # 
-      def build(type, *args)
-        case type
-          when :get       then new(0, *args)
-          when :getnext   then new(1, *args)
-          when :getbulk   then new(5, *args)
-          when :set       then new(3, *args)
-          when :response  then new(2, *args)
+      def build(type, **options)
+        options[:type] = case type
+          when :get       then 0
+          when :getnext   then 1
+          when :getbulk   then 5
+          when :set       then 3
+          when :response  then 2
           else raise Error, "#{type} is not supported as type"
         end
+        new(options)
       end
     end
 
@@ -40,16 +41,11 @@ module NETSNMP
 
     # @param [FFI::Pointer] the pointer to the initialized structure
     #
-    def initialize(type, obj)
-      @type = type
+    def initialize(options={})
+      @type = options.delete(:type)
+      @options = options
       @varbinds = []
-      if obj.is_a?(Hash)
-        @options = obj
-        @options[:request_id] ||= PDU.generate_request_id
-      else
-        @options = {}
-        decode_ber(obj)
-      end
+      @options[:request_id] ||= PDU.generate_request_id
     end
 
 
@@ -68,12 +64,39 @@ module NETSNMP
     end
     alias_method :<<, :add_varbind
 
+    def decode(der)
+      asn_tree = case der
+      when String
+        OpenSSL::ASN1.decode(der)
+      when OpenSSL::ASN1::ASN1Data
+        der
+      else
+        raise "#{der}: unexpected data"
+      end
+
+      *headers, request = asn_tree.value
+
+      decode_headers_asn(*headers)
+
+      @type = request.tag
+
+      *request_headers, varbinds = request.value
+
+      @options[:request_id] = request_headers[0].value.to_i
+      @options[:error_status] = request_headers[1].value.to_i
+      @options[:error_index] = request_headers[2].value.to_i
+ 
+      varbinds.value.each do |varbind|
+        oid_asn, val_asn  = varbind.value
+        oid = oid_asn.value
+        add_varbind(oid, value: val_asn) 
+      end
+    end
+
+
     private
 
     def to_asn
-      version_asn = OpenSSL::ASN1::Integer.new( @options[:version] )
-      community_asn = OpenSSL::ASN1::OctetString.new( @options[:community] )
-    
       request_id_asn = OpenSSL::ASN1::Integer.new( @options[:request_id] )
       error_asn = OpenSSL::ASN1::Integer.new( @options[:error_status] || 0 )
       error_index_asn = OpenSSL::ASN1::Integer.new( @options[:error_index] || 0 )
@@ -85,28 +108,32 @@ module NETSNMP
                                                   varbind_asns], @type,
                                                   :CONTEXT_SPECIFIC )
 
-      OpenSSL::ASN1::Sequence.new( [ version_asn, community_asn, request_asn ] )
+      OpenSSL::ASN1::Sequence.new( [ *encode_headers_asn, request_asn ] )
     end
 
-    def decode_ber(stream)
-      asn_tree = OpenSSL::ASN1.decode(stream)
-      *headers, request = asn_tree.value
 
-      options[:version] = headers[0].value.to_i
-      options[:community] = headers[1].value
+    def encode_headers_asn
+      case options[:version]
+      when 3
+        [ OpenSSL::ASN1::OctetString.new(@options[:engine] || ""),
+          OpenSSL::ASN1::OctetString.new("") ] 
+      else
+        [ OpenSSL::ASN1::Integer.new( @options[:version] ),
+          OpenSSL::ASN1::OctetString.new( @options[:community] ) ]
+      end
+    end
 
-      @type = request.tag
-
-      *request_headers, varbinds = request.value
-
-      options[:request_id] = request_headers[0].value.to_i
-      options[:error_status] = request_headers[1].value.to_i
-      options[:error_index] = request_headers[2].value.to_i
- 
-      varbinds.value.each do |varbind|
-        oid_asn, val_asn  = varbind.value
-        oid = oid_asn.value
-        add_varbind(oid, value: val_asn) 
+    def decode_headers_asn(asn1, asn2)
+      # if first one is integer, this is a raw SNMP PDU
+      # if not, it was integrated in the SNMP v3 message,
+      # and first part is the engine
+      case asn1
+      when OpenSSL::ASN1::OctetString
+        @options[:engine] = asn1.value
+        # ignore second, it's empty string
+      when OpenSSL::ASN1::Integer
+        @options[:version] = asn1.value.to_i
+        @options[:community] = asn2.value
       end
     end
   end
