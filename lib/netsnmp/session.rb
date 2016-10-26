@@ -54,7 +54,7 @@ module NETSNMP
       pdu = PDU.build(type, options)
       if options[:version] == 3
         options = snmp3_options(pdu, options)
-        pdu = Message.build(pdu, options)
+        pdu = Message.new(options.merge(pdu: pdu))
       end
       pdu
     end 
@@ -69,7 +69,7 @@ module NETSNMP
 #        options = snmp3_options(pdu, options)
 #      end
       write(pdu, options)
-      read(options)
+      read(pdu, options)
     end
 
     private
@@ -137,33 +137,14 @@ module NETSNMP
         transport.send( encode(pdu, **opts), 0 )
       end
     end
-#
-#    def async_send(pdu)
-#      if ( @reqid = Core::LibSNMP.snmp_sess_async_send(@signature, pdu.pointer, session_callback, nil) ) == 0
-#        # it's interesting, pdu's are only fred if the async send is successful... netsnmp 1 - me 0
-#        Core::LibSNMP.snmp_free_pdu(pdu.pointer)
-#        # if it's the first time we're passing here and send fails, we can (?) assume that
-#        # AUTH_PASSWORD is wrong
-#        if @logged_at.nil?
-#          raise ConnectionFailed, "failed to login to #@hostname"
-#        else
-#          raise SendError, "#@hostname: Failed to send pdu"
-#        end
-#      end
-#    end
-#
+
     MAXPDUSIZE = 65536 
 
-    def read(options=@options)
+    def read(request_pdu, options=@options)
       perform_io do
-        begin
-          datagram , _ = transport.recvfrom_nonblock(MAXPDUSIZE)
-          @logged_at ||= Time.now
-          decode(datagram, options)
-        rescue OpenSSL::ASN1::ASN1Error
-          # assume this happened because we still don't have the full pdu, so read more
-          retry
-        end
+        datagram , _ = transport.recvfrom_nonblock(MAXPDUSIZE)
+        @logged_at ||= Time.now
+        decode(datagram, request_pdu, options)
       end
     end
 
@@ -197,9 +178,10 @@ module NETSNMP
       return pdu.to_der
     end
 
-    def decode(stream, options=@options)
+    def decode(stream, request, options=@options)
       message = options[:version] == 3 ?
-                Message.new : PDU.new
+                Message.new(encryption: request.encryption) : 
+                PDU.new
       message.decode(stream)
       message
     end
@@ -209,6 +191,8 @@ module NETSNMP
                                     engine_boots: 0,
                                     username: "",
                                     security_level: 0,
+                                    priv_protocol: nil,
+                                    auth_protocol: nil,
                                     engine_time: 0, version: 1, pdu: pdu)
       message = Message.new(probe_options)
       send(message, options)
