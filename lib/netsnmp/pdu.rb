@@ -115,8 +115,8 @@ module NETSNMP
     def encode_headers_asn
       case options[:version]
       when 3
-        [ OpenSSL::ASN1::OctetString.new(@options[:engine] || ""),
-          OpenSSL::ASN1::OctetString.new("") ] 
+        [ OpenSSL::ASN1::OctetString.new(@options[:context_engine_id] || ""),
+          OpenSSL::ASN1::OctetString.new(@options[:context_engine_name] || "") ] 
       else
         [ OpenSSL::ASN1::Integer.new( @options[:version] ),
           OpenSSL::ASN1::OctetString.new( @options[:community] ) ]
@@ -129,8 +129,8 @@ module NETSNMP
       # and first part is the engine
       case asn1
       when OpenSSL::ASN1::OctetString
-        @options[:engine] = asn1.value
-        # ignore second, it's empty string
+        @options[:context_engine_id] = asn1.value
+        @options[:context_name] = asn2.value
       when OpenSSL::ASN1::Integer
         @options[:version] = asn1.value.to_i
         @options[:community] = asn2.value
