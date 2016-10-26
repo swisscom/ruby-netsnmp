@@ -17,7 +17,7 @@ RSpec.describe NETSNMP::PDU do
 
   describe "#decoding pdus" do
     describe "v1" do
-      let(:pdu_response) { described_class.build(:response, encoded_response_pdu) }
+      let(:pdu_response) { subject.decode(encoded_response_pdu); subject }
       it { expect(pdu_response[:version]).to be(0) }
       it { expect(pdu_response[:community]).to eq("public") }
       it { expect(pdu_response[:request_id]).to be(9999) }
