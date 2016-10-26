@@ -1,7 +1,31 @@
 module NETSNMP
   module Authentication
-    module MD5
-      extend self
+    class MD5
+
+      def initialize(password, engine_id)
+        @auth_key = generate_key(password, engine_id)
+      end
+
+      # http://tools.ietf.org/html/rfc3414#section-7.3.1
+      def generate_param(message)
+        cipher = OpenSSL::Digest::MD5.new
+        md5mac = OpenSSL::Digest::MD5.new
+
+        key = @auth_key
+        key << "\x00" * 48
+        k1 = key.xor("\x36" * 64)
+        k2 = key.xor("\x5C" * 64)
+      
+        md5mac << k1
+        md5mac << message
+        dig = md5mac.digest
+
+        cipher << k2
+        cipher << dig
+        cipher.digest[0,12]
+      end
+
+      private
 
       def generate_key(password, engineid="")
         cipher = OpenSSL::Digest::MD5.new
@@ -20,24 +44,6 @@ module NETSNMP
         cipher.digest
       end
 
-      # http://tools.ietf.org/html/rfc3414#section-7.3.1
-      def generate_param(authkey, message)
-        cipher = OpenSSL::Digest::MD5.new
-        md5mac = OpenSSL::Digest::MD5.new
-
-        key = authkey
-        key << "\x00" * 48
-        k1 = key.xor("\x36" * 64)
-        k2 = key.xor("\x5C" * 64)
-      
-        md5mac << k1
-        md5mac << message
-        dig = md5mac.digest
-
-        cipher << k2
-        cipher << dig
-        cipher.digest[0,12]
-      end
     end
   end
 end
