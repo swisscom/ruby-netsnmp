@@ -50,8 +50,13 @@ module NETSNMP
 #      end
     end
 
-    def build_pdu(type, opts={})
-      PDU.build(type, @options.merge(opts))
+    def build_pdu(type, options=@options)
+      pdu = PDU.build(type, options)
+      if options[:version] == 3
+        options = snmp3_options(pdu, options)
+        pdu = Message.build(pdu, options)
+      end
+      pdu
     end 
 
     # sends a request PDU and waits for the response
@@ -59,15 +64,18 @@ module NETSNMP
     # @param [RequestPDU] pdu a request pdu
     # @param [Hash] opts additional options
     # @option opts [true, false] :async if true, it doesn't wait for response (defaults to false)
-    def send(pdu, **opts)
-      write(pdu)
-      read
+    def send(pdu, options=@options)
+#      if !options[:engine_id]
+#        options = snmp3_options(pdu, options)
+#      end
+      write(pdu, options)
+      read(options)
     end
 
     private
 
     def validate_options(options)
-      options[:version] = case options[:version]
+      version = options[:version] = case options[:version]
         when Integer then options[:version] # assume the use know what he's doing
         when /v?1/ then 0 
         when /v?2c?/ then 1 
@@ -76,6 +84,23 @@ module NETSNMP
       options[:community] ||= "public" # v1/v2 default community
       options[:timeout] ||= 10
       options[:retries] ||= 5
+      options
+    end
+
+    def snmp3_options(pdu, options)
+      probe_message = probe_for_engine(pdu, options)
+      options[:engine_id] = probe_message.options[:engine_id]
+      options[:engine_boots] = probe_message.options[:engine_boots]
+      options[:engine_time] = probe_message.options[:engine_time]
+
+      options[:security_level] = case options[:security_level]
+        when /noauth/           then 0
+        when /auth_?no_?priv/   then 1
+        when /auth_?priv/, nil  then 3
+        when Integer
+          options[:security_level]
+      end
+
       options
     end
 
@@ -107,9 +132,9 @@ module NETSNMP
       end
     end
 
-    def write(pdu)
+    def write(pdu, **opts)
       perform_io do
-        transport.send( pdu.to_ber, 0 )
+        transport.send( encode(pdu, **opts), 0 )
       end
     end
 #
@@ -129,14 +154,12 @@ module NETSNMP
 #
     MAXPDUSIZE = 65536 
 
-    def read
-      stream = String.new
+    def read(options=@options)
       perform_io do
         begin
-          buffer, _ = transport.recvfrom_nonblock(MAXPDUSIZE)
+          datagram , _ = transport.recvfrom_nonblock(MAXPDUSIZE)
           @logged_at ||= Time.now
-          stream << buffer
-          PDU.build(:response, stream)
+          decode(datagram, options)
         rescue OpenSSL::ASN1::ASN1Error
           # assume this happened because we still don't have the full pdu, so read more
           retry
@@ -166,6 +189,29 @@ module NETSNMP
       unless transport.__send__(meth, timeout)
         raise TimeoutError, "Timeout after #{timeout} seconds"
       end   
+    end
+
+    private
+
+    def encode(pdu, options=@options)
+      return pdu.to_der
+    end
+
+    def decode(stream, options=@options)
+      message = options[:version] == 3 ?
+                Message.new : PDU.new
+      message.decode(stream)
+      message
+    end
+
+    def probe_for_engine(pdu, options)
+      probe_options = options.merge(engine_id: "",
+                                    engine_boots: 0,
+                                    username: "",
+                                    security_level: 0,
+                                    engine_time: 0, version: 1, pdu: pdu)
+      message = Message.new(probe_options)
+      send(message, options)
     end
 #
 #    def handle_response
