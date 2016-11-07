@@ -2,8 +2,8 @@ module NETSNMP
   module Authentication
     class MD5
 
-      def initialize(password, engine_id)
-        @auth_key = generate_key(password, engine_id)
+      def initialize(password)
+        @password = password
       end
 
       # http://tools.ietf.org/html/rfc3414#section-7.3.1
@@ -11,13 +11,13 @@ module NETSNMP
         cipher = OpenSSL::Digest::MD5.new
         md5mac = OpenSSL::Digest::MD5.new
 
-        key = @auth_key
+        key = generate_key(@password, message.options[:engine_id])
         key << "\x00" * 48
         k1 = key.xor("\x36" * 64)
         k2 = key.xor("\x5C" * 64)
       
         md5mac << k1
-        md5mac << message
+        md5mac << message.to_der
         dig = md5mac.digest
 
         cipher << k2

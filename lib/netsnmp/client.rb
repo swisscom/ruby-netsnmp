@@ -30,8 +30,9 @@ module NETSNMP
     # @return [String] the value for the oid
     #
     def get(oid, **options)
-      request_pdu = @session.build_pdu(:get)
-      request_pdu.add_varbind(oid, value: options[:value])
+      request_pdu = @session.build_pdu(:get) do |pdu|
+        pdu.add_varbind(oid, value: options[:value])
+      end
       response_pdu = @session.send(request_pdu)
       case options[:response_type] 
         when :pdu then response_pdu

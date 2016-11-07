@@ -52,12 +52,17 @@ module NETSNMP
 
     def build_pdu(type, options=@options)
       pdu = PDU.build(type, options)
+      yield pdu if block_given?
       if options[:version] == 3
-        options = snmp3_options(pdu, options)
-        pdu = Message.new(options.merge(pdu: pdu))
+        message = snmp3_message(pdu, options)
+        auth_param = authentication.generate_param(message)
+        message.set_auth_param(auth_param)
+
+        return message
       end
       pdu
     end 
+
 
     # sends a request PDU and waits for the response
     # 
@@ -87,11 +92,12 @@ module NETSNMP
       options
     end
 
-    def snmp3_options(pdu, options)
+    def snmp3_message(pdu, options)
+      pdu_type = pdu.type
       probe_message = probe_for_engine(pdu, options)
-      options[:engine_id] = probe_message.options[:engine_id]
-      options[:engine_boots] = probe_message.options[:engine_boots]
-      options[:engine_time] = probe_message.options[:engine_time]
+#      options[:engine_id] = probe_message.options[:engine_id]
+#      options[:engine_boots] = probe_message.options[:engine_boots]
+#      options[:engine_time] = probe_message.options[:engine_time]
 
       options[:security_level] = case options[:security_level]
         when /noauth/           then 0
@@ -101,29 +107,22 @@ module NETSNMP
           options[:security_level]
       end
 
-      options
+      probe_message.pdu.set_type(pdu_type)
+      probe_message.pdu.set_varbinds(pdu.varbinds)
+      probe_message
     end
 
-#    LoggedInTimeout = Class.new(Timeout::Error)
-#    def try_login
-#      return yield unless @logged_at.nil?
-#
-#      begin
-#        # problem for snmp is, there is no login process.
-#        # signature is sent on first packet. As we are not using the synch interface, this will not
-#        # be handled by the core library. Which sucks. But even core library would just retry and timeout
-#        # at some point.
-#        # we do something similar: before any PDU succeeds, after first PDU is async-sent, we wait for reads, but we can't block. If 
-#        # the socket hasn't anything to read, we can assume it was the wrong USERNAME (?).
-#        # TODO: research if this is true. 
-#        Timeout.timeout(@timeout, LoggedInTimeout) do
-#          yield
-#        end
-#      rescue LoggedInTimeout
-#        raise ConnectionFailed, "failed to login to #@hostname"
-#      end
-#    end
-#
+    def authentication
+      @authentication ||= case @options[:auth_protocol]
+      when /md5/
+        Authentication::MD5.new(@options[:auth_password])
+      when /aes/
+        raise
+      else
+        Authentication::None.new 
+      end
+    end
+
     def transport
       @transport ||= begin
         tr = UDPSocket.new
