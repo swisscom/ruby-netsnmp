@@ -35,7 +35,7 @@ module NETSNMP
       end
     end
 
-    attr_reader :options, :varbinds
+    attr_reader :options, :varbinds, :type
 
     def_delegators :@options, :[], :[]=
 
@@ -48,7 +48,13 @@ module NETSNMP
       @options[:request_id] ||= PDU.generate_request_id
     end
 
+    def set_type(typ)
+      @type = typ
+    end
 
+    def set_varbinds(varbinds)
+      @varbinds = varbinds
+    end
 
     def to_der
       to_asn.to_der
@@ -113,10 +119,9 @@ module NETSNMP
 
 
     def encode_headers_asn
-      case options[:version]
-      when 3
-        [ OpenSSL::ASN1::OctetString.new(@options[:context_engine_id] || ""),
-          OpenSSL::ASN1::OctetString.new(@options[:context_engine_name] || "") ] 
+      if options[:version] == 3 || @options[:engine_id]
+        [ OpenSSL::ASN1::OctetString.new(@options[:engine_id] || ""),
+          OpenSSL::ASN1::OctetString.new(@options[:context] || "") ] 
       else
         [ OpenSSL::ASN1::Integer.new( @options[:version] ),
           OpenSSL::ASN1::OctetString.new( @options[:community] ) ]
@@ -129,8 +134,8 @@ module NETSNMP
       # and first part is the engine
       case asn1
       when OpenSSL::ASN1::OctetString
-        @options[:context_engine_id] = asn1.value
-        @options[:context_name] = asn2.value
+        @options[:engine_id] = asn1.value
+        @options[:context] = asn2.value
       when OpenSSL::ASN1::Integer
         @options[:version] = asn1.value.to_i
         @options[:community] = asn2.value

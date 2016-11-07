@@ -8,36 +8,7 @@ module NETSNMP
     MSG_REPORTABLE     = 4
 
     extend Forwardable 
-    def_delegators :@pdu, :add_varbind, :[], :[]=
-
-#    class << self
-#      private
-#      def encrypt(pdu, options)
-#        case options[:priv_protocol]
-#        when /des/
-#          encrypted_pdu, salt = Encryption::DES.encode(pdu.to_der, options[:priv_password], options)
-#          [OpenSSL::ASN1::OctetString.new(encrypted_pdu), salt]
-#        when /aes/
-#          raise
-#        else
-#          pdu
-#        end
-#      end
-#
-#      def authenticate(pdu, options)
-#        message = new(options.merge(pdu: pdu))
-#        case options[:auth_protocol]
-#        when /md5/
-#          auth_key = Authentication::MD5.generate_key(options[:auth_password], options[:engine_id])
-#          auth_param = Authentication::MD5.generate_param(auth_key, message.to_der)
-#        when /sha/
-#        else
-#        end
-#        auth_param = auth_param.unpack("H*").join
-#        new(options.merge(pdu: pdu, auth_param: auth_param))
-#      end
-#
-#    end
+    def_delegators :@pdu, :add_varbind, :[], :[]=, :varbinds
 
     attr_reader :pdu, :options
 
@@ -46,21 +17,25 @@ module NETSNMP
       @encryption = options.delete(:encryption)
       @options = options
 
-#      @auth_param = options[:auth_param] || ("\x00" * 12)
-#      @priv_param = options[:priv_param] || ""
+      @auth_param = options[:auth_param] || ("\x00" * 12)
+      @priv_param = encryption.salt
+    end
+    def set_auth_param(param)
+      @auth_param = param
     end
 
-    def to_asn
-      encrypted = encrypt_pdu
+
+    def to_asn(options=@options)
+      sec_params = encode_security_parameters_asn(options)
       OpenSSL::ASN1::Sequence([ 
         MSG_VERSION, 
         encode_headers_asn,
-        OpenSSL::ASN1::OctetString.new(encode_security_parameters_asn(pdu).to_der),
-        encrypted])
+        OpenSSL::ASN1::OctetString.new(sec_params.to_der),
+        scoped_pdu])
     end
 
-    def to_der
-      to_asn.to_der
+    def to_der(options=@options)
+      to_asn(options).to_der
     end
 
     def decode(der)
@@ -68,22 +43,10 @@ module NETSNMP
       version, headers, security_parameters, pdu_payload = asn_tree.value
       decode_security_parameters_asn(security_parameters.value)
 
-      pdu_der= encryption.decrypt(pdu_payload, @priv_param)
+      pdu_der = encryption.decrypt(pdu_payload, @priv_param)
       
       @pdu = PDU.new
       @pdu.decode(pdu_der)
-    end
-
-
-    def authentication
-      @authentication ||= case options[:auth_protocol]
-      when /md5/
-        Authentication::MD5.new(options[:auth_password], options[:engine_id])
-      when /aes/
-        raise
-      else
-        Authentication::None.new 
-      end
     end
 
     def encryption
@@ -107,9 +70,7 @@ module NETSNMP
       ])
     end
 
-    def encode_security_parameters_asn(encrypted_pdu)
-      @priv_param = encryption.salt
-      @auth_param = authentication.generate_param(encrypted_pdu.to_der)
+    def encode_security_parameters_asn(opts=@options)
       OpenSSL::ASN1::Sequence.new([
         OpenSSL::ASN1::OctetString.new(@options[:engine_id]),
         OpenSSL::ASN1::Integer.new(@options[:engine_boots]),
@@ -132,7 +93,7 @@ module NETSNMP
 
     end
 
-    def encrypt_pdu
+    def scoped_pdu
       encryption.encrypt(@pdu)
     end
   end
