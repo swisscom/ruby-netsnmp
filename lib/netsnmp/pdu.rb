@@ -48,12 +48,11 @@ module NETSNMP
       @options[:request_id] ||= PDU.generate_request_id
     end
 
-    def set_type(typ)
-      @type = typ
-    end
-
-    def set_varbinds(varbinds)
-      @varbinds = varbinds
+    # helper method; to keep using the same failed response for v3,
+    # one passes the original request pdu and sets what needs to be set
+    def from_pdu(pdu)
+      @type = pdu.type
+      @varbinds = pdu.varbinds
     end
 
     def to_der

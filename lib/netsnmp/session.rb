@@ -95,9 +95,6 @@ module NETSNMP
     def snmp3_message(pdu, options)
       pdu_type = pdu.type
       probe_message = probe_for_engine(pdu, options)
-#      options[:engine_id] = probe_message.options[:engine_id]
-#      options[:engine_boots] = probe_message.options[:engine_boots]
-#      options[:engine_time] = probe_message.options[:engine_time]
 
       options[:security_level] = case options[:security_level]
         when /noauth/           then 0
@@ -107,8 +104,7 @@ module NETSNMP
           options[:security_level]
       end
 
-      probe_message.pdu.set_type(pdu_type)
-      probe_message.pdu.set_varbinds(pdu.varbinds)
+      probe_message.pdu.from_pdu(pdu)
       probe_message
     end
 
