@@ -62,23 +62,37 @@ WALK
 
 
   describe "v3" do
-    it_behaves_like "an snmp client" do 
-      let(:extra_options) { {} }
-      let(:protocol_options) { {
-        version: "3",
-        context: "a172334d7d97871b72241397f713fa12",
-        username: "simulator",
-        auth_password: "auctoritas",
-        auth_protocol: :md5,
-        priv_password: "privatus",
-        priv_protocol: :des
-      }.merge(extra_options) }
-      let(:get_oid) { "1.3.6.1.2.1.1.5.0" }
-      let(:next_oid) { "1.3.6.1.2.1.1.5.0" }
-      let(:walk_oid) { "1.3.6.1.2.1.1.9.1.3" }
-      let(:get_result) { "tt" }
-      let(:next_result) { "KK12" }
+    let(:extra_options) { {} }
+    let(:version_options) { {
+      version: "3",
+      context: "a172334d7d97871b72241397f713fa12",
+    } }
+    let(:get_oid) { "1.3.6.1.2.1.1.5.0" }
+    let(:next_oid) { "1.3.6.1.2.1.1.5.0" }
+    let(:walk_oid) { "1.3.6.1.2.1.1.9.1.3" }
+    let(:get_result) { "tt" }
+    let(:next_result) { "KK12" }
 
+    context "with a no auth no priv policy" do
+      let(:user_options) { { username: "unsafe", security_level: :noauth } }
+      it_behaves_like "an snmp client" do
+        let(:protocol_options) { version_options.merge(user_options).merge(extra_options) }
+      end
+    end
+    context "with an only auth policy" do
+      let(:user_options) { { username: "author", security_level: :auth_no_priv, 
+                             auth_password: "authpass", auth_protocol: :md5 } }
+      it_behaves_like "an snmp client" do
+        let(:protocol_options) { version_options.merge(user_options).merge(extra_options) }
+      end
+    end
+    context "with an auth priv policy" do
+      let(:user_options) { { username: "simulator", auth_password: "auctoritas",
+                             auth_protocol: :md5, priv_password: "privatus",
+                             priv_protocol: :des } }
+      it_behaves_like "an snmp client" do
+        let(:protocol_options) { version_options.merge(user_options).merge(extra_options) }
+      end
 #      context "with a wrong auth password" do
 #        let(:extra_options) { { auth_password: "auctoritas2", timeout: 5 } }
 #        it { 
