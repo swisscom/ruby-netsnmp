@@ -11,7 +11,7 @@ module NETSNMP
         cipher = OpenSSL::Digest::MD5.new
         md5mac = OpenSSL::Digest::MD5.new
 
-        key = generate_key(@password, message.options[:engine_id])
+        key = generate_key(message.options[:engine_id])
         key << "\x00" * 48
         k1 = key.xor("\x36" * 64)
         k2 = key.xor("\x5C" * 64)
@@ -27,23 +27,36 @@ module NETSNMP
 
       private
 
-      def generate_key(password, engineid="")
+      def generate_key(engineid="")
         cipher = OpenSSL::Digest::MD5.new
-        passkey = OpenSSL::Digest::MD5.new
+        key = passkey
 
-        password_length = password.length
-        buffer = String.new
-        64.times { |i| buffer << i % password_length }
-        passkey << buffer * (1048576 / 64)
-        passdigest = passkey.digest
-
-        cipher << passdigest
+        cipher << key
         cipher << engineid 
-        cipher << passdigest
+        cipher << key
 
         cipher.digest
       end
 
+      def passkey
+        passkey = OpenSSL::Digest::MD5.new
+
+        password_index = 0
+        count = 0
+
+        buffer = String.new
+        password_length = @password.length
+        while count < 1048576
+          64.times do
+            buffer << @password[password_index % password_length]
+            password_index += 1
+          end
+          passkey << buffer
+          buffer.clear
+          count += 64
+        end
+        passkey.digest
+      end
     end
   end
 end

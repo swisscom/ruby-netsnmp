@@ -81,7 +81,7 @@ WALK
     end
     context "with an only auth policy" do
       let(:user_options) { { username: "author", security_level: :auth_no_priv, 
-                             auth_password: "authpass", auth_protocol: :md5 } }
+                             auth_password: "maplesyrup", auth_protocol: :md5 } }
       it_behaves_like "an snmp client" do
         let(:protocol_options) { version_options.merge(user_options).merge(extra_options) }
       end
