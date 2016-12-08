@@ -1,6 +1,7 @@
 module NETSNMP
   # Factory for the SNMP v3 Message format
   class Message
+    # TODO: make this random!
     MSG_ID             = OpenSSL::ASN1::Integer.new(56219466)
     MSG_MAX_SIZE       = OpenSSL::ASN1::Integer.new(65507)
     MSG_SECURITY_MODEL = OpenSSL::ASN1::Integer.new(3)           # usmSecurityModel
