@@ -10,10 +10,6 @@ module NETSNMP
     # 
     def initialize(host, opts)
       @host = host
-      # this is because other evented clients might discover IP first, but hostnames
-      # give you better trackability of errors. Give the opportunity to the users to
-      # pass it, by setting the hostname explicitly. If not, fallback to the host. 
-      @hostname = opts.delete(:hostname) || @host
       @port = (opts.delete(:port) || 161).to_i
       @options = validate_options(opts)
       @logged_at = nil
@@ -54,7 +50,7 @@ module NETSNMP
       end
 
       options[:security_level] = case options[:security_level]
-        when /noauth/           then 0
+        when /no_?auth/         then 0
         when /auth_?no_?priv/   then 1
         when /auth_?priv/, nil  then 3
         when Integer
@@ -67,6 +63,12 @@ module NETSNMP
       options
     end
 
+    #
+    # @param [NETSNMP::PDU] pdu the scoped pdu
+    # @param [Hash] options additional options
+    #
+    # @return [NETSNMP::Message] a prepared v3 Message
+    #
     def build_message(pdu, options)
       probe_message = probe_for_engine(pdu, options)
       
@@ -83,6 +85,11 @@ module NETSNMP
       end
     end
 
+    # encodes the message and writes it over the wire
+    #
+    # @param [NETSNMP::PDU, NETSNMP::Message] pdu a valid pdu (version 1/2) or message (v3)
+    # @param [Hash] opts additional options
+    #
     def write(pdu, **opts)
       perform_io do
         transport.send( encode(pdu, **opts), 0 )
@@ -91,6 +98,13 @@ module NETSNMP
 
     MAXPDUSIZE = 65536 
 
+    # reads from the wire and decodes
+    #
+    # @param [NETSNMP::PDU, NETSNMP::Message] request_pdu or message which originated the response
+    # @param [Hash] options additional options
+    #
+    # @return [NETSNMP::PDU, NETSNMP::Message] the response pdu or message
+    #
     def read(request_pdu, options=@options)
       perform_io do
         datagram , _ = transport.recvfrom_nonblock(MAXPDUSIZE)
@@ -123,8 +137,6 @@ module NETSNMP
       end   
     end
 
-    private
-
     def encode(pdu, options=@options)
       return pdu.to_der
     end
@@ -137,6 +149,12 @@ module NETSNMP
       message
     end
 
+    # sends a probe snmp v3 request, to get the additional info with which to handle the security aspect
+    #
+    # @param [NETSNMP::PDU] pdu the scoped pdu to send
+    # @param [Hash] message options
+    #
+    # @return [NETSNMP::Message] the response snmp v3 message with the agent parameters (engine id, boots, time)
     def probe_for_engine(pdu, options)
       probe_options = options.merge(engine_id: "",
                                     engine_boots: 0,
