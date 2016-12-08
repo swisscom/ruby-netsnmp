@@ -48,11 +48,11 @@ module NETSNMP
         buffer = String.new
         password_length = @password.length
         while count < 1048576
-          64.times do
-            buffer << @password[password_index % password_length]
-            password_index += 1
-          end
-          passkey << buffer
+          initial = password_index % password_length
+          rotated_password = @password[initial..-1] + @password[0,initial]
+          buffer << rotated_password while buffer.length < 64
+          password_index += 64
+          passkey << buffer[0,64]
           buffer.clear
           count += 64
         end
