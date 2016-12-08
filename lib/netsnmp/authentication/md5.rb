@@ -2,26 +2,27 @@ module NETSNMP
   module Authentication
     class MD5
 
+      IPAD = "\x36" * 64
+      OPAD = "\x5C" * 64
+
       def initialize(password)
         @password = password
       end
 
       # http://tools.ietf.org/html/rfc3414#section-6.3.1
-      def generate_param(message)
+      def generate_param(message, engineid)
         cipher = OpenSSL::Digest::MD5.new
         md5mac = OpenSSL::Digest::MD5.new
 
-        key = generate_key(message.options[:engine_id])
+        key = generate_key(engineid)
         key << "\x00" * 48
-        k1 = key.xor("\x36" * 64)
-        k2 = key.xor("\x5C" * 64)
+        k1 = key.xor(IPAD)
+        k2 = key.xor(OPAD)
       
-        md5mac << k1
-        md5mac << message.to_der
-        dig = md5mac.digest
+        md5mac << ( k1 + message )
+        d1 = md5mac.digest
 
-        cipher << k2
-        cipher << dig
+        cipher << ( k2 + d1 )
         cipher.digest[0,12]
       end
 
