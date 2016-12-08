@@ -1,18 +1,6 @@
 module NETSNMP
-  # The Entity abstracts the C net-snmp session, and the lifecycle steps.
+  # Let's just remind that there is no session in snmp, this is just an abstraction. 
   # 
-  # For example, a session must be initialized (memory allocated) and opened 
-  # (authentication, encryption, signature)
-  #
-  # The session uses the signature to send and receive PDUs. They are built somewhere else.
-  # 
-  # After the session is established, a socket handle is read from the structure. This will
-  # be later used for non-blocking behaviour. It's important to notice, there is no
-  # usage of the C net-snmp sync API, we always do async send/response, even if the 
-  # ruby API "feels" blocking. This was done so that the GIL can be released between
-  # sends and receives, and the load can be shared through different threads possibly. 
-  # As we use the session abstraction, this means we ONLY use the thread-safe API. 
-  #
   class Session
 
     attr_reader :host, :signature
@@ -40,9 +28,7 @@ module NETSNMP
 
     def build_pdu(type, options=@options)
       pdu = PDU.build(type, options)
-      if options[:version] == 3
-        return snmp3_message(pdu, options)
-      end
+      return build_message(pdu, options) if options[:version] == 3
       pdu
     end
 
@@ -81,10 +67,10 @@ module NETSNMP
       options
     end
 
-    def snmp3_message(pdu, options)
+    def build_message(pdu, options)
       probe_message = probe_for_engine(pdu, options)
       
-      message = Message.new(options.merge(pdu: pdu))
+      message = Message.new(pdu, options)
       message.from_message(probe_message)
       message
     end
@@ -145,7 +131,7 @@ module NETSNMP
 
     def decode(stream, request, options=@options)
       message = options[:version] == 3 ?
-                Message.new(encryption: request.encryption) : 
+                Message.new(PDU.new, encryption: request.encryption) : 
                 PDU.new
       message.decode(stream)
       message
@@ -158,8 +144,8 @@ module NETSNMP
                                     priv_protocol: nil,
                                     auth_protocol: nil,
                                     security_level: 0,
-                                    engine_time: 0, pdu: pdu)
-      message = Message.new(probe_options)
+                                    engine_time: 0)
+      message = Message.new(pdu, probe_options)
       send(message, options)
     end
 
