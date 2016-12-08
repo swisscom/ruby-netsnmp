@@ -42,7 +42,6 @@ require "netsnmp/session"
 require "netsnmp/message"
 require "netsnmp/encryption/none"
 require "netsnmp/encryption/des"
-require "netsnmp/authentication/none"
 require "netsnmp/authentication/md5"
 require "netsnmp/authentication/sha"
 

@@ -89,17 +89,6 @@ module NETSNMP
       message
     end
 
-    def authentication
-      @authentication ||= case @options[:auth_protocol]
-      when /md5/
-        Authentication::MD5.new(@options[:auth_password])
-      when /aes/
-        raise
-      else
-        Authentication::None.new 
-      end
-    end
-
     def transport
       @transport ||= begin
         tr = UDPSocket.new
