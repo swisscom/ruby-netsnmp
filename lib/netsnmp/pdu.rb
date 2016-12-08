@@ -3,6 +3,7 @@ module NETSNMP
   # Abstracts the PDU base structure into a ruby object. It gives access to its varbinds.
   #
   class PDU
+    # TODO: make this random!
     @request_id_counter = 0
     @counter_monitor = Mutex.new
     MAXREQUESTS = 1024
