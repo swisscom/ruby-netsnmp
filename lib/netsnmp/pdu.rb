@@ -53,7 +53,6 @@ module NETSNMP
     # one passes the original request pdu and sets what needs to be set
     def from_pdu(pdu)
       @options[:engine_id] = pdu.options[:engine_id]
-      @options[:request_id] = pdu.options[:request_id]
     end
 
     def to_der
@@ -99,9 +98,6 @@ module NETSNMP
       end
     end
 
-
-    private
-
     def to_asn
       request_id_asn = OpenSSL::ASN1::Integer.new( @options[:request_id] )
       error_asn = OpenSSL::ASN1::Integer.new( @options[:error_status] || 0 )
@@ -117,6 +113,7 @@ module NETSNMP
       OpenSSL::ASN1::Sequence.new( [ *encode_headers_asn, request_asn ] )
     end
 
+    private
 
     def encode_headers_asn
       if options[:version] == 3 || @options[:engine_id]

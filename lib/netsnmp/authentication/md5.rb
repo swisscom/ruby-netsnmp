@@ -10,7 +10,7 @@ module NETSNMP
       end
 
       # http://tools.ietf.org/html/rfc3414#section-6.3.1
-      def generate_param(message, engineid)
+      def signature(message, engineid)
         cipher = OpenSSL::Digest::MD5.new
         md5mac = OpenSSL::Digest::MD5.new
 
