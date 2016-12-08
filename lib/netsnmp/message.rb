@@ -14,19 +14,14 @@ module NETSNMP
 
     def initialize(options={}) 
       @pdu = options.delete(:pdu)
-      @encryption = options.delete(:encryption)
       @options = options
 
-      @auth_param = options[:auth_param] || ("\x00" * 12)
       @priv_param = encryption.salt
     end
-    def set_auth_param(param)
-      @auth_param = param
-    end
 
 
-    def to_asn(options=@options)
-      sec_params = encode_security_parameters_asn(options)
+    def to_asn(auth_param = "\x00" * 12)
+      sec_params = encode_security_parameters_asn(auth_param)
       OpenSSL::ASN1::Sequence([ 
         MSG_VERSION, 
         encode_headers_asn,
@@ -34,8 +29,13 @@ module NETSNMP
         scoped_pdu])
     end
 
-    def to_der(options=@options)
-      to_asn(options).to_der
+    def to_der
+      der = to_asn.to_der
+      if auth = authentication
+        auth_param = auth.generate_param(der, @options[:engine_id])
+        der = to_asn(auth_param).to_der
+      end 
+      der 
     end
 
     def decode(der)
@@ -50,7 +50,7 @@ module NETSNMP
     end
 
     def encryption
-      @encryption ||= case options[:priv_protocol]
+      case options[:priv_protocol]
       when /des/
         Encryption::DES.new(options[:priv_password], options[:engine_boots])
       when /aes/
@@ -58,6 +58,22 @@ module NETSNMP
       else
         Encryption::None.new
       end
+    end
+
+    def authentication
+      case options[:auth_protocol]
+      when /md5/
+        Authentication::MD5.new(options[:auth_password])
+      when /aes/
+        raise
+      end
+    end
+
+    def from_message(message)
+      @options[:engine_id] = message.options[:engine_id]
+      @options[:engine_boots] = message.options[:engine_boots]
+      @options[:engine_time] = message.options[:engine_time]
+      pdu.from_pdu(message.pdu)
     end
 
     private
@@ -70,13 +86,13 @@ module NETSNMP
       ])
     end
 
-    def encode_security_parameters_asn(opts=@options)
+    def encode_security_parameters_asn(auth_param)
       OpenSSL::ASN1::Sequence.new([
         OpenSSL::ASN1::OctetString.new(@options[:engine_id]),
         OpenSSL::ASN1::Integer.new(@options[:engine_boots]),
         OpenSSL::ASN1::Integer.new(@options[:engine_time]),
         OpenSSL::ASN1::OctetString.new(@options[:username]),
-        OpenSSL::ASN1::OctetString.new(@auth_param),
+        OpenSSL::ASN1::OctetString.new(auth_param),
         OpenSSL::ASN1::OctetString.new(@priv_param)
       ])
     end
@@ -88,13 +104,14 @@ module NETSNMP
       @options[:engine_boots] = asn_tree[1].value.to_i
       @options[:engine_time] = asn_tree[2].value.to_i
       @options[:username] = asn_tree[3].value
-      @auth_param = asn_tree[4].value
-      @priv_param = asn_tree[5].value
-
     end
 
     def scoped_pdu
       encryption.encrypt(@pdu)
+    end
+
+    def authenticate(engineid)
+      authentication.generate_param(engineid)
     end
   end
 end

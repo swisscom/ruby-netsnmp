@@ -51,8 +51,8 @@ module NETSNMP
     # helper method; to keep using the same failed response for v3,
     # one passes the original request pdu and sets what needs to be set
     def from_pdu(pdu)
-      @type = pdu.type
-      @varbinds = pdu.varbinds
+      @options[:engine_id] = pdu.options[:engine_id]
+      @options[:request_id] = pdu.options[:request_id]
     end
 
     def to_der
