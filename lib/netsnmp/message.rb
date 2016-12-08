@@ -65,8 +65,10 @@ module NETSNMP
       case options[:auth_protocol]
       when /md5/
         Authentication::MD5.new(options[:auth_password])
-      when /aes/
-        raise
+      when /sha/
+        Authentication::SHA.new(options[:auth_password])
+      else 
+        nil 
       end
     end
 
