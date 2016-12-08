@@ -8,7 +8,7 @@ module NETSNMP
       end
 
       def encrypt(pdu)
-        pdu.to_der
+        pdu.send(:to_asn)
       end
       def decrypt(stream, *)
         stream
