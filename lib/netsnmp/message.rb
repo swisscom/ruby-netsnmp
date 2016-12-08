@@ -14,8 +14,8 @@ module NETSNMP
 
     attr_reader :pdu, :options
 
-    def initialize(options={}) 
-      @pdu = options.delete(:pdu)
+    def initialize(pdu, options={}) 
+      @pdu = pdu
       @options = options
 
       @priv_param = encryption.salt
@@ -47,7 +47,6 @@ module NETSNMP
 
       pdu_der = encryption.decrypt(pdu_payload, @priv_param)
       
-      @pdu = PDU.new
       @pdu.decode(pdu_der)
     end
 
