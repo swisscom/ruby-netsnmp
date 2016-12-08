@@ -40,16 +40,11 @@ module NETSNMP
 
     def build_pdu(type, options=@options)
       pdu = PDU.build(type, options)
-      yield pdu if block_given?
       if options[:version] == 3
-        message = snmp3_message(pdu, options)
-        auth_param = authentication.generate_param(message)
-        message.set_auth_param(auth_param)
-
-        return message
+        return snmp3_message(pdu, options)
       end
       pdu
-    end 
+    end
 
 
     # sends a request PDU and waits for the response
@@ -71,15 +66,6 @@ module NETSNMP
         when /v?2c?/ then 1 
         when /v?3/, nil then 3
       end
-      options[:community] ||= "public" # v1/v2 default community
-      options[:timeout] ||= 10
-      options[:retries] ||= 5
-      options
-    end
-
-    def snmp3_message(pdu, options)
-      pdu_type = pdu.type
-      probe_message = probe_for_engine(pdu, options)
 
       options[:security_level] = case options[:security_level]
         when /noauth/           then 0
@@ -89,8 +75,18 @@ module NETSNMP
           options[:security_level]
       end
 
-      probe_message.pdu.from_pdu(pdu)
-      probe_message
+      options[:community] ||= "public" # v1/v2 default community
+      options[:timeout] ||= 10
+      options[:retries] ||= 5
+      options
+    end
+
+    def snmp3_message(pdu, options)
+      probe_message = probe_for_engine(pdu, options)
+      
+      message = Message.new(options.merge(pdu: pdu))
+      message.from_message(probe_message)
+      message
     end
 
     def authentication
@@ -170,10 +166,10 @@ module NETSNMP
       probe_options = options.merge(engine_id: "",
                                     engine_boots: 0,
                                     username: "",
-                                    security_level: 0,
                                     priv_protocol: nil,
                                     auth_protocol: nil,
-                                    engine_time: 0, version: 1, pdu: pdu)
+                                    security_level: 0,
+                                    engine_time: 0, pdu: pdu)
       message = Message.new(probe_options)
       send(message, options)
     end
