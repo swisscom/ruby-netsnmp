@@ -12,15 +12,15 @@ module NETSNMP
       # http://tools.ietf.org/html/rfc3414#section-6.3.1
       def signature(message, engineid)
         cipher = OpenSSL::Digest::MD5.new
-        md5mac = OpenSSL::Digest::MD5.new
+        hmac = OpenSSL::Digest::MD5.new
 
         key = generate_key(engineid)
         key << "\x00" * 48
         k1 = key.xor(IPAD)
         k2 = key.xor(OPAD)
       
-        md5mac << ( k1 + message )
-        d1 = md5mac.digest
+        hmac << ( k1 + message )
+        d1 = hmac.digest
 
         cipher << ( k2 + d1 )
         cipher.digest[0,12]
