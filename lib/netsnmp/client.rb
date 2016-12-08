@@ -25,17 +25,17 @@ module NETSNMP
     # 
     # @param [String] oid the oid to get
     # @param [Hash] options the varbind options (see Varbind)
-    # @option options [true, false] :response_pdu if true, the method returns a PDU
+    # @option options [true, false] :response if true, the method returns a PDU
     #
     # @return [String] the value for the oid
     #
     def get(oid, **options)
-      request_pdu = @session.build_pdu(:get)
-      request_pdu.add_varbind(oid, value: options[:value])
-      response_pdu = @session.send(request_pdu)
+      request = @session.build_pdu(:get)
+      request.add_varbind(oid, value: options[:value])
+      response = @session.send(request)
       case options[:response_type] 
-        when :pdu then response_pdu
-        else response_pdu.varbinds.first.value
+        when :pdu then response
+        else response.varbinds.first.value
       end
     end
 
@@ -43,19 +43,19 @@ module NETSNMP
     # 
     # @param [String] oid the oid to get
     # @param [Hash] options the varbind options (see Varbind)
-    # @option options [true, false] :response_pdu if true, the method returns a PDU
+    # @option options [true, false] :response if true, the method returns a PDU
     #
     # @return [String] the value for the next oid
     # 
     # @note this method is used as a sub-routine for the walk
     #
     def get_next(oid, **options)
-      request_pdu = @session.build_pdu(:getnext)
-      request_pdu.add_varbind(oid, value: options[:value])
-      response_pdu = @session.send(request_pdu)
+      request = @session.build_pdu(:getnext)
+      request.add_varbind(oid, value: options[:value])
+      response = @session.send(request)
       case options[:response_type] 
-        when :pdu then response_pdu
-        else response_pdu.varbinds.first.value
+        when :pdu then response
+        else response.varbinds.first.value
       end
     end
 
@@ -74,8 +74,8 @@ module NETSNMP
         first_response_code = nil
         catch(:walk) do
           loop do
-            response_pdu = get_next(code, options)
-            response_pdu.varbinds.each do |varbind|
+            response = get_next(code, options)
+            response.varbinds.each do |varbind|
               code = varbind.oid_code
               if !walkoid.parent_of?(code) or 
                   varbind.value.eql?(:endofmibview) or
@@ -101,13 +101,13 @@ module NETSNMP
     # @return [Enumerator] the enumerator-collection of the oid-value pairs
     #
     def get_bulk(oid, **options)
-      request_pdu = @session.build_pdu(:getbulk)
-      request_pdu[:error_status]  = options.delete(:non_repeaters) || 0
-      request_pdu[:error_index] = options.delete(:max_repetitions) || 10
-      request_pdu.add_varbind(oid, value: options[:value])
-      response_pdu = @session.send(request_pdu)
+      request = @session.build_pdu(:getbulk)
+      request[:error_status]  = options.delete(:non_repeaters) || 0
+      request[:error_index] = options.delete(:max_repetitions) || 10
+      request.add_varbind(oid, value: options[:value])
+      response = @session.send(request)
       Enumerator.new do |y|
-        response_pdu.varbinds.each do |varbind|
+        response.varbinds.each do |varbind|
           y << [ varbind.oid_code, varbind.value ]
         end
       end
@@ -120,11 +120,11 @@ module NETSNMP
     # @option options [Object] :value value to update the oid with. 
     #
     def set(oid, **options)
-      request_pdu = @session.build_pdu(:set)
-      request_pdu.add_varbind(oid, **options)
-      yield request_pdu if block_given? 
-      response_pdu = @session.send(request_pdu)
-      response_pdu.varbinds.map(&:value)
+      request = @session.build_pdu(:set)
+      request.add_varbind(oid, **options)
+      yield request if block_given? 
+      response = @session.send(request)
+      response.varbinds.map(&:value)
     end
   end
 end
