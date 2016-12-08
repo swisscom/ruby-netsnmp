@@ -2,6 +2,7 @@ module NETSNMP
   # Factory for the SNMP v3 Message format
   class Message
     # TODO: make this random!
+    NONE               = OpenSSL::ASN1::OctetString.new("\x00" * 12)
     MSG_ID             = OpenSSL::ASN1::Integer.new(56219466)
     MSG_MAX_SIZE       = OpenSSL::ASN1::Integer.new(65507)
     MSG_SECURITY_MODEL = OpenSSL::ASN1::Integer.new(3)           # usmSecurityModel
@@ -21,7 +22,7 @@ module NETSNMP
     end
 
 
-    def to_asn(auth_param = "\x00" * 12)
+    def to_asn(auth_param = NONE)
       sec_params = encode_security_parameters_asn(auth_param)
       OpenSSL::ASN1::Sequence([ 
         MSG_VERSION, 
@@ -33,8 +34,8 @@ module NETSNMP
     def to_der
       der = to_asn.to_der
       if auth = authentication
-        auth_param = auth.generate_param(der, @options[:engine_id])
-        der = to_asn(auth_param).to_der
+        auth_param = OpenSSL::ASN1::OctetString.new(auth.signature(der, @options[:engine_id]))
+        der.sub!(NONE.to_der, auth_param.to_der)
       end 
       der 
     end
@@ -93,7 +94,7 @@ module NETSNMP
         OpenSSL::ASN1::Integer.new(@options[:engine_boots]),
         OpenSSL::ASN1::Integer.new(@options[:engine_time]),
         OpenSSL::ASN1::OctetString.new(@options[:username]),
-        OpenSSL::ASN1::OctetString.new(auth_param),
+        auth_param,
         OpenSSL::ASN1::OctetString.new(@priv_param)
       ])
     end
@@ -111,8 +112,5 @@ module NETSNMP
       encryption.encrypt(@pdu)
     end
 
-    def authenticate(engineid)
-      authentication.generate_param(engineid)
-    end
   end
 end

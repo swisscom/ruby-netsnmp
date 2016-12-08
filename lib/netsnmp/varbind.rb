@@ -6,7 +6,6 @@ module NETSNMP
 
     attr_reader :oid, :value
 
-    # @param [FFI::Pointer] pointer to the variable list
     def initialize(oid , value: nil, type: nil)
       @oid = oid.is_a?(OID) ? oid : OID.build(oid)
       @type = type
