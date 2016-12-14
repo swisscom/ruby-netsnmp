@@ -38,11 +38,10 @@ require "netsnmp/oid"
 require "netsnmp/pdu"
 require "netsnmp/session"
 
-
+require "netsnmp/v3_session"
+require "netsnmp/security_parameters"
 require "netsnmp/message"
 require "netsnmp/encryption/des"
 require "netsnmp/encryption/aes"
-require "netsnmp/authentication/md5"
-require "netsnmp/authentication/sha"
 
 require "netsnmp/client"
