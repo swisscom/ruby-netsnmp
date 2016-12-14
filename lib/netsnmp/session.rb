@@ -13,8 +13,6 @@ module NETSNMP
       @port = (opts.delete(:port) || 161).to_i
       @options = validate_options(opts)
       @logged_at = nil
-      @request = nil
-      @requests ||= {}
     end
 
     # Closes the session
@@ -23,9 +21,7 @@ module NETSNMP
     end
 
     def build_pdu(type, options=@options)
-      pdu = PDU.build(type, options)
-      return build_message(pdu, options) if options[:version] == 3
-      pdu
+      PDU.build(type, options)
     end
 
 
@@ -51,33 +47,12 @@ module NETSNMP
         when /v?3/, nil then 3
       end
 
-      options[:security_level] = case options[:security_level]
-        when /no_?auth/         then 0
-        when /auth_?no_?priv/   then 1
-        when /auth_?priv/, nil  then 3
-        when Integer
-          options[:security_level]
-      end
-
       options[:community] ||= "public" # v1/v2 default community
       options[:timeout] ||= 10
       options[:retries] ||= 5
       options
     end
 
-    #
-    # @param [NETSNMP::PDU] pdu the scoped pdu
-    # @param [Hash] options additional options
-    #
-    # @return [NETSNMP::Message] a prepared v3 Message
-    #
-    def build_message(pdu, options)
-      probe_message = probe_for_engine(pdu, options)
-      
-      message = Message.new(pdu, options)
-      message.from_message(probe_message)
-      message
-    end
 
     def transport
       @transport ||= begin
@@ -144,30 +119,11 @@ module NETSNMP
     end
 
     def decode(stream, request, options=@options)
-      message = options[:version] == 3 ?
-                Message.new(PDU.new, encryption: request.encryption) : 
-                PDU.new
-      message.decode(stream)
-      message
+      pdu = PDU.new
+      pdu.decode(stream)
+      pdu
     end
 
-    # sends a probe snmp v3 request, to get the additional info with which to handle the security aspect
-    #
-    # @param [NETSNMP::PDU] pdu the scoped pdu to send
-    # @param [Hash] message options
-    #
-    # @return [NETSNMP::Message] the response snmp v3 message with the agent parameters (engine id, boots, time)
-    def probe_for_engine(pdu, options)
-      probe_options = options.merge(engine_id: "",
-                                    engine_boots: 0,
-                                    username: "",
-                                    priv_protocol: nil,
-                                    auth_protocol: nil,
-                                    security_level: 0,
-                                    engine_time: 0)
-      message = Message.new(pdu, probe_options)
-      send(message, options)
-    end
 
 
   end

@@ -13,7 +13,15 @@ module NETSNMP
     #
     # @see Session#initialize
     def initialize(hostname, options)
-      @session ||= Session.new(hostname, options)
+      version = options[:version]
+      version = case version 
+        when Integer then version # assume the use know what he's doing
+        when /v?1/ then 0 
+        when /v?2c?/ then 1 
+        when /v?3/, nil then 3
+      end
+
+      @session ||= version == 3 ? V3Session.new(hostname, options) : Session.new(hostname, options)
     end
 
     # @see Session#close
