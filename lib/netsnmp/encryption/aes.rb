@@ -1,16 +1,15 @@
 module NETSNMP
   module Encryption
-    class DES
+    class AES
       def initialize(priv_key, local: 0)
         @priv_key = priv_key
         @local = local
       end
 
+      def encrypt(decrypted_data, engine_boots: , engine_time: )
+        cipher = OpenSSL::Cipher::AES128.new(:CFB)
 
-      def encrypt(decrypted_data, engine_boots: , engine_time: nil)
-        cipher = OpenSSL::Cipher::DES.new(:CBC)
-
-        iv, salt = generate_encryption_key(engine_boots)
+        iv, salt = generate_encryption_key(engine_boots, engine_time)
 
         cipher.encrypt
         cipher.iv = iv
@@ -22,16 +21,17 @@ module NETSNMP
 
         encrypted_data = cipher.update(decrypted_data) + cipher.final
         [encrypted_data, salt]
+
       end
 
-      def decrypt(encrypted_data, salt: , engine_boots: nil, engine_time: nil)
+      def decrypt(encrypted_data, salt: , engine_boots: , engine_time: )
         # TODO: error out if salt length != 8
         # TODO: error out if encrypted data size % 8 != 0
 
-        cipher = OpenSSL::Cipher::DES.new(:CBC)
+        cipher = OpenSSL::Cipher::AES128.new(:CFB)
         cipher.padding = 0
 
-        iv = generate_decryption_key(salt)
+        iv = generate_decryption_key(engine_boots, engine_time, salt)
 
         cipher.decrypt
         cipher.key = des_key
@@ -43,33 +43,39 @@ module NETSNMP
         decrypted_data
       end
 
-
       private
       # 8.1.1.1
-      def generate_encryption_key(boots)
-        pre_iv = @priv_key[8,8]
-        salt = [0xff & (boots >> 24),
-                0xff & (boots >> 16),
-                0xff & (boots >> 8),
-                0xff &  boots,
+      def generate_encryption_key(boots, time)
+        salt = [0xff & (@local >> 56),
+                0xff & (@local >> 48),
+                0xff & (@local >> 40),
+                0xff & (@local >> 32),
                 0xff & (@local >> 24),
                 0xff & (@local >> 16),
                 0xff & (@local >> 8),
                 0xff &  @local].pack("c*")
-         @local = @local == 0xffffffff ? 0 : @local + 1
+        @local = @local == 0xffffffffffffffff ? 0 : @local + 1
 
-         iv = pre_iv.xor(salt)
-         [iv, salt]
+        iv = generate_decryption_key(boots, time, salt)
+
+        [iv, salt]
        end
 
-       def generate_decryption_key(salt)
-         pre_iv = @priv_key[8,8]
-         pre_iv.xor(salt)
+       def generate_decryption_key(boots, time, salt)
+         [0xff & (boots >> 24),
+          0xff & (boots >> 16),
+          0xff & (boots >> 8),
+          0xff &  boots,
+          0xff & (time >> 24),
+          0xff & (time >> 16),
+          0xff & (time >> 8),
+          0xff &  time].pack("c*") + salt
        end
 
       def des_key 
-        @priv_key[0,8]
+        @priv_key
       end
+
     end
   end
 end

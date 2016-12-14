@@ -98,7 +98,7 @@ module NETSNMP
       end
     end
 
-    MAXPDUSIZE = 65536 
+    MAXPDUSIZE = 0xffff + 1
 
     # reads from the wire and decodes
     #

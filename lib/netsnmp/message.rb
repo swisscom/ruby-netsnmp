@@ -5,7 +5,6 @@ module NETSNMP
     MSG_ID             = OpenSSL::ASN1::Integer.new(56219466)
     AUTHNONE               = OpenSSL::ASN1::OctetString.new("\x00" * 12)
     PRIVNONE               = OpenSSL::ASN1::OctetString.new("")
-    MSG_ID             = OpenSSL::ASN1::Integer.new(2082716074)
     MSG_MAX_SIZE       = OpenSSL::ASN1::Integer.new(65507)
     MSG_SECURITY_MODEL = OpenSSL::ASN1::Integer.new(3)           # usmSecurityModel
     MSG_VERSION        = OpenSSL::ASN1::Integer.new(3)
@@ -57,7 +56,7 @@ module NETSNMP
       when /des/
         Encryption::DES.new(authentication(password: @options[:priv_password]).localized_key)
       when /aes/
-        raise
+        Encryption::AES.new(authentication(password: @options[:priv_password]).localized_key)
       else
         nil
       end
@@ -119,7 +118,8 @@ module NETSNMP
       pdu_asn = @pdu.to_asn
       if enc = encryption
         pdu_der = pdu_asn.to_der
-        enc_pdu, salt_str = enc.encrypt(pdu_der, engine_boots: @options[:engine_boots])
+        enc_pdu, salt_str = enc.encrypt(pdu_der, engine_boots: @options[:engine_boots],
+                                                 engine_time: @options[:engine_time])
         pdu_asn = OpenSSL::ASN1::OctetString.new(enc_pdu)
         salt    = OpenSSL::ASN1::OctetString.new(salt_str)
       end
@@ -130,7 +130,9 @@ module NETSNMP
       pdu_asn = OpenSSL::ASN1.decode(der)
       if enc = encryption and pdu_asn.is_a?(OpenSSL::ASN1::OctetString)
         encrypted_pdu = pdu_asn.value
-        decrypted_pdu = enc.decrypt(encrypted_pdu, salt: @priv_param)
+        decrypted_pdu = enc.decrypt(encrypted_pdu, salt: @priv_param, 
+                                                   engine_time: @options[:engine_time],
+                                                   engine_boots: @options[:engine_boots])
         pdu_asn = OpenSSL::ASN1.decode(decrypted_pdu)
       end
       pdu_asn
