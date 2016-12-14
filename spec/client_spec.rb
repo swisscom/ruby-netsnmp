@@ -80,18 +80,30 @@ WALK
       end
     end
     context "with an only auth policy" do
-      let(:user_options) { { username: "author", security_level: :auth_no_priv, 
-                             auth_password: "maplesyrup", auth_protocol: :md5 } }
-      it_behaves_like "an snmp client" do
-        let(:protocol_options) { version_options.merge(user_options).merge(extra_options) }
+      context "speaking md5" do
+        let(:user_options) { { username: "authmd5", security_level: :auth_no_priv, 
+                               auth_password: "maplesyrup", auth_protocol: :md5 } }
+        it_behaves_like "an snmp client" do
+          let(:protocol_options) { version_options.merge(user_options).merge(extra_options) }
+        end
       end
+      context "speaking sha" do
+        let(:user_options) { { username: "authsha", security_level: :auth_no_priv, 
+                               auth_password: "maplesyrup", auth_protocol: :sha } }
+        it_behaves_like "an snmp client" do
+          let(:protocol_options) { version_options.merge(user_options).merge(extra_options) }
+        end
+      end
+
     end
     context "with an auth priv policy" do
-      let(:user_options) { { username: "simulator", auth_password: "auctoritas",
-                             auth_protocol: :md5, priv_password: "privatus",
-                             priv_protocol: :des } }
-      it_behaves_like "an snmp client" do
-        let(:protocol_options) { version_options.merge(user_options).merge(extra_options) }
+      context "auth in md5, encrypting in des" do
+        let(:user_options) { { username: "authprivmd5des", auth_password: "maplesyrup",
+                               auth_protocol: :md5, priv_password: "maplesyrup",
+                               priv_protocol: :des } }
+        it_behaves_like "an snmp client" do
+          let(:protocol_options) { version_options.merge(user_options).merge(extra_options) }
+        end
       end
 #      context "with a wrong auth password" do
 #        let(:extra_options) { { auth_password: "auctoritas2", timeout: 5 } }

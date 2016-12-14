@@ -2,9 +2,7 @@ module NETSNMP
   module Encryption
     class None
 
-      attr_reader :salt
       def initialize(*)
-        @salt = ""
       end
 
       def encrypt(pdu)

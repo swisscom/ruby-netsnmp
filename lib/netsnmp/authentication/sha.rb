@@ -3,9 +3,12 @@ module NETSNMP
     class SHA
       IPAD = "\x36" * 64
       OPAD = "\x5c" * 64
+     
+      attr_reader :localized_key
 
-      def initialize(password)
+      def initialize(password, engine_id)
         @password = password
+        @localized_key = generate_key(engine_id)
       end
 
       # http://tools.ietf.org/html/rfc3414#section-7.3.1
@@ -13,7 +16,7 @@ module NETSNMP
         cipher = OpenSSL::Digest::SHA1.new
         hmac = OpenSSL::Digest::SHA1.new 
 
-        key = generate_key(engineid)
+        key = @localized_key.dup
 
         key << "\x00" * 44 
         k1 = key.xor(IPAD)
@@ -24,18 +27,6 @@ module NETSNMP
 
         cipher << ( k2 + d1 )
         cipher.digest[0,12]
-      end
-
-      private
-
-      def generate_key(engineid="")
-        cipher = OpenSSL::Digest::SHA1.new
-
-        key = passkey
-        cipher << key
-        cipher << engineid
-        cipher << key
-        cipher.digest
       end
 
       def passkey
@@ -58,6 +49,19 @@ module NETSNMP
         passkey.digest
 
       end
+
+      private
+
+      def generate_key(engineid="")
+        cipher = OpenSSL::Digest::SHA1.new
+
+        key = passkey
+        cipher << key
+        cipher << engineid
+        cipher << key
+        cipher.digest
+      end
+
     end
   end
 end

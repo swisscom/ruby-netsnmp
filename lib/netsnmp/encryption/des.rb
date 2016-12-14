@@ -1,82 +1,74 @@
 module NETSNMP
   module Encryption
-    class DES < None
-      SALTLSB = Random.new.bytes(4)
-
-      def initialize(password, engineboots)
-        super
-        prev_iv = password[4,4]
+    class DES
+      def initialize(priv_key, local: 0)
+        @priv_key = priv_key
+        @local = local
       end
 
-      def initialize(password, engineboots)
-        super
-        @des_key = generate_key(password)
-        @iv = generate_iv(password, engineboots)
-      end
 
-      def encrypt(pdu)
+      def encrypt(data, engine_boots: )
         cipher = OpenSSL::Cipher::DES.new(:CBC)
-        # get cipher
+
+        iv, salt = generate_encryption_key(engine_boots)
+
         cipher.encrypt
-        cipher.key = @des_key
-        cipher.iv = @iv
-        payload = cipher.update(pdu.to_der) + cipher.final
-        OpenSSL::ASN1::OctetString.new(payload)
+        cipher.iv = iv
+        cipher.key = des_key
+
+        if (diff = data.length % 8) != 0
+          data << ("\x00" * (8 - diff))
+        end
+
+        encrypted_data = cipher.update(data) + cipher.final
+        [encrypted_data, salt]
       end
 
+      def decrypt(encrypted_data, salt: )
+        # TODO: error out if salt length != 8
+        # TODO: error out if encrypted data size % 8 != 0
 
-      def decrypt(stream, priv_salt)
-        seq = stream.value
-        raise unless seq.size % 8 == 0
+        cipher = OpenSSL::Cipher::DES.new(:CBC)
+        cipher.padding = 0
 
-        decipher = OpenSSL::Cipher::DES.new(:CBC)
-        # get cipher
-        decipher.decrypt
-        decipher.key = @des_key
-        decipher.iv = @iv
+        iv = generate_decryption_key(salt)
 
-        payload = decipher.update(stream.value) + decipher.final
-        OpenSSL::ASN1::Data.decode payload
+        cipher.decrypt
+        cipher.key = des_key
+        cipher.iv = iv
+        data = cipher.update(encrypted_data) + cipher.final
+        # chomp padded nulls
+        # TODO: I don't know, but what if the last value is null?
+        data.slice!(/\x00*$/)
+        data
       end
+
 
       private
+      # 8.1.1.1
+      def generate_encryption_key(boots)
+        pre_iv = @priv_key[8,8]
+        salt = [0xff & (boots >> 24),
+                0xff & (boots >> 16),
+                0xff & (boots >> 8),
+                0xff &  boots,
+                0xff & (@local >> 24),
+                0xff & (@local >> 16),
+                0xff & (@local >> 8),
+                0xff &  @local].pack("c*")
+         @local = @local == 0xffffffff ? 0 : @local + 1
 
+         iv = pre_iv.xor(salt)
+         [iv, salt]
+       end
 
-      # https://tools.ietf.org/html/rfc3414#section-8.1.1.1
-      #
-      #
-      def generate_iv(password, engineboots)
-        prev_iv = password[4, 4]
+       def generate_decryption_key(salt)
+         pre_iv = @priv_key[8,8]
+         pre_iv.xor(salt)
+       end
 
-   
-        # make this 32 bit
-        boots_str = [engineboots.to_s].pack("H*")
-        boots_str.prepend("\x00") while boots_str.size < 4
-
-        # concat 32 bit engine boot with local32 bit integer
-        @salt = boots_str[0,4].concat(SALTLSB)
-        prev_iv.xor(salt)
-      end
-
-      # ihttps://tools.ietf.org/html/rfc3414#section-8.1.1.1
-      #
-      # The first 8 octets of the 16-octet secret (private privacy key) are
-      # used as a DES key.  Since DES uses only 56 bits, the Least
-      # Significant Bit in each octet is disregarded.
-      #
-      def generate_key(password)
-        # get first 8 octets of password
-        passstream = to_octets(password)[0, 64]
-        (1..8).reverse_each do |least_significant|
-          passstream.delete_at(least_significant * 8 - 1)
-        end
-        des_key = [passstream.join].pack("B*") # 56 bits
-        des_key.prepend("\x00") # key must be 64 bits, or openssl won't accept it
-        des_key 
-      end
-
-      def to_octets(word)
-         word.unpack("B*").flat_map(&:chars)
+      def des_key 
+        @priv_key[0,8]
       end
     end
   end
