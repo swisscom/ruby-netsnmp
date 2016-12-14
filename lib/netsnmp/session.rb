@@ -7,7 +7,7 @@ module NETSNMP
 
     # @param [String] host the host IP/hostname
     # @param [Hash] opts the options set 
-    # 
+    #
     def initialize(host, opts)
       @host = host
       @port = (opts.delete(:port) || 161).to_i
@@ -41,6 +41,8 @@ module NETSNMP
 
     private
 
+    # TODO: throw error when authpass < 8 bytes
+    # TODO: throw Error when privpass < 8 bytes
     def validate_options(options)
       version = options[:version] = case options[:version]
         when Integer then options[:version] # assume the use know what he's doing
