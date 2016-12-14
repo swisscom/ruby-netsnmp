@@ -105,6 +105,31 @@ WALK
           let(:protocol_options) { version_options.merge(user_options).merge(extra_options) }
         end
       end
+      context "auth in sha, encrypting in des" do
+        let(:user_options) { { username: "authprivshades", auth_password: "maplesyrup",
+                               auth_protocol: :sha, priv_password: "maplesyrup",
+                               priv_protocol: :des } }
+        it_behaves_like "an snmp client" do
+          let(:protocol_options) { version_options.merge(user_options).merge(extra_options) }
+        end
+      end
+
+      context "auth in md5, encrypting in aes" do
+        let(:user_options) { { username: "authprivmd5aes", auth_password: "maplesyrup",
+                               auth_protocol: :md5, priv_password: "maplesyrup",
+                               priv_protocol: :aes } }
+        it_behaves_like "an snmp client" do
+          let(:protocol_options) { version_options.merge(user_options).merge(extra_options) }
+        end
+      end
+      context "auth in sha, encrypting in aes" do
+        let(:user_options) { { username: "authprivshaaes", auth_password: "maplesyrup",
+                               auth_protocol: :sha, priv_password: "maplesyrup",
+                               priv_protocol: :aes } }
+        it_behaves_like "an snmp client" do
+          let(:protocol_options) { version_options.merge(user_options).merge(extra_options) }
+        end
+      end
 #      context "with a wrong auth password" do
 #        let(:extra_options) { { auth_password: "auctoritas2", timeout: 5 } }
 #        it { 
