@@ -8,8 +8,6 @@ RSpec.describe "with cellulloid", type: :celluloid do
                          auth_protocol: :md5, priv_password: "maplesyrup",
                          priv_protocol: :des } }
 
-  subject { described_class.new(host, options) }
-
   let(:get_oid) { "1.3.6.1.2.1.1.5.0" }
   let(:next_oid) { "1.3.6.1.2.1.1.6.0" }
   let(:set_oid) { "1.3.6.1.2.1.1.3.0" } # sysUpTimeInstance
@@ -32,7 +30,7 @@ WALK
     within_io_actor { example.run }
   end
   let(:proxy) { CelluloidHelpers::Proxy.new("localhost", SNMPPORT) }
-  after(:each) { proxy } 
+  after(:each) { proxy.close } 
 
   it_behaves_like "an snmp client" do
     subject { NETSNMP::Client.new(options) }
