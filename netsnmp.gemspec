@@ -32,6 +32,5 @@ DESC
   gem.add_development_dependency "rake", ["~> 10.4.2"]
   gem.add_development_dependency "rspec", ["~> 3.3.0"]
 
-  gem.add_development_dependency "em-synchrony", ["~> 1.0.4"]
   gem.add_development_dependency "celluloid-io", ["~> 0.17.2"]
 end
