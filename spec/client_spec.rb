@@ -16,7 +16,7 @@ RSpec.describe NETSNMP::Client do
       let(:get_oid) { "1.3.6.1.2.1.1.5.0" }
       let(:next_oid) { "1.3.6.1.2.1.1.6.0" }
       let(:walk_oid) { "1.3.6.1.2.1.1" }
-      let(:set_oid) {  "1.3.6.1.2.1.1.1.0" }
+      let(:set_oid) { "1.3.6.1.2.1.1.3.0" } # sysUpTimeInstance
       let(:get_result) { "DEVICE-192.168.1.1" }
       let(:next_result) { "The Cloud" }
       let(:walk_result) { <<-WALK
@@ -30,7 +30,7 @@ RSpec.describe NETSNMP::Client do
 1.3.6.1.2.1.1.8.0: 0
 WALK
       }
-      let(:set_oid_result) { "SNMPv1 trap sender" }
+      let(:set_oid_result) { 43 }
     end
   end
   describe "v2" do
@@ -42,7 +42,7 @@ WALK
       let(:get_oid) { "1.3.6.1.2.1.1.5.0" }
       let(:next_oid) { "1.3.6.1.2.1.1.6.0" }
       let(:walk_oid) { "1.3.6.1.2.1.1" }
-      let(:set_oid) { "1.3.6.1.2.1.1.1.0" }
+      let(:set_oid) { "1.3.6.1.2.1.1.3.0" }
       let(:get_result) { "DEVICE-192.168.1.1" }
       let(:next_result) { "The Cloud" }
       let(:walk_result) { <<-WALK
@@ -56,7 +56,7 @@ WALK
 1.3.6.1.2.1.1.8.0: 0
 WALK
       }
-      let(:set_oid_result) { "SNMPv1 trap sender" }
+      let(:set_oid_result) { 43 }
 
     end
   end
@@ -85,11 +85,30 @@ WALK
 1.3.6.1.2.1.1.9.1.3.8: View-based Access Control Model for SNMP.
 WALK
     }
-    let(:set_oid_result) { "SNMPv1 trap sender" }
+    let(:set_oid_result) { 43}
     context "with a no auth no priv policy" do
       let(:user_options) { { username: "unsafe", security_level: :noauth } }
       it_behaves_like "an snmp client" do
         let(:protocol_options) { version_options.merge(user_options).merge(extra_options) }
+        # why is this here? that variation/notification community causes the simulagtor to go down
+        # until I find the origin of the issue and patched it with an appropriated community, this
+        # is here so that I test the set call at least once, although I'm sure it'll work always
+        # for v3
+        describe "#set" do
+          let(:extra_options) { { #community: "variation/notification", 
+                                  context: "0886e1397d572377c17c15036a1e6c66" } }
+          it "updates the value of the oid" do
+            prev_value = subject.get(oid: set_oid)
+            expect(prev_value).to be_a(Integer)
+        
+            # without type
+            subject.set(oid: set_oid, value: set_oid_result)
+            expect(subject.get(oid: set_oid)).to eq(set_oid_result)
+
+            subject.set(oid: set_oid, value: prev_value)
+          end
+        end
+
       end
     end
     context "with an only auth policy" do
@@ -143,31 +162,6 @@ WALK
           let(:protocol_options) { version_options.merge(user_options).merge(extra_options) }
         end
       end
-#      context "with a wrong auth password" do
-#        let(:extra_options) { { auth_password: "auctoritas2", timeout: 5 } }
-#        it { 
-#          expect { 
-#            subject.get(oid)
-#          }.to raise_error(NETSNMP::ConnectionFailed) 
-#        }
-#      end
-#      context "with a wrong priv password" do
-#        let(:extra_options) { { priv_password: "privatus2", timeout: 5 } }
-#        it { 
-#          expect { 
-#            subject.get(oid)
-#          }.to raise_error(NETSNMP::ConnectionFailed) 
-#        }
-#      end
-#
-#      context "with an unexisting user" do
-#        let(:extra_options) { { username: "simulata", timeout: 5 } }
-#        it { 
-#          expect { 
-#            subject.get(oid)
-#          }.to raise_error(NETSNMP::ConnectionFailed) 
-#        }
-#      end
     end
   end
 end

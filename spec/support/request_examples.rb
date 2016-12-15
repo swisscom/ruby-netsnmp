@@ -1,14 +1,13 @@
 RSpec.shared_examples "an snmp client" do
-  let(:host) { "localhost" }
   let(:device_options) { {
-    peername: "localhost",
+    host: "localhost",
     port: SNMPPORT
   } }
   let(:protocol_options) { { } } 
   let(:extra_options) { { } }
   let(:options) { protocol_options.merge(device_options).merge(extra_options) }
 
-  subject { described_class.new(host, options) }
+  subject { described_class.new(options) }
 
   describe "#get" do
     let(:value) { subject.get(oid: get_oid) }
@@ -34,33 +33,4 @@ RSpec.shared_examples "an snmp client" do
     end
   end
 
-#  describe "#get_bulk" do
-#    let(:oid) { "1.3.6.1.2.1.1.9.1.3" }
-#    let(:value) { subject.get_bulk(oid: oid) }
-#    it "fetches the varbinds for the next oid" do
-#      expect(value.next).to eq(["#{oid}.1","The SNMP Management Architecture MIB."])
-#      expect(value.next).to eq(["#{oid}.2","The MIB for Message Processing and Dispatching."])
-#      expect(value.next).to eq(["#{oid}.3","The management information definitions for the SNMP User-based Security Model."])
-#      expect(value.next).to eq(["#{oid}.4","The MIB module for SNMPv2 entities"])
-#      expect(value.next).to eq(["#{oid}.5","The MIB module for managing TCP implementations"])
-#      expect(value.next).to eq(["#{oid}.6","The MIB module for managing IP and ICMP implementations"])
-#      expect(value.next).to eq(["#{oid}.7","The MIB module for managing UDP implementations"])
-#      expect(value.next).to eq(["#{oid}.8","View-based Access Control Model for SNMP."])
-#      expect(value.next).to eq(["1.3.6.1.2.1.1.9.1.4.1",2])
-#      expect(value.next).to eq(["1.3.6.1.2.1.1.9.1.4.2",2])
-#      expect{ value.next }.to raise_error(StopIteration)
-#    end
-#  end
-  describe "#set" do
-    #let(:extra_options) { { community: "variation/notification" } }
-    after { subject.set(set_oid, value: set_oid_result, type: :timetick ) } 
-    it "updates the value of the oid" do
-      expect(subject.get(set_oid)).to eq(set_oid_result)
-  
-      # without type
-      subject.set(oid, value: "SNMP2TEST" )
-      expect(subject.get(set_oid)).to eq("SNMP2TEST")
-
-    end
-  end
 end
