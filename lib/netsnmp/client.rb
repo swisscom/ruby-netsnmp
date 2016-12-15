@@ -121,11 +121,10 @@ module NETSNMP
     # @param [Hash] options the varbind options 
     # @option options [Object] :value value to update the oid with. 
     #
-    def set(oid, **options)
-      request = @session.build_pdu(:set)
-      request.add_varbind(oid, **options)
-      yield request if block_given? 
+    def set(*oids)
+      request = @session.build_pdu(:set, *oids)
       response = @session.send(request)
+      yield response if block_given? 
       response.varbinds.map(&:value)
     end
   end
