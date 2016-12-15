@@ -37,14 +37,10 @@ module NETSNMP
     #
     # @return [String] the value for the oid
     #
-    def get(oid, **options)
-      request = @session.build_pdu(:get)
-      request.add_varbind(oid, value: options[:value])
+    def get(*oids)
+      request = @session.build_pdu(:get, *oids)
       response = @session.send(request)
-      case options[:response_type] 
-        when :pdu then response
-        else response.varbinds.first.value
-      end
+      response.varbinds.first.value
     end
 
     # Performs an SNMP GETNEXT Request
@@ -57,14 +53,11 @@ module NETSNMP
     # 
     # @note this method is used as a sub-routine for the walk
     #
-    def get_next(oid, **options)
-      request = @session.build_pdu(:getnext)
-      request.add_varbind(oid, value: options[:value])
+    def get_next(*oids)
+      request = @session.build_pdu(:getnext, *oids)
       response = @session.send(request)
-      case options[:response_type] 
-        when :pdu then response
-        else response.varbinds.first.value
-      end
+      varbind = response.varbinds.first
+      [varbind.oid.code, varbind.value]
     end
 
     # Perform a SNMP Walk (issues multiple subsequent GENEXT requests within the subtree rooted on an OID)
@@ -108,11 +101,10 @@ module NETSNMP
     #
     # @return [Enumerator] the enumerator-collection of the oid-value pairs
     #
-    def get_bulk(oid, **options)
-      request = @session.build_pdu(:getbulk)
+    def get_bulk(*oids, **options)
+      request = @session.build_pdu(:getbulk, *oids)
       request[:error_status]  = options.delete(:non_repeaters) || 0
       request[:error_index] = options.delete(:max_repetitions) || 10
-      request.add_varbind(oid, value: options[:value])
       response = @session.send(request)
       Enumerator.new do |y|
         response.varbinds.each do |varbind|

@@ -17,6 +17,32 @@ module NETSNMP
 
     attr_reader :security_parameters, :engine_id, :engine_boots, :engine_time
 
+    class << self
+      def decode(stream, security_parameters: )
+        asn_tree = OpenSSL::ASN1.decode(stream)
+        version, headers, sec_params, pdu_payload = asn_tree.value
+
+        sec_params_asn = OpenSSL::ASN1.decode(sec_params.value).value
+
+        engine_id, engine_boots, engine_time, username, auth_param, priv_param = sec_params_asn.map(&:value)
+
+        engine_boots=engine_boots.to_i
+        engine_time =engine_time.to_i
+
+        encoded_pdu = security_parameters.decode(pdu_payload, salt: priv_param,
+                                                              engine_boots: engine_boots,
+                                                              engine_time: engine_time)
+       
+        pdu = ScopedPDU.decode(encoded_pdu) 
+        new(pdu, security_parameters: security_parameters,
+                 engine_id: engine_id,
+                 engine_boots: engine_boots,
+                 engine_time: engine_time)
+      end
+
+
+    end
+
     def initialize(pdu, options={}) 
       @pdu = pdu
       @security_parameters = options[:security_parameters]
@@ -47,42 +73,7 @@ module NETSNMP
       der 
     end
 
-    def decode(der)
-      asn_tree = OpenSSL::ASN1.decode(der)
-      version, headers, security_parameters, pdu_payload = asn_tree.value
-      decode_security_parameters_asn(security_parameters.value)
-
-      pdu_der = decode_scoped_pdu(pdu_payload)
-      
-      @pdu.decode(pdu_der)
-    end
-
-    def encryption
-      @encryption ||= case @options[:priv_protocol]
-      when /des/
-        Encryption::DES.new(authentication(password: @options[:priv_password]).localized_key)
-      when /aes/
-        Encryption::AES.new(authentication(password: @options[:priv_password]).localized_key)
-      else
-        nil
-      end
-    end
-
-    def authentication(password: @options[:auth_password], engine_id: @options[:engine_id])
-      case options[:auth_protocol]
-      when /md5/
-        Authentication::MD5.new(password, engine_id)
-      when /sha/
-        Authentication::SHA.new(password, engine_id)
-      else 
-        nil 
-      end
-    end
-
     def from_message(message)
-      @engine_id = message.engine_id
-      @engine_boots = message.engine_boots
-      @engine_time = message.engine_time
       pdu.from_pdu(message.pdu)
     end
 
@@ -106,26 +97,11 @@ module NETSNMP
         priv_param
       ])
     end
-
-    def decode_security_parameters_asn(der)
-      asn_tree = OpenSSL::ASN1.decode(der).value
-
-      @engine_id     = asn_tree[0].value
-      @engine_boots  = asn_tree[1].value.to_i
-      @engine_time   = asn_tree[2].value.to_i
-      @username      = asn_tree[3].value
-      @auth_param    = asn_tree[4].value
-      @priv_param    = asn_tree[5].value
-    end
  
     # @return [Array<OpenSSL::ASN1::ASN1Data, String>] the pdu asn or the encrypted payload, and its salt
     def encode_scoped_pdu
       salt = PRIVNONE
       @security_parameters.encode(@pdu, salt: salt, engine_boots: @engine_boots, engine_time: @engine_time)
-    end
-
-    def decode_scoped_pdu(der)
-      @security_parameters.decode(der, salt: @priv_param, engine_boots: @engine_boots, engine_time: @engine_time)
     end
 
   end

@@ -11,16 +11,18 @@ RSpec.shared_examples "an snmp client" do
   subject { described_class.new(host, options) }
 
   describe "#get" do
-    let(:value) { subject.get(get_oid) }
+    let(:value) { subject.get(oid: get_oid) }
     it "fetches the varbinds for a given oid" do
       expect(value).to eq(get_result)
     end
   end
 
   describe "#get_next" do
-    let(:value) { subject.get_next(next_oid) }
+    let(:varbind) { subject.get_next(oid: get_oid) }
     it "fetches the varbinds for the next oid" do
+      oid, value = varbind
       expect(value).to start_with(next_result)
+      expect(oid).to eq(next_oid)
     end
   end
 
@@ -42,7 +44,7 @@ RSpec.shared_examples "an snmp client" do
 
 #  describe "#get_bulk" do
 #    let(:oid) { "1.3.6.1.2.1.1.9.1.3" }
-#    let(:value) { subject.get_bulk(oid) }
+#    let(:value) { subject.get_bulk(oid: oid) }
 #    it "fetches the varbinds for the next oid" do
 #      expect(value.next).to eq(["#{oid}.1","The SNMP Management Architecture MIB."])
 #      expect(value.next).to eq(["#{oid}.2","The MIB for Message Processing and Dispatching."])

@@ -20,25 +20,21 @@ module NETSNMP
       @transport.close if defined?(@transport)
     end
 
-    def build_pdu(type, options=@options)
-      PDU.build(type, options)
+    def build_pdu(type, *oids)
+      PDU.build(type, headers: @options.values_at(:version, :community), varbinds: oids)
     end
 
 
     # sends a request PDU and waits for the response
     # 
     # @param [RequestPDU] pdu a request pdu
-    # @param [Hash] opts additional options
-    # @option opts [true, false] :async if true, it doesn't wait for response (defaults to false)
-    def send(pdu, options=@options)
-      write(pdu, options)
-      read(pdu, options)
+    def send(pdu)
+      write(pdu)
+      read(pdu)
     end
 
     private
 
-    # TODO: throw error when authpass < 8 bytes
-    # TODO: throw Error when privpass < 8 bytes
     def validate_options(options)
       version = options[:version] = case options[:version]
         when Integer then options[:version] # assume the use know what he's doing
@@ -67,9 +63,9 @@ module NETSNMP
     # @param [NETSNMP::PDU, NETSNMP::Message] pdu a valid pdu (version 1/2) or message (v3)
     # @param [Hash] opts additional options
     #
-    def write(pdu, **opts)
+    def write(pdu)
       perform_io do
-        transport.send( encode(pdu, **opts), 0 )
+        transport.send( encode(pdu), 0 )
       end
     end
 
@@ -82,11 +78,11 @@ module NETSNMP
     #
     # @return [NETSNMP::PDU, NETSNMP::Message] the response pdu or message
     #
-    def read(request_pdu, options=@options)
+    def read(request_pdu)
       perform_io do
         datagram , _ = transport.recvfrom_nonblock(MAXPDUSIZE)
         @logged_at ||= Time.now
-        decode(datagram, request_pdu, options)
+        decode(datagram, request_pdu)
       end
     end
 
@@ -114,17 +110,12 @@ module NETSNMP
       end   
     end
 
-    def encode(pdu, options=@options)
+    def encode(pdu)
       return pdu.to_der
     end
 
-    def decode(stream, request, options=@options)
-      pdu = PDU.new
-      pdu.decode(stream)
-      pdu
+    def decode(stream, request)
+      PDU.decode(stream)
     end
-
-
-
   end
 end
