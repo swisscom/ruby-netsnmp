@@ -56,6 +56,7 @@ WALK
 1.3.6.1.2.1.1.8.0: 0
 WALK
       }
+      let(:set_oid_result) { "SNMPv1 trap sender" }
 
     end
   end
@@ -69,6 +70,7 @@ WALK
     } }
     let(:get_oid) { "1.3.6.1.2.1.1.5.0" }
     let(:next_oid) { "1.3.6.1.2.1.1.6.0" }
+    let(:set_oid) { "1.3.6.1.2.1.1.3.0" } # sysUpTimeInstance
     let(:walk_oid) { "1.3.6.1.2.1.1.9.1.3" }
     let(:get_result) { "tt" }
     let(:next_result) { "KK12" }
@@ -83,6 +85,7 @@ WALK
 1.3.6.1.2.1.1.9.1.3.8: View-based Access Control Model for SNMP.
 WALK
     }
+    let(:set_oid_result) { "SNMPv1 trap sender" }
     context "with a no auth no priv policy" do
       let(:user_options) { { username: "unsafe", security_level: :noauth } }
       it_behaves_like "an snmp client" do

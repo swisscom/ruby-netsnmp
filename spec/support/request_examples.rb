@@ -51,23 +51,16 @@ RSpec.shared_examples "an snmp client" do
 #      expect{ value.next }.to raise_error(StopIteration)
 #    end
 #  end
+  describe "#set" do
+    #let(:extra_options) { { community: "variation/notification" } }
+    after { subject.set(set_oid, value: set_oid_result, type: :timetick ) } 
+    it "updates the value of the oid" do
+      expect(subject.get(set_oid)).to eq(set_oid_result)
+  
+      # without type
+      subject.set(oid, value: "SNMP2TEST" )
+      expect(subject.get(set_oid)).to eq("SNMP2TEST")
 
- 
-  # TODO: use this oid to test error calls
-  #  let(:oid) { "SNMPv2-MIB::sysORDescr.1" }
-
-#  describe "#set" do
-#    let(:oid) { "1.3.6.1.2.1.1.3.0" } # sysUpTimeInstance
-#    let(:extra_options) { { community: "variation/notification" } }
-#    after { subject.set(set_oid, value: set_oid_result, type: :timetick ) } 
-#    it "updates the value of the oid" do
-#      expect(subject.get(set_oid)).to eq(set_oid_result)
-#  
-#      # without type
-#      subject.set(oid, value: "SNMP2TEST" )
-#      expect(subject.get(set_oid)).to eq("SNMP2TEST")
-#
-#    end
-#  end
-
+    end
+  end
 end
