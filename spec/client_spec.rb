@@ -16,7 +16,7 @@ RSpec.describe NETSNMP::Client do
       let(:get_oid) { "1.3.6.1.2.1.1.5.0" }
       let(:next_oid) { "1.3.6.1.2.1.1.6.0" }
       let(:walk_oid) { "1.3.6.1.2.1.1" }
-      let(:set_oid) { "1.3.6.1.2.1.1.1.0" }
+      let(:set_oid) {  "1.3.6.1.2.1.1.1.0" }
       let(:get_result) { "DEVICE-192.168.1.1" }
       let(:next_result) { "The Cloud" }
       let(:walk_result) { <<-WALK
@@ -72,7 +72,17 @@ WALK
     let(:walk_oid) { "1.3.6.1.2.1.1.9.1.3" }
     let(:get_result) { "tt" }
     let(:next_result) { "KK12" }
-
+    let(:walk_result) { <<-WALK
+1.3.6.1.2.1.1.9.1.3.1: The SNMP Management Architecture MIB.
+1.3.6.1.2.1.1.9.1.3.2: The MIB for Message Processing and Dispatching.
+1.3.6.1.2.1.1.9.1.3.3: The management information definitions for the SNMP User-based Security Model.
+1.3.6.1.2.1.1.9.1.3.4: The MIB module for SNMPv2 entities
+1.3.6.1.2.1.1.9.1.3.5: The MIB module for managing TCP implementations
+1.3.6.1.2.1.1.9.1.3.6: The MIB module for managing IP and ICMP implementations
+1.3.6.1.2.1.1.9.1.3.7: The MIB module for managing UDP implementations
+1.3.6.1.2.1.1.9.1.3.8: View-based Access Control Model for SNMP.
+WALK
+    }
     context "with a no auth no priv policy" do
       let(:user_options) { { username: "unsafe", security_level: :noauth } }
       it_behaves_like "an snmp client" do
