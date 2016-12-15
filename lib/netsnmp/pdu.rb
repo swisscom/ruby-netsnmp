@@ -63,7 +63,7 @@ module NETSNMP
         typ = case type
           when :get       then 0
           when :getnext   then 1
-          when :getbulk   then 5
+#          when :getbulk   then 5
           when :set       then 3
           when :response  then 2
           else raise Error, "#{type} is not supported as type"

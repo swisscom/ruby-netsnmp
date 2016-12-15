@@ -103,17 +103,17 @@ module NETSNMP
     #
     # @return [Enumerator] the enumerator-collection of the oid-value pairs
     #
-    def get_bulk(*oids, **options)
-      request = @session.build_pdu(:getbulk, *oids)
-      request[:error_status]  = options.delete(:non_repeaters) || 0
-      request[:error_index] = options.delete(:max_repetitions) || 10
-      response = @session.send(request)
-      Enumerator.new do |y|
-        response.varbinds.each do |varbind|
-          y << [ varbind.oid_code, varbind.value ]
-        end
-      end
-    end
+    #def get_bulk(oid)
+    #  request = @session.build_pdu(:getbulk, *oids)
+    #  request[:error_status]  = options.delete(:non_repeaters) || 0
+    #  request[:error_index] = options.delete(:max_repetitions) || 10
+    #  response = @session.send(request)
+    #  Enumerator.new do |y|
+    #    response.varbinds.each do |varbind|
+    #      y << [ varbind.oid_code, varbind.value ]
+    #    end
+    #  end
+    #end
 
     # Perform a SNMP SET Request
     #
