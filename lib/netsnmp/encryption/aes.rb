@@ -37,10 +37,8 @@ module NETSNMP
         cipher.key = des_key
         cipher.iv = iv
         decrypted_data = cipher.update(encrypted_data) + cipher.final
-        # chomp padded nulls
-        # TODO: I don't know, but what if the last value is null?
-        decrypted_data.slice!(/\0*\Z/)
-        decrypted_data
+        hlen, bodylen = OpenSSL::ASN1.traverse(decrypted_data) { |_, _, x, y, *| break x, y }
+        decrypted_data.byteslice(0, hlen+bodylen)
       end
 
       private
