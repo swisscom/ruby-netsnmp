@@ -83,6 +83,16 @@ module NETSNMP
           raise Error, "security level not supported: #{@security_level}"
       end
 
+      if @security_level > 0
+        @auth_protocol ||= :md5 # this is the default
+        raise "security level requires an auth password" if @auth_password.nil?
+        raise "auth password must have between 8 to 32 characters" if not (8..32).include?(@auth_password.length)
+      end
+      if @security_level > 1
+        @priv_protocol ||= :des
+        raise "security level requires a priv password" if @priv_password.nil?
+        raise "priv password must have between 8 to 32 characters" if not (8..32).include?(@priv_password.length)
+      end
     end
 
     def localize_key(password)
