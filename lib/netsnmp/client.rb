@@ -40,6 +40,7 @@ module NETSNMP
     def get(*oids)
       request = @session.build_pdu(:get, *oids)
       response = @session.send(request)
+      yield response if block_given?
       response.varbinds.first.value
     end
 
@@ -56,6 +57,7 @@ module NETSNMP
     def get_next(*oids)
       request = @session.build_pdu(:getnext, *oids)
       response = @session.send(request)
+      yield response if block_given?
       varbind = response.varbinds.first
       [varbind.oid.code, varbind.value]
     end
@@ -67,25 +69,25 @@ module NETSNMP
     #
     # @return [Enumerator] the enumerator-collection of the oid-value pairs
     #
-    def walk(oid, **options)
-      options[:response_type] = :pdu
+    def walk(oid)
       walkoid = OID.build(oid)
       Enumerator.new do |y|
         code = walkoid
         first_response_code = nil
         catch(:walk) do
           loop do
-            response = get_next(code, options)
-            response.varbinds.each do |varbind|
-              code = varbind.oid_code
-              if !walkoid.parent_of?(code) or 
-                  varbind.value.eql?(:endofmibview) or
-                  code == first_response_code
-                throw(:walk)             
-              else
-                y << [code, varbind.value]
+            get_next(oid: code) do |response|
+              response.varbinds.each do |varbind|
+                code = varbind.oid_code
+                if !walkoid.parent_of?(code) or 
+                    varbind.value.eql?(:endofmibview) or
+                    code == first_response_code
+                  throw(:walk)             
+                else
+                  y << [code, varbind.value]
+                end
+                first_response_code ||= code
               end
-              first_response_code ||= code
             end
           end
         end

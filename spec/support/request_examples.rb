@@ -29,16 +29,8 @@ RSpec.shared_examples "an snmp client" do
   describe "#walk" do
     let(:value) { subject.walk(walk_oid) }
     it "fetches the varbinds for the next oid" do
-      expect(value.map {|oid, val| "#{oid}: #{val}" }.join("\n") << "\n").to eq(walk_result)
-#      expect(value.next).to eq(["#{oid}.1","The SNMP Management Architecture MIB."])
-#      expect(value.next).to eq(["#{oid}.2","The MIB for Message Processing and Dispatching."])
-#      expect(value.next).to eq(["#{oid}.3","The management information definitions for the SNMP User-based Security Model."])
-#      expect(value.next).to eq(["#{oid}.4","The MIB module for SNMPv2 entities"])
-#      expect(value.next).to eq(["#{oid}.5","The MIB module for managing TCP implementations"])
-#      expect(value.next).to eq(["#{oid}.6","The MIB module for managing IP and ICMP implementations"])
-#      expect(value.next).to eq(["#{oid}.7","The MIB module for managing UDP implementations"])
-#      expect(value.next).to eq(["#{oid}.8","View-based Access Control Model for SNMP."])
-#      expect{ value.next }.to raise_error(StopIteration)
+      values = value.map {|oid, val| "#{oid}: #{val}" }.join("\n") << "\n" 
+      expect(values).to eq(walk_result)
     end
   end
 
