@@ -14,7 +14,7 @@ RSpec.describe NETSNMP::Client do
         community: "public"
       } }
       let(:get_oid) { "1.3.6.1.2.1.1.5.0" }
-      let(:next_oid) { "1.3.6.1.2.1.1.5.0" }
+      let(:next_oid) { "1.3.6.1.2.1.1.6.0" }
       let(:walk_oid) { "1.3.6.1.2.1.1" }
       let(:set_oid) { "1.3.6.1.2.1.1.1.0" }
       let(:get_result) { "DEVICE-192.168.1.1" }
@@ -40,7 +40,7 @@ WALK
         community: "public"
       } }
       let(:get_oid) { "1.3.6.1.2.1.1.5.0" }
-      let(:next_oid) { "1.3.6.1.2.1.1.5.0" }
+      let(:next_oid) { "1.3.6.1.2.1.1.6.0" }
       let(:walk_oid) { "1.3.6.1.2.1.1" }
       let(:set_oid) { "1.3.6.1.2.1.1.1.0" }
       let(:get_result) { "DEVICE-192.168.1.1" }
@@ -68,7 +68,7 @@ WALK
       context: "a172334d7d97871b72241397f713fa12",
     } }
     let(:get_oid) { "1.3.6.1.2.1.1.5.0" }
-    let(:next_oid) { "1.3.6.1.2.1.1.5.0" }
+    let(:next_oid) { "1.3.6.1.2.1.1.6.0" }
     let(:walk_oid) { "1.3.6.1.2.1.1.9.1.3" }
     let(:get_result) { "tt" }
     let(:next_result) { "KK12" }

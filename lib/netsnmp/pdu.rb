@@ -3,28 +3,64 @@ module NETSNMP
   # Abstracts the PDU base structure into a ruby object. It gives access to its varbinds.
   #
   class PDU
+    Error = Class.new(Error)
+
+
     # TODO: make this random!
     @request_id_counter = 0
     @counter_monitor = Mutex.new
     MAXREQUESTS = 1024
-    def self.generate_request_id
-      @counter_monitor.synchronize do
-        current = @request_id_counter   
-        @request_id_counter = current >= MAXREQUESTS ? 0 : current + 1
-        current
-      end
-    end
-
-    extend Forwardable 
-    Error = Class.new(Error)
     class << self
+      def generate_request_id
+        @counter_monitor.synchronize do
+          current = @request_id_counter   
+          @request_id_counter = current >= MAXREQUESTS ? 0 : current + 1
+          current
+        end
+      end
+
+      def decode(der)
+        asn_tree = case der
+        when String
+          OpenSSL::ASN1.decode(der)
+        when OpenSSL::ASN1::ASN1Data
+          der
+        else
+          raise "#{der}: unexpected data"
+        end
+
+        *headers, request = asn_tree.value
+
+        version, community = headers.map(&:value)
+
+        type = request.tag
+
+        *request_headers, varbinds = request.value
+
+        request_id = request_headers[0].value.to_i
+        error_status = request_headers[1].value.to_i
+        error_index  = request_headers[2].value.to_i
+        # TODO: fail fast if errors here
+    
+        varbs = varbinds.value.map do |varbind|
+          oid_asn, val_asn  = varbind.value
+          oid = oid_asn.value
+          { oid: oid, value: val_asn }
+        end
+
+        new(type: type, headers: [version, community],
+                        error_status: error_status,
+                        error_index: error_index,
+                        request_id: request_id, 
+                        varbinds: varbs)
+      end
+
       # factory method that abstracts initialization of the pdu types that the library supports.
       # 
       # @param [Symbol] type the type of pdu structure to build
-      # @return [RequestPDU] a fully-formed request pdu
       # 
-      def build(type, **options)
-        options[:type] = case type
+      def build(type, **args)
+        typ = case type
           when :get       then 0
           when :getnext   then 1
           when :getbulk   then 5
@@ -32,28 +68,31 @@ module NETSNMP
           when :response  then 2
           else raise Error, "#{type} is not supported as type"
         end
-        new(options)
+        new(args.merge(type: typ))
       end
     end
 
-    attr_reader :options, :varbinds, :type
+    attr_reader :varbinds, :type
 
-    def_delegators :@options, :[], :[]=
+    attr_reader :version, :community, :request_id
 
-    # @param [FFI::Pointer] the pointer to the initialized structure
-    #
-    def initialize(options={})
-      @type = options.delete(:type)
-      @options = options
+    def initialize(type: , headers: , 
+                           request_id: nil, 
+                           error_status: 0,
+                           error_index: 0,
+                           varbinds: [])
+      @version, @community = headers
+      @version = @version.to_i
+      @error_status = error_status
+      @error_index  = error_index
+      @type = type
       @varbinds = []
-      @options[:request_id] ||= PDU.generate_request_id
+      varbinds.each do |varbind|
+        add_varbind(varbind)
+      end
+      @request_id = request_id || PDU.generate_request_id
     end
 
-    # helper method; to keep using the same failed response for v3,
-    # one passes the original request pdu and sets what needs to be set
-    def from_pdu(pdu)
-      @options[:engine_id] = pdu.options[:engine_id]
-    end
 
     def to_der
       to_asn.to_der
@@ -64,44 +103,16 @@ module NETSNMP
     # @param [OID] oid a valid oid
     # @param [Hash] options additional request varbind options
     # @option options [Object] :value the value for the oid
-    def add_varbind(oid, **options)
-      @varbinds << Varbind.new(oid, options)
+    def add_varbind(oid: , **options)
+      @varbinds << Varbind.new(oid, **options)
     end
     alias_method :<<, :add_varbind
 
-    def decode(der)
-      asn_tree = case der
-      when String
-        OpenSSL::ASN1.decode(der)
-      when OpenSSL::ASN1::ASN1Data
-        der
-      else
-        raise "#{der}: unexpected data"
-      end
-
-      *headers, request = asn_tree.value
-
-      decode_headers_asn(*headers)
-
-      @type = request.tag
-
-      *request_headers, varbinds = request.value
-
-      @options[:request_id] = request_headers[0].value.to_i
-      @options[:error_status] = request_headers[1].value.to_i
-      @options[:error_index] = request_headers[2].value.to_i
- 
-      varbinds.value.each do |varbind|
-        oid_asn, val_asn  = varbind.value
-        oid = oid_asn.value
-        add_varbind(oid, value: val_asn) 
-      end
-    end
 
     def to_asn
-      request_id_asn = OpenSSL::ASN1::Integer.new( @options[:request_id] )
-      error_asn = OpenSSL::ASN1::Integer.new( @options[:error_status] || 0 )
-      error_index_asn = OpenSSL::ASN1::Integer.new( @options[:error_index] || 0 )
+      request_id_asn = OpenSSL::ASN1::Integer.new( @request_id )
+      error_asn = OpenSSL::ASN1::Integer.new( @error_status )
+      error_index_asn = OpenSSL::ASN1::Integer.new( @error_index )
 
       varbind_asns = OpenSSL::ASN1::Sequence.new( @varbinds.map(&:to_asn) )
 
@@ -116,27 +127,9 @@ module NETSNMP
     private
 
     def encode_headers_asn
-      if options[:version] == 3 || @options[:engine_id]
-        [ OpenSSL::ASN1::OctetString.new(@options[:engine_id] || ""),
-          OpenSSL::ASN1::OctetString.new(@options[:context] || "") ] 
-      else
-        [ OpenSSL::ASN1::Integer.new( @options[:version] ),
-          OpenSSL::ASN1::OctetString.new( @options[:community] ) ]
-      end
+      [ OpenSSL::ASN1::Integer.new( @version ),
+        OpenSSL::ASN1::OctetString.new( @community ) ]
     end
 
-    def decode_headers_asn(asn1, asn2)
-      # if first one is integer, this is a raw SNMP PDU
-      # if not, it was integrated in the SNMP v3 message,
-      # and first part is the engine
-      case asn1
-      when OpenSSL::ASN1::OctetString
-        @options[:engine_id] = asn1.value
-        @options[:context] = asn2.value
-      when OpenSSL::ASN1::Integer
-        @options[:version] = asn1.value.to_i
-        @options[:community] = asn2.value
-      end
-    end
   end
 end

@@ -38,6 +38,7 @@ require "netsnmp/oid"
 require "netsnmp/pdu"
 require "netsnmp/session"
 
+require "netsnmp/scoped_pdu"
 require "netsnmp/v3_session"
 require "netsnmp/security_parameters"
 require "netsnmp/message"

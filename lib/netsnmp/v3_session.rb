@@ -1,9 +1,11 @@
 module NETSNMP
   class V3Session < Session
 
-    def build_pdu(type, options=@options)
-      pdu = super
-      build_message(pdu, options)
+    def build_pdu(type, *oids)
+      engine_id = @options.fetch(:engine_id, "")
+      context   = @options.fetch(:context)
+      pdu = ScopedPDU.build(type, headers: [engine_id, context], varbinds: oids)
+      build_message(pdu)
     end
 
     private
@@ -20,41 +22,39 @@ module NETSNMP
       options
     end
 
-    def build_message(pdu, options)
+    def build_message(pdu)
       if !@security_parameters
-        probe_message = probe_for_engine(pdu, options)
-        @security_parameters = SecurityParameters.new(security_level: options[:security_level], 
-                                                      username: options[:username],
+        probe_message = probe_for_engine(pdu)
+        @options[:engine_id] = probe_message.engine_id
+        @security_parameters = SecurityParameters.new(security_level: @options[:security_level], 
+                                                      username: @options[:username],
                                                       engine_id: probe_message.engine_id,
-                                                      auth_protocol: options[:auth_protocol],
-                                                      priv_protocol: options[:priv_protocol],
-                                                      auth_password: options[:auth_password],
-                                                      priv_password: options[:priv_password])
-        message = Message.new(pdu, options.merge(security_parameters: @security_parameters))
+                                                      auth_protocol: @options[:auth_protocol],
+                                                      priv_protocol: @options[:priv_protocol],
+                                                      auth_password: @options[:auth_password],
+                                                      priv_password: @options[:priv_password])
+        message = Message.new(pdu, security_parameters: @security_parameters,
+                                   engine_id: probe_message.engine_id,
+                                   engine_boots: probe_message.engine_boots,
+                                   engine_time: probe_message.engine_time)
         message.from_message(probe_message)
       else
-        message = Message.new(pdu, options.merge(security_parameters: @security_parameters))
+        message = Message.new(pdu, security_parameters: @security_parameters)
       end
       message
     end
 
     # sends a probe snmp v3 request, to get the additional info with which to handle the security aspect
     #
-    # @param [NETSNMP::PDU] pdu the scoped pdu to send
-    # @param [Hash] message options
-    #
-    # @return [NETSNMP::Message] the response snmp v3 message with the agent parameters (engine id, boots, time)
-    def probe_for_engine(pdu, options)
+    def probe_for_engine(pdu)
       report_sec_params = SecurityParameters.new(security_level: 0,
-                                                 username: options[:username])
+                                                 username: @options[:username])
       message = Message.new(pdu, security_parameters: report_sec_params)
-      send(message, options)
+      send(message)
     end
 
-    def decode(stream, request, options=@options)
-      message = Message.new(PDU.new, options.merge(security_parameters: request.security_parameters))
-      message.decode(stream)
-      message
+    def decode(stream, request)
+      Message.decode(stream, security_parameters: request.security_parameters)
     end
   end
 end
