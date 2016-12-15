@@ -39,7 +39,7 @@ module NETSNMP
         decrypted_data = cipher.update(encrypted_data) + cipher.final
         # chomp padded nulls
         # TODO: I don't know, but what if the last value is null?
-        decrypted_data.slice!(/\x00*$/)
+        decrypted_data.slice!(/\0*\Z/)
         decrypted_data
       end
 
