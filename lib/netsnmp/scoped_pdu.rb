@@ -20,8 +20,8 @@ module NETSNMP
 
     # helper method; to keep using the same failed response for v3,
     # one passes the original request pdu and sets what needs to be set
-    def from_pdu(pdu)
-      @engine_id = pdu.engine_id
+    def set_engine_id(engine_id)
+      @engine_id = engine_id
     end
   end
 end

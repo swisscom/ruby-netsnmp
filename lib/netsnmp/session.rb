@@ -29,7 +29,7 @@ module NETSNMP
       encoded_request = encode(pdu) 
       write(encoded_request)
       encoded_response = read
-      decode(encoded_response, pdu)
+      decode(encoded_response)
     end
 
     private
@@ -105,10 +105,10 @@ module NETSNMP
     end
 
     def encode(pdu)
-      return pdu.to_der
+      pdu.to_der
     end
 
-    def decode(stream, request)
+    def decode(stream)
       PDU.decode(stream)
     end
   end
