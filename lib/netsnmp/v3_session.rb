@@ -49,8 +49,9 @@ module NETSNMP
       report_sec_params = SecurityParameters.new(security_level: 0,
                                                  username: @options[:username])
       encoded_report_pdu = Message.encode(pdu, security_parameters: report_sec_params)
-      write(encoded_report_pdu)
-      encoded_response_pdu = read
+
+      encoded_response_pdu = @transport.send(encoded_report_pdu)
+
       pdu, engine_id, @engine_boots, @engine_time = decode(encoded_response_pdu, security_parameters: report_sec_params)
       engine_id
     end

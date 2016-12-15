@@ -12,7 +12,7 @@ module NETSNMP
     # @param [Hash] options the set of options to open the session.
     #
     # @see Session#initialize
-    def initialize(hostname, options)
+    def initialize(options)
       version = options[:version]
       version = case version 
         when Integer then version # assume the use know what he's doing
@@ -21,7 +21,7 @@ module NETSNMP
         when /v?3/, nil then 3
       end
 
-      @session ||= version == 3 ? V3Session.new(hostname, options) : Session.new(hostname, options)
+      @session ||= version == 3 ? V3Session.new(options) : Session.new(options)
     end
 
     # @see Session#close
