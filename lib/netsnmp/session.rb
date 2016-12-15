@@ -25,12 +25,11 @@ module NETSNMP
     end
 
 
-    # sends a request PDU and waits for the response
-    # 
-    # @param [RequestPDU] pdu a request pdu
     def send(pdu)
-      write(pdu)
-      read(pdu)
+      encoded_request = encode(pdu) 
+      write(encoded_request)
+      encoded_response = read
+      decode(encoded_response, pdu)
     end
 
     private
@@ -58,14 +57,9 @@ module NETSNMP
       end
     end
 
-    # encodes the message and writes it over the wire
-    #
-    # @param [NETSNMP::PDU, NETSNMP::Message] pdu a valid pdu (version 1/2) or message (v3)
-    # @param [Hash] opts additional options
-    #
-    def write(pdu)
+    def write(payload)
       perform_io do
-        transport.send( encode(pdu), 0 )
+        transport.send( payload, 0 )
       end
     end
 
@@ -78,11 +72,11 @@ module NETSNMP
     #
     # @return [NETSNMP::PDU, NETSNMP::Message] the response pdu or message
     #
-    def read(request_pdu)
+    def read
       perform_io do
         datagram , _ = transport.recvfrom_nonblock(MAXPDUSIZE)
         @logged_at ||= Time.now
-        decode(datagram, request_pdu)
+        datagram
       end
     end
 
