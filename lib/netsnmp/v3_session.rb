@@ -3,7 +3,7 @@ module NETSNMP
 
     def build_pdu(type, *oids)
       engine_id = @options.fetch(:engine_id, "")
-      context   = @options.fetch(:context)
+      context   = @options.fetch(:context, "")
       pdu = ScopedPDU.build(type, headers: [engine_id, context], varbinds: oids)
       build_scoped_pdu(pdu)
     end
