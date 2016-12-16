@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module NETSNMP
   # Main Entity, provides the user-facing API to communicate with SNMP Agents
   #

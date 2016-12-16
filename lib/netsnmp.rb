@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require "netsnmp/version"
 require "openssl"
 require "io/wait"

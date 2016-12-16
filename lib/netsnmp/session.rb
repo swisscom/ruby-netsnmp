@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module NETSNMP
   # Let's just remind that there is no session in snmp, this is just an abstraction. 
   # 

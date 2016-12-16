@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'forwardable'
 module NETSNMP
   # Abstracts the PDU base structure into a ruby object. It gives access to its varbinds.
