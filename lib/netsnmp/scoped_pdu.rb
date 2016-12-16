@@ -18,10 +18,5 @@ module NETSNMP
         OpenSSL::ASN1::OctetString.new(@context   || "") ] 
     end 
 
-    # helper method; to keep using the same failed response for v3,
-    # one passes the original request pdu and sets what needs to be set
-    def set_engine_id(engine_id)
-      @engine_id = engine_id
-    end
   end
 end
