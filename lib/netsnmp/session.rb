@@ -82,11 +82,9 @@ module NETSNMP
         begin
           write(payload)
           recv
-        rescue TimeoutError => e
-          raise e if retries == 0
-          retries -= 1
-          retry
         end
+      ensure
+        @entries = retries
       end
 
       alias_method :<<, :send
@@ -95,6 +93,10 @@ module NETSNMP
         perform_io do
           @socket.send(payload, 0)
         end
+      rescue TimeoutError => e
+        raise e if @retries == 0
+        @retries -= 1
+        retry
       end
 
       def recv(bytesize=MAXPDUSIZE)
@@ -102,6 +104,10 @@ module NETSNMP
           datagram, _ = @socket.recvfrom_nonblock(bytesize)
           datagram
         end
+      rescue TimeoutError => e
+        raise e if @retries == 0
+        @retries -= 1
+        retry
       end
 
       private
@@ -111,19 +117,15 @@ module NETSNMP
           begin
             return yield
           rescue IO::WaitReadable
-            wait(:r)
+            wait(:wait_readable)
           rescue IO::WaitWritable
-            wait(:w)
+            wait(:wait_writable)
           end
         end
       end
 
       def wait(mode)
-        meth = case mode
-          when :r then :wait_readable
-          when :w then :wait_writable
-        end
-        unless @socket.__send__(meth, @timeout)
+        unless @socket.__send__(mode, @timeout)
           raise TimeoutError, "Timeout after #{@timeout} seconds"
         end   
       end
