@@ -2,12 +2,11 @@ module NETSNMP
   # Abstracts the PDU variable structure into a ruby object
   #
   class Varbind
-    Error = Class.new(Error)
 
     attr_reader :oid, :value
 
     def initialize(oid , value: nil, type: nil)
-      @oid = oid.is_a?(OID) ? oid : OID.build(oid)
+      @oid = OID.build(oid)
       @type = type
       @value = convert_val(value) if value
     end
@@ -40,7 +39,7 @@ module NETSNMP
         when nil
           OpenSSL::ASN1::Null
         else
-          raise Error, "#{@value}: unsupported type"
+          raise Error, "#{@value}: unsupported varbind type"
         end.new(@value)
       end
       OpenSSL::ASN1::Sequence.new( [asn_oid, asn_val] )
