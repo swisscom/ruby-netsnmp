@@ -1,5 +1,6 @@
 module NETSNMP
   class SecurityParameters
+    using StringExtensions
 
     IPAD = "\x36" * 64
     OPAD = "\x5c" * 64

@@ -1,5 +1,7 @@
 module NETSNMP
   module Encryption
+    using StringExtensions
+
     class DES
       def initialize(priv_key, local: 0)
         @priv_key = priv_key
