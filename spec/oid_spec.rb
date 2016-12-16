@@ -6,7 +6,7 @@ RSpec.describe NETSNMP::OID do
   describe ".build" do
     it { expect(described_class.build([1,3,6,1,2,1,1,1,0]).to_s).to eq(code) }
     it { expect(described_class.build(".#{code}").to_s).to eq(code) }
-    it { expect { described_class.build("blablabla") }.to raise_error(NETSNMP::OID::Error) }
+    it { expect { described_class.build("blablabla") }.to raise_error(NETSNMP::Error) }
   end
 
   describe "#to_der" do
