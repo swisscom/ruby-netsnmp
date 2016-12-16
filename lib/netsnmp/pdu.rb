@@ -3,21 +3,7 @@ module NETSNMP
   # Abstracts the PDU base structure into a ruby object. It gives access to its varbinds.
   #
   class PDU
-    Error = Class.new(Error)
-
-
-    # TODO: make this random!
-    @request_id_counter = 0
-    @counter_monitor = Mutex.new
-    MAXREQUESTS = 1024
     class << self
-      def generate_request_id
-        @counter_monitor.synchronize do
-          current = @request_id_counter   
-          @request_id_counter = current >= MAXREQUESTS ? 0 : current + 1
-          current
-        end
-      end
 
       def decode(der)
         asn_tree = case der
@@ -90,7 +76,7 @@ module NETSNMP
       varbinds.each do |varbind|
         add_varbind(varbind)
       end
-      @request_id = request_id || PDU.generate_request_id
+      @request_id = request_id || SecureRandom.random_number(2147483647)
     end
 
 

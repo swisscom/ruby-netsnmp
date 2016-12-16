@@ -2,8 +2,6 @@ module NETSNMP
   # Factory for the SNMP v3 Message format
   module Message
     extend self
-    # TODO: make this random!
-    MSG_ID             = OpenSSL::ASN1::Integer.new(56219466)
     AUTHNONE               = OpenSSL::ASN1::OctetString.new("\x00" * 12)
     PRIVNONE               = OpenSSL::ASN1::OctetString.new("")
     MSG_MAX_SIZE       = OpenSSL::ASN1::Integer.new(65507)
@@ -44,8 +42,9 @@ module NETSNMP
         salt_param
       ])
       message_flags = MSG_REPORTABLE | security_parameters.security_level
+      message_id    = OpenSSL::ASN1::Integer.new(SecureRandom.random_number(2147483647))
       headers = OpenSSL::ASN1::Sequence.new([
-        MSG_ID, MSG_MAX_SIZE,
+        message_id, MSG_MAX_SIZE,
         OpenSSL::ASN1::OctetString.new( [String(message_flags)].pack("h*") ),
         MSG_SECURITY_MODEL
       ])
