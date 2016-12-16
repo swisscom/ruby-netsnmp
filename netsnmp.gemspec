@@ -14,7 +14,7 @@ DESC
   gem.email       = "cardoso_tiago@hotmail.com"
   gem.homepage    = ""
   gem.platform    = Gem::Platform::RUBY
-  gem.required_ruby_version = '>=2.0.0'
+  gem.required_ruby_version = '>=2.1.0'
   gem.metadata["allowed_push_hosts"] = "https://rubygems.org/"
 
   # Manifest
