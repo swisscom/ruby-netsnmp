@@ -105,7 +105,7 @@ module NETSNMP
           datagram, _ = @socket.recvfrom_nonblock(bytesize)
           datagram
         end
-      rescue TimeoutError => e
+      rescue Timeout::Error => e
         raise e if @retries == 0
         @retries -= 1
         retry
@@ -127,7 +127,7 @@ module NETSNMP
 
       def wait(mode)
         unless @socket.__send__(mode, @timeout)
-          raise TimeoutError, "Timeout after #{@timeout} seconds"
+          raise Timeout::Error, "Timeout after #{@timeout} seconds"
         end   
       end
 
