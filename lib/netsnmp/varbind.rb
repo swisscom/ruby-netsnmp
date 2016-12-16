@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module NETSNMP
   # Abstracts the PDU variable structure into a ruby object
   #

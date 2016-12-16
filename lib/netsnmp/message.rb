@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module NETSNMP
   # Factory for the SNMP v3 Message format
   module Message
