@@ -2,7 +2,7 @@ module NETSNMP
   class V3Session < Session
 
     def build_pdu(type, *oids)
-      engine_id = security_parameters.engine_id#@options.fetch(:engine_id, security_parameters.engine_id)
+      engine_id = security_parameters.engine_id
       context   = @options.fetch(:context, "")
       pdu = ScopedPDU.build(type, headers: [engine_id, context], varbinds: oids)
     end
@@ -49,7 +49,7 @@ module NETSNMP
 
       encoded_response_pdu = @transport.send(encoded_report_pdu)
 
-      pdu, engine_id, @engine_boots, @engine_time = decode(encoded_response_pdu, security_parameters: report_sec_params)
+      _, engine_id, @engine_boots, @engine_time = decode(encoded_response_pdu, security_parameters: report_sec_params)
       engine_id
     end
 
