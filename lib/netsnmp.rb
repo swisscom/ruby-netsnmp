@@ -1,6 +1,5 @@
 require "netsnmp/version"
 require "openssl"
-require "socket"
 require "io/wait"
 require "securerandom"
 
@@ -24,12 +23,10 @@ end
 
 # core structures
 require "netsnmp/logger"
-require 'netsnmp/core'
 
 module NETSNMP
 end
 
-require "netsnmp/ber"
 require "netsnmp/errors"
 
 require "netsnmp/oid"
