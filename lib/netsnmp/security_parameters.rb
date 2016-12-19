@@ -73,6 +73,12 @@ module NETSNMP
       digest.digest[0,12]
     end
 
+    def verify(stream, salt)
+      return if @security_level < 1
+      verisalt = sign(stream)
+      raise Error, "invalid message authentication salt" unless verisalt == salt
+    end
+
     private
 
     def check_parameters

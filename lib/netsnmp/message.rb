@@ -18,6 +18,9 @@ module NETSNMP
 
       engine_id, engine_boots, engine_time, username, auth_param, priv_param = sec_params_asn.map(&:value)
 
+      # validate_authentication
+      security_parameters.verify(stream.sub(auth_param, AUTHNONE.value), auth_param)
+
       engine_boots=engine_boots.to_i
       engine_time =engine_time.to_i
 
