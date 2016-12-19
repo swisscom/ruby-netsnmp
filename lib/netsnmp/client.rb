@@ -23,6 +23,13 @@ module NETSNMP
       end
 
       @session ||= version == 3 ? V3Session.new(options) : Session.new(options)
+      if block_given?
+        begin
+          yield self
+        ensure
+          close
+        end
+      end
     end
 
     # @see Session#close
