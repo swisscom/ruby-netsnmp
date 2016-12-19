@@ -5,13 +5,7 @@ require "io/wait"
 require "securerandom"
 
 
-# CORE EXTENSIONS!!!!!
-# TODO: replace this with fast_xor
-
-
-
 # core structures
-require "netsnmp/logger"
 
 begin
   require "xorcist"
