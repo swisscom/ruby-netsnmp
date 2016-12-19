@@ -112,18 +112,16 @@ module NETSNMP
 
       digest.reset
       password_index = 0
-      count = 0
 
       buffer = String.new
       password_length = password.length
-      while count < 1048576
+      while password_index < 1048576
         initial = password_index % password_length
-        rotated_password = password[initial..-1] + password[0,initial]
-        buffer << rotated_password while buffer.length < 64
+        rotated = password[initial..-1] + password[0,initial]
+        buffer = rotated * (64 / rotated.length) + rotated[0, 64 % rotated.length]
         password_index += 64
-        digest << buffer[0,64]
+        digest << buffer
         buffer.clear
-        count += 64
       end
 
       dig = digest.digest
