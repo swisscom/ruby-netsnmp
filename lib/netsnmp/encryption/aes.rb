@@ -26,8 +26,8 @@ module NETSNMP
       end
 
       def decrypt(encrypted_data, salt: , engine_boots: , engine_time: )
-        # TODO: error out if salt length != 8
-        # TODO: error out if encrypted data size % 8 != 0
+        raise Error, "invalid priv salt received" unless salt.length % 8 == 0
+        raise Error, "invalid encrypted PDU received" unless encrypted_data.length % 8 == 0
 
         cipher = OpenSSL::Cipher::AES128.new(:CFB)
         cipher.padding = 0
