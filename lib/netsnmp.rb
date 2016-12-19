@@ -38,6 +38,29 @@ rescue LoadError
   end
 end
 
+
+module NETSNMP
+  def self.set_debug(io)
+    @debug_output = io
+  end
+
+  def self.debug(&blk)
+    @debug_output << blk.call + "\n" if @debug_output
+  end
+
+  unless defined?(Hexdump) # support the hexdump gem
+    module Hexdump
+      def self.dump(data, width: 8)
+        pairs = data.unpack("H*").first.scan(/.{4}/)
+        pairs.each_slice(width).map do |row|
+          row.join(" ")
+        end.join("\n")
+      end
+    end
+  end
+end
+
+
 require "netsnmp/errors"
 
 require "netsnmp/oid"
