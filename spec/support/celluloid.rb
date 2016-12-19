@@ -36,12 +36,8 @@ module CelluloidHelpers
 
     private
     def wait(mode)
-      meth = case mode
-        when :r then :wait_readable
-        when :w then :wait_writable
-      end
       Celluloid.timeout(@timeout) do
-        @socket.__send__(meth)
+        @socket.__send__(mode)
       end
     rescue Celluloid::TaskTimeout
       raise TimeoutError, "Timeout after #{@timeout} seconds"
