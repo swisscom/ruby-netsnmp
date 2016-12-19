@@ -6,10 +6,12 @@ module NETSNMP
     IPAD = "\x36" * 64
     OPAD = "\x5c" * 64
 
-    attr_reader :security_level, :username, :engine_id
-    def initialize(security_level: , 
+    attr_reader :security_level, :username
+    attr_accessor :engine_id
+    def initialize(
                    username: , 
                    engine_id: "",
+                   security_level: nil, 
                    auth_protocol: nil, 
                    auth_password: nil, 
                    priv_protocol: nil, 
@@ -22,14 +24,16 @@ module NETSNMP
       @auth_password = auth_password
       @priv_password = priv_password
       check_parameters
+      @auth_pass_key = passkey(@auth_password) unless @auth_password.nil?
+      @priv_pass_key = passkey(@priv_password) unless @priv_password.nil?
     end
 
     def auth_key
-      @auth_key ||= localize_key(@auth_password)
+      @auth_key ||= localize_key(@auth_pass_key)
     end
 
     def priv_key
-      @priv_key ||= localize_key(@priv_password)
+      @priv_key ||= localize_key(@priv_pass_key)
     end
 
 
@@ -103,8 +107,7 @@ module NETSNMP
       end
     end
 
-    def localize_key(password)
-      key = passkey(password)
+    def localize_key(key)
 
       digest.reset
       digest << key
