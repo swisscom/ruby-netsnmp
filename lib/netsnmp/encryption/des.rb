@@ -23,7 +23,9 @@ module NETSNMP
           decrypted_data << ("\x00" * (8 - diff))
         end
 
+
         encrypted_data = cipher.update(decrypted_data) + cipher.final
+        NETSNMP.debug {"encrypted:\n#{Hexdump.dump(encrypted_data)}" }
         [encrypted_data, salt]
       end
 
@@ -40,6 +42,8 @@ module NETSNMP
         cipher.key = des_key
         cipher.iv = iv
         decrypted_data = cipher.update(encrypted_data) + cipher.final
+        NETSNMP.debug {"decrypted:\n#{Hexdump.dump(decrypted_data)}" }
+
         hlen, bodylen = OpenSSL::ASN1.traverse(decrypted_data) { |_, _, x, y, *| break x, y }
         decrypted_data.byteslice(0, hlen+bodylen)
       end
