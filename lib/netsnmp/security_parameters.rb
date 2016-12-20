@@ -1,5 +1,10 @@
 # frozen_string_literal: true
 module NETSNMP
+  # This module encapsulates the public API for encrypting/decrypting and signing/verifying.
+  # 
+  # It doesn't interact with other layers from the library, rather it is used and passed all 
+  # the arguments (consisting mostly of primitive types).
+  # It also provides validation of the security options passed with a client is initialized in v3 mode.
   class SecurityParameters
     using StringExtensions
 
@@ -8,6 +13,20 @@ module NETSNMP
 
     attr_reader :security_level, :username
     attr_accessor :engine_id
+
+    # @param [String] username the snmp v3 username
+    # @param [String] engine_id the device engine id (initialized to '' for report)
+    # @param [Symbol, integer] security_level allowed snmp v3 security level (:auth_priv, :auh_no_priv, etc)
+    # @param [Symbol, nil] auth_protocol a supported authentication protocol (currently supported: :md5, :sha)
+    # @param [Symbol, nil] priv_protocol a supported privacy protocol (currently supported: :des, :aes)
+    # @param [String, nil] auth_password the authentication password
+    # @param [String, nil] priv_password the privacy password
+    #
+    # @note if security level is set to :no_auth_no_priv, all other parameters are optional; if
+    #   :auth_no_priv, :auth_protocol will be coerced to :md5 (if not explicitly set), and :auth_password is
+    #   mandatory; if :auth_priv, the sentence before applies, and :priv_protocol will be coerced to :des (if
+    #   not explicitly set), and :priv_password becomes mandatory.
+    #
     def initialize(
                    username: , 
                    engine_id: "",
@@ -28,15 +47,14 @@ module NETSNMP
       @priv_pass_key = passkey(@priv_password) unless @priv_password.nil?
     end
 
-    def auth_key
-      @auth_key ||= localize_key(@auth_pass_key)
-    end
 
-    def priv_key
-      @priv_key ||= localize_key(@priv_pass_key)
-    end
-
-
+    # @param [#to_asn, #to_der] pdu the pdu to encode (must quack like a asn1 type)
+    # @param [String] salt the salt to use
+    # @param [Integer] engine_time the reported engine time
+    # @param [Integer] engine_boots the reported boots time
+    # 
+    # @return [Array] a pair, where the first argument in the asn structure with the encoded pdu, 
+    #    and the second is the calculated salt (if it has been encrypted)
     def encode(pdu, salt: , engine_time: , engine_boots: )
       if encryption
         encrypted_pdu, salt = encryption.encrypt(pdu.to_der, engine_boots: engine_boots, 
@@ -47,6 +65,10 @@ module NETSNMP
       end
     end
 
+    # @param [String] der the encoded der to be decoded
+    # @param [String] salt the salt from the incoming der
+    # @param [Integer] engine_time the reported engine time
+    # @param [Integer] engine_boots the reported engine boots
     def decode(der, salt: , engine_time: , engine_boots: )
       asn = OpenSSL::ASN1.decode(der)
       if encryption
@@ -58,6 +80,10 @@ module NETSNMP
       end
     end
 
+    # @param [String] message the already encoded snmp v3 message
+    # @return [String] the digest signature of the message payload
+    #
+    # @note this method is used in the process of authenticating a message
     def sign(message)
       # don't sign unless you have to
       return nil if not @auth_protocol
@@ -77,6 +103,10 @@ module NETSNMP
       digest.digest[0,12]
     end
 
+    # @param [String] stream the encoded incoming payload
+    # @param [String] salt the incoming payload''s salt
+    #
+    # @raise [NETSMP::Error] if the message's integration has been violated 
     def verify(stream, salt)
       return if @security_level < 1
       verisalt = sign(stream)

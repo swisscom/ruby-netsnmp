@@ -1,18 +1,24 @@
 # frozen_string_literal: true
 module NETSNMP
+  # Abstraction for the v3 semantics.
   class V3Session < Session
 
+    # @param [String, Integer] version SNMP version (always 3)
     def initialize(version: 3, context: "", **opts)
       @context = context
       @security_parameters = opts.delete(:security_parameters) 
       super
     end
 
-    def build_pdu(type, *oids)
+    # @see {NETSNMP::Session#build_pdu}
+    #
+    # @return [NETSNMP::ScopedPDU] a pdu
+    def build_pdu(type, *vars)
       engine_id = security_parameters.engine_id
-      pdu = ScopedPDU.build(type, headers: [engine_id, @context], varbinds: oids)
+      pdu = ScopedPDU.build(type, headers: [engine_id, @context], varbinds: vars)
     end
 
+    # @see {NETSNMP::Session#send}
     def send(*)
       pdu, _ = super
       pdu

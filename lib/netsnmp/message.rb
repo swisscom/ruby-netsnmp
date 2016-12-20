@@ -10,6 +10,11 @@ module NETSNMP
     MSG_VERSION        = OpenSSL::ASN1::Integer.new(3)
     MSG_REPORTABLE     = 4
 
+    # @param [String] payload of an snmp v3 message which can be decoded
+    # @param [NETSMP::SecurityParameters, #decode] security_parameters knowns how to decode the stream
+    #
+    # @return [NETSNMP::ScopedPDU] the decoded PDU
+    #
     def decode(stream, security_parameters: )
       asn_tree = OpenSSL::ASN1.decode(stream)
       version, headers, sec_params, pdu_payload = asn_tree.value
@@ -32,6 +37,11 @@ module NETSNMP
       [pdu, engine_id, engine_boots, engine_time]
     end
 
+    # @param [NETSNMP::ScopedPDU] the PDU to encode in the message
+    # @param [NETSMP::SecurityParameters, #decode] security_parameters knowns how to decode the stream
+    #
+    # @return [String] the byte representation of an SNMP v3 Message
+    #
     def encode(pdu, security_parameters: , engine_boots: 0, engine_time: 0)
       scoped_pdu, salt_param = security_parameters.encode(pdu, salt: PRIVNONE, 
                                                                engine_boots: engine_boots, 
