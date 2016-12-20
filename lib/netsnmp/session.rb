@@ -19,11 +19,21 @@ module NETSNMP
       @transport.close unless @proxy
     end
 
-    def build_pdu(type, *oids)
-      PDU.build(type, headers: [ @version, @community ], varbinds: oids)
+    # @param [Symbol] type the type of PDU (:get, :set, :getnext)
+    # @param [Array<Hashes>] vars collection of options to generate varbinds (see {NETSMP::Varbind.new} for all the possible options)
+    #
+    # @return [NETSNMP::PDU] a pdu
+    #
+    def build_pdu(type, *vars)
+      PDU.build(type, headers: [ @version, @community ], varbinds: vars)
     end
 
-
+    # send a pdu, receives a pdu
+    #
+    # @param [NETSNMP::PDU, #to_der] an encodable request pdu
+    #
+    # @return [NETSNMP::PDU] the response pdu
+    #
     def send(pdu)
       encoded_request = encode(pdu) 
       encoded_response = @transport.send(encoded_request)
