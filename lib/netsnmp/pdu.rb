@@ -4,6 +4,7 @@ module NETSNMP
   # Abstracts the PDU base structure into a ruby object. It gives access to its varbinds.
   #
   class PDU
+    MAXREQUESTID=2147483647
     class << self
 
       def decode(der)
@@ -24,9 +25,7 @@ module NETSNMP
 
         *request_headers, varbinds = request.value
 
-        request_id = request_headers[0].value.to_i
-        error_status = request_headers[1].value.to_i
-        error_index  = request_headers[2].value.to_i
+        request_id, error_status, error_index  = request_headers.map(&:value).map(&:to_i)
         # TODO: fail fast if errors here
     
         varbs = varbinds.value.map do |varbind|
@@ -77,7 +76,7 @@ module NETSNMP
       varbinds.each do |varbind|
         add_varbind(varbind)
       end
-      @request_id = request_id || SecureRandom.random_number(2147483647)
+      @request_id = request_id || SecureRandom.random_number(MAXREQUESTID)
     end
 
 
