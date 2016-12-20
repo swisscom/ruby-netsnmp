@@ -26,8 +26,7 @@ module NETSNMP
         *request_headers, varbinds = request.value
 
         request_id, error_status, error_index  = request_headers.map(&:value).map(&:to_i)
-        # TODO: fail fast if errors here
-    
+
         varbs = varbinds.value.map do |varbind|
           oid_asn, val_asn  = varbind.value
           oid = oid_asn.value
@@ -77,6 +76,7 @@ module NETSNMP
         add_varbind(varbind)
       end
       @request_id = request_id || SecureRandom.random_number(MAXREQUESTID)
+      check_error_status(@error_status)
     end
 
 
@@ -117,5 +117,31 @@ module NETSNMP
         OpenSSL::ASN1::OctetString.new( @community ) ]
     end
 
+
+    # http://www.tcpipguide.com/free/t_SNMPVersion2SNMPv2MessageFormats-5.htm#Table_219
+    def check_error_status(status)
+      return if status == 0
+      message = case status
+        when 1 then "Response-PDU too big"
+        when 2 then "No such name"
+        when 3 then "Bad value"
+        when 4 then "Read Only"
+        when 5 then "General Error"
+        when 6 then "Access denied"
+        when 7 then "Wrong type"
+        when 8 then "Wrong length"
+        when 9 then "Wrong encoding"
+        when 10 then "Wrong value"
+        when 11 then "No creation"
+        when 12 then "Inconsistent value"
+        when 13 then "Resource unavailable"
+        when 14 then "Commit failed"
+        when 15 then "Undo Failed"
+        when 16 then "Authorization Error"
+        when 17 then "Not Writable"
+        when 18 then "Inconsistent Name"
+      end
+      raise Error, message
+    end
   end
 end
