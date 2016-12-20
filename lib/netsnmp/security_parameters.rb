@@ -115,6 +115,14 @@ module NETSNMP
 
     private
 
+    def auth_key
+      @auth_key ||= localize_key(@auth_pass_key)
+    end
+
+    def priv_key
+      @priv_key ||= localize_key(@priv_pass_key)
+    end
+
     def check_parameters
       @security_level = case @security_level
         when Integer then @security_level
