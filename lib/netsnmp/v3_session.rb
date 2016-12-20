@@ -2,15 +2,15 @@
 module NETSNMP
   class V3Session < Session
 
-    def initialize(*)
+    def initialize(version: 3, context: "", **opts)
+      @context = context
+      @security_parameters = opts.delete(:security_parameters) 
       super
-      @security_parameters = @options.delete(:security_parameters)
     end
 
     def build_pdu(type, *oids)
       engine_id = security_parameters.engine_id
-      context   = @options.fetch(:context, "")
-      pdu = ScopedPDU.build(type, headers: [engine_id, context], varbinds: oids)
+      pdu = ScopedPDU.build(type, headers: [engine_id, @context], varbinds: oids)
     end
 
     def send(*)
@@ -20,8 +20,8 @@ module NETSNMP
 
     private
 
-    def validate_options(options)
-      options = super
+    def validate(**options)
+      super
       if s = @security_parameters
         # inspect public API
         unless s.respond_to?(:encode) &&
@@ -30,17 +30,18 @@ module NETSNMP
                s.respond_to?(:verify)
           raise Error, "#{s} doesn't respect the sec params public API (#encode, #decode, #sign)" 
         end 
+      else
+        @security_parameters = SecurityParameters.new(security_level: options[:security_level], 
+                                                      username:       options[:username],
+                                                      auth_protocol:  options[:auth_protocol],
+                                                      priv_protocol:  options[:priv_protocol],
+                                                      auth_password:  options[:auth_password],
+                                                      priv_password:  options[:priv_password])
+  
       end
-      options
     end
 
     def security_parameters
-      @security_parameters ||= SecurityParameters.new(security_level: @options[:security_level], 
-                                                      username: @options[:username],
-                                                      auth_protocol: @options[:auth_protocol],
-                                                      priv_protocol: @options[:priv_protocol],
-                                                      auth_password: @options[:auth_password],
-                                                      priv_password: @options[:priv_password])
       if @security_parameters.engine_id.empty?
         @security_parameters.engine_id = probe_for_engine
       end

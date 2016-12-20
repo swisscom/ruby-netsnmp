@@ -6,19 +6,21 @@ module NETSNMP
     TIMEOUT = 2
 
     # @param [Hash] opts the options set 
-    def initialize(opts)
-      @options = validate_options(opts)
+    def initialize(version: 1, community: "public", **options)
+      @version   = 1
+      @community = community
+      validate(options)
     end
 
     # Closes the session
     def close
       # if the transport came as an argument,
       # then let the outer realm care for its lifecycle
-      @transport.close unless @options.has_key?(:proxy)
+      @transport.close unless @proxy
     end
 
     def build_pdu(type, *oids)
-      PDU.build(type, headers: @options.values_at(:version, :community), varbinds: oids)
+      PDU.build(type, headers: [ @version, @community ], varbinds: oids)
     end
 
 
@@ -30,11 +32,10 @@ module NETSNMP
 
     private
 
-    def validate_options(options)
-      options[:community] ||= "public" # v1/v2 default community
-
+    def validate(**options)
       proxy = options[:proxy]
       if proxy
+        @proxy = true
         @transport = proxy 
       else
         host, port = options.values_at(:host, :port)
@@ -42,14 +43,14 @@ module NETSNMP
         port ||= 161 # default snmp port
         @transport = Transport.new(host, port.to_i, timeout: options.fetch(:timeout, TIMEOUT))
       end
-      version = options[:version] = case options[:version]
-        when Integer then options[:version] # assume the use know what he's doing
+      @version = case @version
+        when Integer then @version # assume the use know what he's doing
         when /v?1/ then 0 
         when /v?2c?/ then 1 
-        when /v?3/, nil then 3
+        when /v?3/ then 3
+        else
+          raise "unsupported snmp version (#{@version})"
       end
-
-      options
     end
 
 
