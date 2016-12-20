@@ -27,7 +27,6 @@ module CelluloidHelpers
       @socket = Celluloid::IO::UDPSocket.new
       @socket.connect( host, port )
       @timeout = 2
-      @retries = 5
     end
 
     def close
@@ -40,7 +39,7 @@ module CelluloidHelpers
         @socket.__send__(mode)
       end
     rescue Celluloid::TaskTimeout
-      raise TimeoutError, "Timeout after #{@timeout} seconds"
+      raise Timeout::Error, "Timeout after #{@timeout} seconds"
     end
 
   end
