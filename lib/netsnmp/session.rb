@@ -4,12 +4,10 @@ module NETSNMP
   # 
   class Session
     TIMEOUT = 2
-    RETRIES = 5
 
     # @param [Hash] opts the options set 
     def initialize(opts)
       @options = validate_options(opts)
-      @logged_at = nil
     end
 
     # Closes the session
@@ -42,8 +40,7 @@ module NETSNMP
         host, port = options.values_at(:host, :port)
         raise "you must provide an hostname/ip under :host" unless host
         port ||= 161 # default snmp port
-        @transport = Transport.new(host, port.to_i, timeout: options.fetch(:timeout, TIMEOUT),
-                                                    retries: options.fetch(:retries, RETRIES))
+        @transport = Transport.new(host, port.to_i, timeout: options.fetch(:timeout, TIMEOUT))
       end
       version = options[:version] = case options[:version]
         when Integer then options[:version] # assume the use know what he's doing
@@ -67,11 +64,10 @@ module NETSNMP
     class Transport
       MAXPDUSIZE = 0xffff + 1
 
-      def initialize(host, port, timeout: , retries: )
+      def initialize(host, port, timeout: )
         @socket = UDPSocket.new
         @socket.connect( host, port )
         @timeout = timeout
-        @retries = retries
       end
 
       def close 
@@ -79,25 +75,14 @@ module NETSNMP
       end
 
       def send(payload)
-        retries = @retries
-        begin
-          write(payload)
-          recv
-        end
-      ensure
-        @entries = retries
+        write(payload)
+        recv
       end
 
-      alias_method :<<, :send
- 
       def write(payload)
         perform_io do
           @socket.send(payload, 0)
         end
-      rescue TimeoutError => e
-        raise e if @retries == 0
-        @retries -= 1
-        retry
       end
 
       def recv(bytesize=MAXPDUSIZE)
@@ -105,10 +90,6 @@ module NETSNMP
           datagram, _ = @socket.recvfrom_nonblock(bytesize)
           datagram
         end
-      rescue Timeout::Error => e
-        raise e if @retries == 0
-        @retries -= 1
-        retry
       end
 
       private

@@ -8,7 +8,7 @@ module NETSNMP
   #
   #
   class Client
-    
+    RETRIES = 5
     # @param [String] hostname the hostname of the agent
     # @param [Hash] options the set of options to open the session.
     #
@@ -22,6 +22,7 @@ module NETSNMP
         when /v?3/, nil then 3
       end
 
+      @retries = options.fetch(:retries, RETRIES)
       @session ||= version == 3 ? V3Session.new(options) : Session.new(options)
       if block_given?
         begin
@@ -47,7 +48,7 @@ module NETSNMP
     #
     def get(*oids)
       request = @session.build_pdu(:get, *oids)
-      response = @session.send(request)
+      response = handle_timeout { @session.send(request) }
       yield response if block_given?
       response.varbinds.first.value
     end
@@ -64,7 +65,7 @@ module NETSNMP
     #
     def get_next(*oids)
       request = @session.build_pdu(:getnext, *oids)
-      response = @session.send(request)
+      response = handle_timeout { @session.send(request) }
       yield response if block_given?
       varbind = response.varbinds.first
       [varbind.oid.code, varbind.value]
@@ -131,9 +132,23 @@ module NETSNMP
     #
     def set(*oids)
       request = @session.build_pdu(:set, *oids)
-      response = @session.send(request)
+      response = handle_timeout { @session.send(request) }
       yield response if block_given? 
       response.varbinds.map(&:value)
+    end
+
+
+    private
+
+    def handle_timeout
+      retries = @retries
+      begin
+        yield
+      rescue Timeout::Error => e
+        raise e if retries == 0
+        retries -= 1
+        retry
+      end
     end
   end
 end
