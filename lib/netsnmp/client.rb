@@ -48,7 +48,7 @@ module NETSNMP
     #
     def get(*oids)
       request = @session.build_pdu(:get, *oids)
-      response = handle_timeout { @session.send(request) }
+      response = handle_retries { @session.send(request) }
       yield response if block_given?
       response.varbinds.first.value
     end
@@ -65,7 +65,7 @@ module NETSNMP
     #
     def get_next(*oids)
       request = @session.build_pdu(:getnext, *oids)
-      response = handle_timeout { @session.send(request) }
+      response = handle_retries { @session.send(request) }
       yield response if block_given?
       varbind = response.varbinds.first
       [varbind.oid.code, varbind.value]
@@ -132,7 +132,7 @@ module NETSNMP
     #
     def set(*oids)
       request = @session.build_pdu(:set, *oids)
-      response = handle_timeout { @session.send(request) }
+      response = handle_retries { @session.send(request) }
       yield response if block_given? 
       response.varbinds.map(&:value)
     end
@@ -140,7 +140,7 @@ module NETSNMP
 
     private
 
-    def handle_timeout
+    def handle_retries
       retries = @retries
       begin
         yield
