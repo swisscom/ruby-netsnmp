@@ -12,7 +12,7 @@ begin
   require "xorcist/refinements"
   NETSNMP::StringExtensions = Xorcist::Refinements
 rescue LoadError
-  warn "no xorcist"
+  # "no xorcist"
   module NETSNMP
     module StringExtensions
       refine String do
