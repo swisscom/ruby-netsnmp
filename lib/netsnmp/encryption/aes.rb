@@ -76,7 +76,7 @@ module NETSNMP
        end
 
       def des_key 
-        @priv_key
+        @priv_key[0,16]
       end
 
     end
