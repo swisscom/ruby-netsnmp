@@ -26,7 +26,7 @@ RSpec.shared_examples "an snmp client" do
   end
 
   describe "#walk" do
-    let(:value) { subject.walk(walk_oid) }
+    let(:value) { subject.walk(oid: walk_oid) }
     it "fetches the varbinds for the next oid" do
       values = value.map {|oid, val| "#{oid}: #{val}" }.join("\n") << "\n" 
       expect(values).to eq(walk_result)
