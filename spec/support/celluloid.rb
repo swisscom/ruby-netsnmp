@@ -19,4 +19,28 @@ module CelluloidHelpers
     actor.terminate if actor.alive? rescue nil
   end
 
+
+  class Proxy < NETSNMP::Session::Transport
+    MAXPDUSIZE = 0xffff + 1
+
+    def initialize(host, port)
+      @socket = Celluloid::IO::UDPSocket.new
+      @socket.connect( host, port )
+      @timeout = 2
+    end
+
+    def close
+      @socket.close
+    end
+
+    private
+    def wait(mode)
+      Celluloid.timeout(@timeout) do
+        @socket.__send__(mode)
+      end
+    rescue Celluloid::TaskTimeout
+      raise Timeout::Error, "Timeout after #{@timeout} seconds"
+    end
+
+  end
 end

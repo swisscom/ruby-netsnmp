@@ -1,29 +1,30 @@
 RSpec.describe NETSNMP::PDU do
-  let(:struct) { double(:structure) }
-  let(:pointer) { double(:pointer) }
-  subject {  NETSNMP::PDU.new(pointer) }
-  before do
-    allow(NETSNMP::Core::Structures::PDU).to receive(:new).with(pointer).and_return(struct)
-  end
+  let(:get_request_oid) { ".1.3.6.1.2.1.1.1.0" }
+  let(:encoded_get_pdu) { "0'\002\001\000\004\006public\240\032\002\002?*\002\001\000\002\001\0000\0160\f\006\b+\006\001\002\001\001\001\000\005\000" }
+  let(:encoded_response_pdu) { "0+\002\001\000\004\006public\242\036\002\002'\017\002\001\000\002\001\0000\0220\020\006\b+\006\001\002\001\001\001\000\004\004test" }
 
-  it { is_expected.to respond_to(:struct) }
-  it { expect(subject.varbinds).to be_empty }
+  describe "#to_der" do
+    let(:pdu_get){ described_class.build(:get,
+                                         headers: [0, "public"] ,
+                                         request_id: 16170) }
 
-  describe NETSNMP::RequestPDU do
-    before { allow(NETSNMP::Core::LibSNMP).to receive(:snmp_pdu_create).and_return(pointer) }
-    subject { NETSNMP::PDU.build(:get) }
-
-    describe "#add_varbind" do
-      let(:oid) { double(:oid) }
-      let(:value) { double(:value) }
-      let(:varbind) { double(:varbind) }
-      before { allow(NETSNMP::RequestVarbind).to receive(:new).with(subject, oid, value, instance_of(Hash)).and_return(varbind) }
-      it "creates a new varbind and adds it to the structure" do
-        subject.add_varbind(oid, { value: value }) 
-        expect(subject.varbinds).not_to be_empty
-        expect(subject.varbinds).to include(varbind) 
-      end
+    context "v1" do
+      before { pdu_get.add_varbind(oid: get_request_oid) }
+      it { expect(pdu_get.to_der).to eq(encoded_get_pdu.b) }
     end
   end
 
+  describe "#decoding pdus" do
+    describe "v1" do
+      let(:pdu_response) { described_class.decode(encoded_response_pdu) }
+      it { expect(pdu_response.version).to be(0) }
+      it { expect(pdu_response.community).to eq("public") }
+      it { expect(pdu_response.request_id).to be(9999) }
+
+      it { expect(pdu_response.varbinds.length).to be(1) }
+      it { expect(pdu_response.varbinds[0].oid).to be_a(NETSNMP::OID) } 
+      it { expect(pdu_response.varbinds[0].oid.code).to eq("1.3.6.1.2.1.1.1.0") } 
+      it { expect(pdu_response.varbinds[0].value).to eq("test") } 
+    end
+  end
 end

@@ -5,7 +5,7 @@
 [![Code Climate](https://codeclimate.com/github/swisscom/ruby-netsnmp/badges/gpa.svg)](https://codeclimate.com/github/swisscom/ruby-netsnmp)
 [![Docs](http://img.shields.io/badge/yard-docs-blue.svg)](https://www.rubydoc.info/github/swisscom/ruby-netsnmp/master)
 
-The netsnmp gem provides a ruby DSL to handle SNMP queries. It currently uses the net-snmp C library using the FFI interface. 
+The `netsnmp` gem provides a ruby native implementation of the SNMP protocol (v1/2c abd v3).
 
 This gem started as a cleanup from [net-snmp](https://github.com/mixtli/net-snmp) and its follow-up [net-snmp2](https://github.com/jbreeden/net-snmp2), both of which have been mostly inactive for the last year(s).
 
@@ -29,33 +29,38 @@ Or install it yourself as:
 $ gem install netsnmp
 ```
 
+## Features 
+
+This gem provides:
+
+* Implementation in ruby of the SNMP Protocol for v3, v2c and v1 (most notable the rfc3414 and 3826).
+* Client/Manager API with simple interface for get, genext, set and walk.
+* No dependencies.
+* Support for concurrency and evented I/O.
+
 ## Why?
 
-You may ask, why not just use the aforementioned? I'll try to sum up the reasons. 
+If you look for snmp gems in ruby toolbox, you'll find a bunch. 
+You may ask, why not just use one of them? 
 
-* Lack of support for some specific net-snmp versions. 
-* Memory Leaks (both leave the responsibility of cleaning pdus to the user, and this usually creates memory leak when the responses fail). 
-* Lack of support for some ruby > 2.1 GC directives, which makes the VM crash under certain circumstances. 
-* Iffy EventMachine support (they basically send the request pdu, and schedule the reads to the reactor, and not really reacting on the socket handle).
-* Lack of support for NIO4r/Celluloid-IO (the other event loop, besides EM, that counts in the ruby world). 
-* The default sync request calls block the whole VM, making multi-threading a non-factor, forcing you to resort to multiprocess for concurrency. 
+Most of them only implement v1 and v2, so if your requirement is to use v3, you're left with only 2 choices: [net-snmp](https://github.com/mixtli/net-snmp) (unmantained since 2013) and its follow-up [net-snmp2](https://github.com/jbreeden/net-snmp2), which started as a fork to fix some bugs left unattended. Both libraries wrap the C netsnmp library using FFI, which leaves them vulnerable to the following bugs (experienced in both libraries):
 
+* Dependency of specific versions of netsnmp C package. 
+* Memory Leaks.
+* Doesn't work reliable in ruby > 2.0.0-p576, crashing the VM.
+* Network I/O done by the library, thereby blocking the GVL, thereby making all snmp calls block the whole ruby VM.
+  * This means, multi-threading is impossible. 
+  * This means, evented I/O is impossible.
 
-## Philosophy
-
-The main motto of the gem is: API economy. As less moving parts as possible. New features can be discussed and integrated, but they all must abide to this philosophy. 
-
-The main purpose of this gem is: SNMP v3 support. Why? Because it's the only one with authentication and security features integrated. SNMP has been a protocol which historically ignored security for many years, and even when it embraced it, its choices are by today's standards considered half-baked (MD5, SHA-1, shrug). Still, some-security is better than no-security. Also, support for v1 and v2 is something that you can get from other ruby gems (most of them refuse to support v3 altogether).
-
-Do one thing and do it well. There's only an interface to interact with an SNMP Agent. Other features like credentials encryption or concurrency are out of the scope of this library, which only guarantees that an SNMP Client is thread-safe and performs ruby-VM-compatible IO. 
+All of these issues are resolved here. 
 
 ## Features
 
-* Client Interface, which supports SNMP 3, 2c, and 1
-* Supports get, set, walk and bulk calls. 
-* Wrappers for eventmachine and celluloid-io
-* Ruby >= 2.0 support
-* net-snmp (C library) >= 5.5 support
+* Client Interface, which supports SNMP v3, v2c, and v1
+* Supports get, getnext, set and walk calls. 
+* Proxy IO object support (for eventmachine/celluloid-io)
+* Ruby >= 2.1 support
+* Pure Ruby (no FFI)
 
 ## Examples
 
@@ -64,13 +69,14 @@ You can use the docker container provided under spec/support to test against the
 ```ruby
 require 'netsnmp'
 
-manager = NETSNMP::Client.new("localhost", port: 33445, username: "simulator",
-                                           auth_password: "auctoritas", auth_protocol: :md5, 
-                                           priv_password: "privatus", priv_protocol: :des,
-                                           context: "a172334d7d97871b72241397f713fa12")
+# example you can test against the docker simulator provided. port attribute might be different. 
+manager = NETSNMP::Client.new(host: "localhost", port: 33445, username: "simulator",
+                              auth_password: "auctoritas", auth_protocol: :md5, 
+                              priv_password: "privatus", priv_protocol: :des,
+                              context: "a172334d7d97871b72241397f713fa12")
 
 # SNMP get
-manager.get("sysName.0") #=> 'tt'
+manager.get(oid: "sysName.0") #=> 'tt'
 
 # SNMP walk
 manager.walk("sysORDescr") do |oid_code, value|
@@ -78,25 +84,105 @@ manager.walk("sysORDescr") do |oid_code, value|
   puts "for #{oid_code}: #{value}"
 end
 
-# SNMP get_bulk
-manager.get_bulk("sysOrDescr") do |oid_code, value|
-  # do something with them  
-  puts "for #{oid_code}: #{value}"
-end
-
 manager.close
 
 # SNMP set
-manager2 = NETSNMP::Client.new("localhost", port: 33445, username: "simulator",
-                                           auth_password: "auctoritas", auth_protocol: :md5, 
-                                           priv_password: "privatus", priv_protocol: :des,
-                                           context: "0886e1397d572377c17c15036a1e6c66")
+manager2 = NETSNMP::Client.new(host: "localhost", port: 33445, username: "simulator",
+                               auth_password: "auctoritas", auth_protocol: :md5, 
+                               priv_password: "privatus", priv_protocol: :des,
+                               context: "0886e1397d572377c17c15036a1e6c66")
 
 # setting to 43, becos yes
 manager2.set("sysUpTimeInstance", 43) 
 
 manager2.close
 ```
+
+SNMP v2/v1 examples will be similar (beware of the differences in the initialization attributes). 
+
+
+## Concurrency
+
+In ruby, you are usually adviced not to share IO objects across threads. The same principle applies here to `NETSNMP::Client`: provided you use it within a thread of execution, it should behave safely. So, something like this would be possible:
+
+```ruby
+general_options = { auth_protocol: ....
+routers.map do |r|
+  Thread.start do 
+    NETSNMP::Client.new(general_options.merge(host: r)) do |cl| 
+      cli.get(oid: "1.6.3.......
+
+    end
+  end
+end.each(&:join)
+```
+
+Evented IO is also supported, in that you can pass a `:proxy` object as an already opened channel of communication to the client. Very important: you have to take care of the lifecycle, as the client will not connect and will not close the object, it will assume no control over it. 
+
+When passing a proxy object, you can omit the `:host` parameter. 
+
+The proxy object will have to be a duck-type implementing `#send`, which is a method receiving the sending PDU payload, and return the payload of the receiving PDU.
+
+Here is a small pseudo-code example: 
+
+```ruby
+# beware, we are inside a warp-speed loop!!!
+general_options = { auth_protocol: ....
+proxy = SpecialUDPImplementation.new(host: router)
+NETSNMP::Client.new(general_options.merge(proxy: proxy)) do |cl|
+  # this get call will eventually #send to the proxy...
+  cli.get(oid: "1.6.3.......
+
+end
+# client isn't usable anymore, but now we must close to proxy
+proxy.close
+```
+
+For more information about this subject, the specs test this feature against celluloid-io. An eventmachine could be added, if someone would be kind enough to provide an implementation. 
+
+## Performance
+
+
+### XOR
+
+This library has some workarounds to some missing features in the ruby language, namely the inexistence of a byte array structure. The closest we have is a byte stream presented as a String with ASCII encoding. A method was added to the String class called `#xor` for some operations needed internally. To prevent needless monkey-patches, Refinements have been employed. 
+
+If `#xor` becomes at some point the bottleneck of your usage, this gem has also support for [xorcist](https://github.com/fny/xorcist/). You just have to add it to your Gemfile (or install it in the system):
+
+```
+# Gemfile
+
+gem 'netsnmp'
+
+# or, in the command line 
+
+$ gem install netsnmp      
+```                        
+
+and `netsnmp` will automatically pick it up. 
+
+## Auth/Priv Key
+
+If you'll use this gem often with SNMP v3 and auth/priv security level enabled, you'll have that funny feeling that everything could be a bit faster. Well, this is basically because the true performance bottleneck of this gem is the generation of the auth and pass keys used for authorization and encryption. Although this is a one-time thing for each client, its lag will be noticeable if you're running on > 100 hosts.
+
+There is a recommended work-around, but this is only usable **if you are using the same user/authpass/privpass on all the hosts!!!**. Use this with care, then:
+
+```ruby
+$shared_security_parameters = NETSNMP::SecurityParameters.new(security_level: :authpriv, username: "mustermann", 
+                                                              auth_protocol: :md5, priv_protocol: :aes, ....
+# this will eager-load the auth/priv_key
+...
+
+# over 9000 routers are running on this event loop!!! this is just one!
+NETSNMP::Client.new(share_options.merge(proxy: router_proxy, security_parameters: $shared_security_parameters.dup).new do |cl|
+  cli.get(oid:  .....
+end
+```
+
+## OpenSSL
+
+All encoding/decoding/encryption/decryption/digests are done using `openssl`, which is (still) a part of the standard library. If at some point `openssl` is removed and not specifically distributed, you'll have to install it yourself. Hopefully this will never happen.
+
 
 ## Tests
 
@@ -120,33 +206,6 @@ To stop the image, you can just:
 > spec/supoprt/stop_docker.sh
 ```
 
-## Notes
-
-This library provides support for C net-snmp 5.5 or higher, as this has been considered the most stable SNMP v3 implementation.
-
-To install it in your environment, just use your package manager:
-
-```
-# on OSX
-> brew install net-snmp  
-
-# Linux
-# centOS
-> sudo yum install net-snmp
-# Ubuntu
-> sudo apt-get install net-snmp
-> sudo apt-get install libsnmp-dev
-```
-
-Ubuntu doesn't come with the default mibs, you might have to download the mibs downloader package:
-
-```
-> sudo apt-get install -y snmp-mibs-downloader
-> sudo download-mibs
-```
-
-TODO: on Windows(?)
-
 ## Contributing
 
 * Fork this repository
@@ -156,7 +215,11 @@ TODO: on Windows(?)
 
 ## TODO
 
-There are a few features still to be added, like:
+There are some features which this gem doesn't support. It was built to provide a client (or manager, in SNMP language) implementation only, and the requirements were fulfilled. However, these notable misses will stand-out:
 
-* [JRuby Support](https://github.com/celluloid/nio4r/issues/94)
+* No MIB support (you can only work with OIDs)
+* No server (Agent, in SNMP-ish) implementation.
+* No getbulk support. 
+
+So if you like the gem, but would rather have these features implemented, please help by sending us a PR and we'll gladly review it.
 
