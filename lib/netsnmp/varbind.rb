@@ -1,181 +1,94 @@
+# frozen_string_literal: true
 module NETSNMP
   # Abstracts the PDU variable structure into a ruby object
   #
   class Varbind
-    Error = Class.new(Error)
 
-    attr_reader :struct
+    attr_reader :oid, :value
 
-    # @param [FFI::Pointer] pointer to the variable list
-    def initialize(pointer)
-      @struct = Core::Structures::VariableList.new(pointer)
-    end
-  end
-
-
-  # Abstracts the Varbind used for the PDU Request
-  class RequestVarbind < Varbind
-
-    # @param [RequestPDU] pdu the request pdu for this varbind
-    # @param [OID] oid the oid for this varbind
-    # @param [Object] value the value for the oid
-    # @param [Hash] options additional options
-    # @option options [Symbol, Integer, nil] :type C net-snmp type flag,  
-    #   type-label for value (see #convert_type), if not set it's inferred from the value
-    #
-    def initialize(pdu, oid, value, options={})
-      type = case options[:type]
-        when Integer then options[:type] # assume that the code is properly passed
-        when Symbol  then convert_type(options[:type]) # DSL-specific API
-        when nil     then infer_from_value(value)
-        else 
-          raise Error, "#{options[:type]} is an unsupported type"
-      end
-
-      value_length = case type
-        when Core::Constants::ASN_NULL,
-             Core::Constants::SNMP_NOSUCHOBJECT,
-             Core::Constants::SNMP_NOSUCHINSTANCE,
-             Core::Constants::SNMP_ENDOFMIBVIEW
-          0
-        else value ? value.size : 0 
-      end
-      value = convert_value(value, type)
-
-      pointer = Core::LibSNMP.snmp_pdu_add_variable(pdu.pointer, oid.pointer, oid.length, type, value, value_length) 
-      super(pointer)
+    def initialize(oid , value: nil, type: nil)
+      @oid = OID.build(oid)
+      @type = type
+      @value = convert_val(value) if value
     end
 
-
-    private
-
-    # @param [Object] value value to infer the type from
-    # @return [Integer] the C net-snmp flag indicating the type
-    # @raise [Error] when the value is from an unexpected type
-    #
-    def infer_from_value(value)
-      case value
-        when String then Core::Constants::ASN_OCTET_STR
-        when Fixnum then Core::Constants::ASN_INTEGER
-        when OID then Core::Constants::ASN_OBJECT_ID
-        when nil then Core::Constants::ASN_NULL
-        else raise Error, "#{value} is from an unsupported type"
-      end
+    def oid_code
+      @oid.code.to_s
     end
 
-    # @param [Symbol] symbol_type symbol representing the type
-    # @return [Integer] the C net-snmp flag indicating the type
-    # @raise [Error] when the symbol is unsupported
-    #
-    def convert_type(symbol_type)
-      case symbol_type
-        when :integer    then Core::Constants::ASN_INTEGER
-        when :gauge      then Core::Constants::ASN_GAUGE
-        when :counter    then Core::Constants::ASN_COUNTER
-        when :timeticks  then Core::Constants::ASN_TIMETICKS
-        when :unsigned   then Core::Constants::ASN_UNSIGNED
-        when :boolean    then Core::Constants::ASN_BOOLEAN
-        when :string     then Core::Constants::ASN_OCTET_STR
-        when :binary     then Core::Constants::ASN_BIT_STR
-        when :ip_address then Core::Constants::ASN_IPADDRESS
-        else 
-          raise Error, "#{symbol_type} cannot be converted"
-      end
+    def to_s
+      "#<#{self.class}:0x#{object_id.to_s(16)} @oid=#{@oid.to_s} @value=#{@value}>"
     end
 
-    # @param [Object] value the value to convert
-    # @param [Integer] type the C net-snmp level object type flakg
-    #
-    # @return [FFI::Pointer] pointer to the memory location where the value is stored
-    #
-    def convert_value(value, type)
-      case type
-        when Core::Constants::ASN_INTEGER,
-             Core::Constants::ASN_GAUGE,
-             Core::Constants::ASN_COUNTER,
-             Core::Constants::ASN_TIMETICKS,
-             Core::Constants::ASN_UNSIGNED
-          new_val = FFI::MemoryPointer.new(:long)
-          new_val.write_long(value)
-          new_val
-        when Core::Constants::ASN_OCTET_STR,
-             Core::Constants::ASN_BIT_STR,
-             Core::Constants::ASN_OPAQUE
-          value
-        when Core::Constants::ASN_IPADDRESS
-            # TODO
-        when Core::Constants::ASN_OBJECT_ID
-          value.pointer
-        when Core::Constants::ASN_NULL,
-             Core::Constants::SNMP_NOSUCHOBJECT,
-             Core::Constants::SNMP_NOSUCHINSTANCE,
-             Core::Constants::SNMP_ENDOFMIBVIEW
-            nil
-        else
-          raise Error, "Unknown variable type: #{type}" 
-      end
-    end
-  end
-
-  # Abstracts the Varbind used for the PDU Response
-  # 
-  class ResponseVarbind < Varbind
-
-    attr_reader :value, :oid_code
-
-    # @param [FFI::Pointer] pointer pointer to the response varbind structure
-    # 
-    # @note it loads the value and oid code on initialization
-    #
-    def initialize(pointer)
-      super
-      @value    = load_varbind_value
-      @oid_code = load_oid_code
+    def to_der
+      to_asn.to_der
     end
 
-    private
-
-    # @return [String] the oid code from the varbind
-    def load_oid_code
-      OID.read_pointer(@struct[:name], @struct[:name_length])
-    end
-
-    # @return [Object] the value for the varbind (a ruby type, a string, an integer, a symbol etc...)
-    #
-    def load_varbind_value
-      object_type = @struct[:type]
-      case object_type
-      when Core::Constants::ASN_OCTET_STR, 
-           Core::Constants::ASN_OPAQUE
-        @struct[:val][:string].read_string(@struct[:val_len])
-      when Core::Constants::ASN_INTEGER
-        @struct[:val][:integer].read_long
-      when Core::Constants::ASN_UINTEGER, 
-           Core::Constants::ASN_TIMETICKS,  
-           Core::Constants::ASN_COUNTER, 
-           Core::Constants::ASN_GAUGE
-        @struct[:val][:integer].read_ulong
-      when Core::Constants::ASN_IPADDRESS
-        @struct[:val][:objid].read_string(@struct[:val_len]).unpack('CCCC').join(".")
-      when Core::Constants::ASN_NULL
-        nil
-      when Core::Constants::ASN_OBJECT_ID
-        OID.from_pointer(@struct[:val][:objid], @struct[:val_len] / OID.default_size)
-      when Core::Constants::ASN_COUNTER64
-        counter = Core::Structures::Counter64.new(@struct[:val][:counter64])
-        counter[:high] * 2^32 + counter[:low]
-      when Core::Constants::ASN_BIT_STR
-        # XXX not sure what to do here.  Is this obsolete?
-      when Core::Constants::SNMP_ENDOFMIBVIEW
-        :endofmibview
-      when Core::Constants::SNMP_NOSUCHOBJECT
-        :nosuchobject
-      when Core::Constants::SNMP_NOSUCHINSTANCE
-        :nosuchinstance
+    def to_asn
+      asn_oid = @oid.to_asn
+      asn_val = if @type
+        asn_type, asn_val = convert_to_asn(@type, @value)
+        OpenSSL::ASN1::ASN1Data.new(asn_val, asn_type, :APPLICATION)
       else
-        raise Error, "#{object_type} is an invalid type"
+        case @value
+        when String
+          OpenSSL::ASN1::OctetString
+        when Integer
+          OpenSSL::ASN1::Integer
+        when true, false
+          OpenSSL::ASN1::Boolean
+        when nil
+          OpenSSL::ASN1::Null
+        else
+          raise Error, "#{@value}: unsupported varbind type"
+        end.new(@value)
+      end
+      OpenSSL::ASN1::Sequence.new( [asn_oid, asn_val] )
+    end
+
+
+    def convert_val(asn_value)
+      case asn_value
+      when OpenSSL::ASN1::Primitive
+        val = asn_value.value
+        val = val.to_i if val.is_a?(OpenSSL::BN)
+        val
+      when OpenSSL::ASN1::ASN1Data
+        # application data
+        convert_application_asn(asn_value)
+      when OpenSSL::BN
+      else
+       asn_value # assume it's already primitive
+      end 
+    end
+
+    def convert_to_asn(typ, value)
+      return [typ, value] unless typ.is_a?(Symbol)
+      case typ
+        when :ipaddress then 0
+        when :counter32 then 1
+        when :gauge then 2
+        when :timetick then [3, [ value].pack("N") ]
+        when :opaque then 4
+        when :nsap then 5
+        when :counter64 then 6
+        when :uinteger then 7
       end
     end
 
+    def convert_application_asn(asn)
+      case asn.tag
+        when 0 # IP Address
+        when 1 # ASN counter 32
+          asn.value.unpack("n*")[0] || 0
+        when 2 # gauge
+        when 3 # timeticks
+          asn.value.unpack("N*")[0] || 0
+        when 4 # opaque
+        when 5 # NSAP
+        when 6 # ASN Counter 64
+        when 7 # ASN UInteger
+      end
+    end
   end
 end

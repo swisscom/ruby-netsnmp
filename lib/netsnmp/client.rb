@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module NETSNMP
   # Main Entity, provides the user-facing API to communicate with SNMP Agents
   #
@@ -7,83 +8,90 @@ module NETSNMP
   #
   #
   class Client
-    
-    # @param [String] hostname the hostname of the agent
-    # @param [Hash] options the set of options to open the session.
+    RETRIES = 5
+
+    # @param [Hash] options the options to needed to enable the SNMP client.
+    # @option options [String, Integer, nil] :version the version of the protocol (defaults to 3).
+    #    also accepts common known declarations like :v3, "v2c", etc
+    # @option options [Integer] :retries number of retries for each failed PDU (after which it raise timeout error. Defaults to {RETRIES} retries)
+    # @yield [client] the instantiated client, after which it closes it for use. 
+    # @example Yielding a clinet
+    #    NETSNMP::Client.new(host: "241.232.22.12") do |client|
+    #      puts client.get(oid: "1.3.6.1.2.1.1.5.0")
+    #    end
     #
-    # @see Session#initialize
-    def initialize(hostname, options)
-      @session ||= Session.new(hostname, options)
+    def initialize(**options)
+      version = options[:version]
+      version = case version 
+        when Integer then version # assume the use know what he's doing
+        when /v?1/ then 0 
+        when /v?2c?/ then 1 
+        when /v?3/, nil then 3
+      end
+
+      @retries = options.fetch(:retries, RETRIES)
+      @session ||= version == 3 ? V3Session.new(options) : Session.new(options)
+      if block_given?
+        begin
+          yield self
+        ensure
+          close
+        end
+      end
     end
 
-    # @see Session#close
+    # Closes the inner section 
     def close
       @session.close
     end
 
     # Performs an SNMP GET Request
-    # 
-    # @param [OID, String] oid_code the oid to get
-    # @param [Hash] options the varbind options (see Varbind)
-    # @option options [true, false] :response_pdu if true, the method returns a PDU
     #
-    # @return [String] the value for the oid
+    # @see {NETSNMP::Varbind#new}
     #
-    def get(oid_code, **options)
-      request_pdu = RequestPDU.build(:get)
-      oid = oid_code.is_a?(OID) ? oid_code : OID.new(oid_code)
-      request_pdu.add_varbind(oid, options)
-      yield request_pdu if block_given? 
-      response_pdu = @session.send(request_pdu)
-      case options[:response_type] 
-        when :pdu then response_pdu
-        else response_pdu.value
-      end
+    def get(oid_opts)
+      request = @session.build_pdu(:get, oid_opts)
+      response = handle_retries { @session.send(request) }
+      yield response if block_given?
+      response.varbinds.first.value
     end
 
     # Performs an SNMP GETNEXT Request
     # 
-    # @param [OID, String] oid_code the oid to get
-    # @param [Hash] options the varbind options (see Varbind)
-    # @option options [true, false] :response_pdu if true, the method returns a PDU
+    # @see {NETSNMP::Varbind#new}
     #
-    # @return [String] the value for the next oid
-    # 
-    # @note this method is used as a sub-routine for the walk
-    #
-    def get_next(oid_code, **options)
-      request_pdu = RequestPDU.build(:getnext)
-      oid = oid_code.is_a?(OID) ? oid_code : OID.new(oid_code)
-      request_pdu.add_varbind(oid, options)
-      yield request_pdu if block_given? 
-      response_pdu = @session.send(request_pdu)
-      case options[:response_type] 
-        when :pdu then response_pdu
-        else response_pdu.value
-      end
+    def get_next(oid_opts)
+      request = @session.build_pdu(:getnext, oid_opts)
+      response = handle_retries { @session.send(request) }
+      yield response if block_given?
+      varbind = response.varbinds.first
+      [varbind.oid.code, varbind.value]
     end
 
     # Perform a SNMP Walk (issues multiple subsequent GENEXT requests within the subtree rooted on an OID)
     #
-    # @param [OID, String] oid_code the root oid from the subtree
-    # @param [Hash] options the varbind options 
+    # @param [String] oid the root oid from the subtree
     #
     # @return [Enumerator] the enumerator-collection of the oid-value pairs
     #
-    def walk(oid_code, **options)
-      options[:response_type] = :pdu
-      walkoid = oid_code.is_a?(OID) ? oid_code : OID.new(oid_code)
+    def walk(oid)
+      walkoid = OID.build(oid)
       Enumerator.new do |y|
-        code = walkoid.code
+        code = walkoid
+        first_response_code = nil
         catch(:walk) do
           loop do
-            response_pdu = get_next(code, options)
-            response_pdu.varbinds.each do |varbind|
-              code = varbind.oid_code
-              if !walkoid.parent_of?(code) or varbind.value.eql?(:endofmibview)
-                throw(:walk)             
-              else
-                y << [code, varbind.value]
+            get_next(oid: code) do |response|
+              response.varbinds.each do |varbind|
+                code = varbind.oid_code
+                if !walkoid.parent_of?(code) or 
+                    varbind.value.eql?(:endofmibview) or
+                    code == first_response_code
+                  throw(:walk)             
+                else
+                  y << [code, varbind.value]
+                end
+                first_response_code ||= code
               end
             end
           end
@@ -93,39 +101,49 @@ module NETSNMP
 
     # Perform a SNMP GETBULK Request (performs multiple GETNEXT)
     #
-    # @param [OID, String] oid_code the first oid
+    # @param [String] oid the first oid
     # @param [Hash] options the varbind options 
     # @option options [Integer] :errstat sets the number of objects expected for the getnext instance
     # @option options [Integer] :errindex number of objects repeating for all the repeating IODs. 
     #
     # @return [Enumerator] the enumerator-collection of the oid-value pairs
     #
-    def get_bulk(oid_code, **options)
-      request_pdu = RequestPDU.build(:getbulk)
-      request_pdu[:errstat]  = options.delete(:non_repeaters) || 0
-      request_pdu[:errindex] = options.delete(:max_repetitions) || 10
-      request_pdu.add_varbind(OID.new(oid_code), options)
-      yield request_pdu if block_given? 
-      response_pdu = @session.send(request_pdu)
-      Enumerator.new do |y|
-        response_pdu.varbinds.each do |varbind|
-          y << [ varbind.oid_code, varbind.value ]
-        end
-      end
-    end
+    #def get_bulk(oid)
+    #  request = @session.build_pdu(:getbulk, *oids)
+    #  request[:error_status]  = options.delete(:non_repeaters) || 0
+    #  request[:error_index] = options.delete(:max_repetitions) || 10
+    #  response = @session.send(request)
+    #  Enumerator.new do |y|
+    #    response.varbinds.each do |varbind|
+    #      y << [ varbind.oid_code, varbind.value ]
+    #    end
+    #  end
+    #end
 
     # Perform a SNMP SET Request
     #
-    # @param [OID, String] oid_code the oid to update
-    # @param [Hash] options the varbind options 
-    # @option options [Object] :value value to update the oid with. 
+    # @see {NETSNMP::Varbind#new}
     #
-    def set(oid_code, **options)
-      request_pdu = PDU.build(:set)
-      request_pdu.add_varbind(OID.new(oid_code), options)
-      yield request_pdu if block_given? 
-      response_pdu = @session.send(request_pdu)
-      response_pdu.value
+    def set(oid_opts)
+      request = @session.build_pdu(:set, oid_opts)
+      response = handle_retries { @session.send(request) }
+      yield response if block_given? 
+      response.varbinds.map(&:value)
+    end
+
+
+    private
+
+    # Handles timeout errors by reissuing the same pdu until it runs out or retries. 
+    def handle_retries
+      retries = @retries
+      begin
+        yield
+      rescue Timeout::Error => e
+        raise e if retries == 0
+        retries -= 1
+        retry
+      end
     end
   end
 end

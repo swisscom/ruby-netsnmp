@@ -14,7 +14,8 @@ DESC
   gem.email       = "cardoso_tiago@hotmail.com"
   gem.homepage    = ""
   gem.platform    = Gem::Platform::RUBY
-  gem.required_ruby_version = '>=2.0.0'
+  gem.required_ruby_version = '>=2.1.0'
+  gem.metadata["allowed_push_hosts"] = "https://rubygems.org/"
 
   # Manifest
   gem.files         = `git ls-files`.split("\n") - Dir['tmp/**/*']
@@ -23,14 +24,8 @@ DESC
   gem.require_paths = ["lib"]
 
   gem.executables = Dir["bin/*"].map { |e| File.basename e }
-  gem.add_runtime_dependency "ffi", ["~> 1.9"]
-  unless RUBY_PLATFORM == "java"
-    gem.add_runtime_dependency "RubyInline", ["~> 3.12"]
-  end
-
   gem.add_development_dependency "rake", ["~> 10.4.2"]
   gem.add_development_dependency "rspec", ["~> 3.3.0"]
 
-  gem.add_development_dependency "em-synchrony", ["~> 1.0.4"]
   gem.add_development_dependency "celluloid-io", ["~> 0.17.2"]
 end

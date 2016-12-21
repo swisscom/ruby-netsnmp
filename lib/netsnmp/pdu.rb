@@ -1,50 +1,87 @@
+# frozen_string_literal: true
 require 'forwardable'
 module NETSNMP
   # Abstracts the PDU base structure into a ruby object. It gives access to its varbinds.
   #
   class PDU
-    extend Forwardable 
-
-    Error = Class.new(Error)
+    MAXREQUESTID=2147483647
     class << self
+
+      def decode(der)
+        asn_tree = case der
+        when String
+          OpenSSL::ASN1.decode(der)
+        when OpenSSL::ASN1::ASN1Data
+          der
+        else
+          raise "#{der}: unexpected data"
+        end
+
+        *headers, request = asn_tree.value
+
+        version, community = headers.map(&:value)
+
+        type = request.tag
+
+        *request_headers, varbinds = request.value
+
+        request_id, error_status, error_index  = request_headers.map(&:value).map(&:to_i)
+
+        varbs = varbinds.value.map do |varbind|
+          oid_asn, val_asn  = varbind.value
+          oid = oid_asn.value
+          { oid: oid, value: val_asn }
+        end
+
+        new(type: type, headers: [version, community],
+                        error_status: error_status,
+                        error_index: error_index,
+                        request_id: request_id, 
+                        varbinds: varbs)
+      end
+
       # factory method that abstracts initialization of the pdu types that the library supports.
       # 
       # @param [Symbol] type the type of pdu structure to build
-      # @return [RequestPDU] a fully-formed request pdu
       # 
-      def build(type, *args)
-        case type
-          when :get       then RequestPDU.new(Core::Constants::SNMP_MSG_GET, *args)
-          when :getnext   then RequestPDU.new(Core::Constants::SNMP_MSG_GETNEXT, *args)
-          when :getbulk   then RequestPDU.new(Core::Constants::SNMP_MSG_GETBULK, *args)
-          when :set       then RequestPDU.new(Core::Constants::SNMP_MSG_SET, *args)
-          when :response  then ResponsePDU.new(Core::Constants::SNMP_MSG_RESPONSE, *args)
+      def build(type, **args)
+        typ = case type
+          when :get       then 0
+          when :getnext   then 1
+#          when :getbulk   then 5
+          when :set       then 3
+          when :response  then 2
           else raise Error, "#{type} is not supported as type"
         end
+        new(args.merge(type: typ))
       end
     end
 
-    attr_reader :struct, :varbinds
+    attr_reader :varbinds, :type
 
-    def_delegators :@struct, :[], :[]=, :pointer
+    attr_reader :version, :community, :request_id
 
-    # @param [FFI::Pointer] the pointer to the initialized structure
-    #
-    def initialize(pointer)
-      @struct = Core::Structures::PDU.new(pointer)
+    def initialize(type: , headers: , 
+                           request_id: nil, 
+                           error_status: 0,
+                           error_index: 0,
+                           varbinds: [])
+      @version, @community = headers
+      @version = @version.to_i
+      @error_status = error_status
+      @error_index  = error_index
+      @type = type
       @varbinds = []
+      varbinds.each do |varbind|
+        add_varbind(varbind)
+      end
+      @request_id = request_id || SecureRandom.random_number(MAXREQUESTID)
+      check_error_status(@error_status)
     end
 
 
-  end
-
-  # Abstracts the request PDU
-  # Main characteristic is that it has a write-only API, in that you can add varbinds to it.
-  #
-  class RequestPDU < PDU
-    def initialize(type)
-      pointer = Core::LibSNMP.snmp_pdu_create(type)
-      super(pointer)
+    def to_der
+      to_asn.to_der
     end
 
     # Adds a request varbind to the pdu
@@ -52,54 +89,59 @@ module NETSNMP
     # @param [OID] oid a valid oid
     # @param [Hash] options additional request varbind options
     # @option options [Object] :value the value for the oid
-    def add_varbind(oid, **options)
-      @varbinds << RequestVarbind.new(self, oid, options[:value], options)
+    def add_varbind(oid: , **options)
+      @varbinds << Varbind.new(oid, **options)
     end
     alias_method :<<, :add_varbind
-  end
 
-  # Abstracts the response PDU
-  # Main characteristic is: it reads the values on initialization (because the response structure
-  # is at some point free'd). It is therefore a read-only entity
-  #
-  class ResponsePDU < PDU
 
-    # @param [FFI::Pointer] the pointer to the response pdu structure
-    #
-    # @note it loads the variable as well.
-    # 
-    def initialize(pointer)
-      super
-      load_variables
-    end
+    def to_asn
+      request_id_asn = OpenSSL::ASN1::Integer.new( @request_id )
+      error_asn = OpenSSL::ASN1::Integer.new( @error_status )
+      error_index_asn = OpenSSL::ASN1::Integer.new( @error_index )
 
-    # @return [String] the concatenation of the varbind values (usually, it's only one)
-    # 
-    def value
-      case @varbinds.size
-        when 0 then nil
-        when 1 then @varbinds.first.value
-        else 
-          # assume that they're all strings
-          @varbinds.map(&:value).join(' ')
-      end  
+      varbind_asns = OpenSSL::ASN1::Sequence.new( @varbinds.map(&:to_asn) )
+
+      request_asn = OpenSSL::ASN1::ASN1Data.new( [request_id_asn,
+                                                  error_asn, error_index_asn,
+                                                  varbind_asns], @type,
+                                                  :CONTEXT_SPECIFIC )
+
+      OpenSSL::ASN1::Sequence.new( [ *encode_headers_asn, request_asn ] )
     end
 
     private
 
-    # loads the C-level structure variables into ruby ResponseVarbind objects, 
-    # and store them as state in {{@varbinds}} 
-    def load_variables
-      variable = @struct[:variables]
-      unless variable.null?
-        @varbinds << ResponseVarbind.new(variable)
-        variable = Core::Structures::VariableList.new(variable)
-        while( !(variable = variable[:next_variable]).null? )
-          variable = Core::Structures::VariableList.new(variable)
-          @varbinds << ResponseVarbind.new(variable.pointer)
-        end
-      end
+    def encode_headers_asn
+      [ OpenSSL::ASN1::Integer.new( @version ),
+        OpenSSL::ASN1::OctetString.new( @community ) ]
     end
 
+
+    # http://www.tcpipguide.com/free/t_SNMPVersion2SNMPv2MessageFormats-5.htm#Table_219
+    def check_error_status(status)
+      return if status == 0
+      message = case status
+        when 1 then "Response-PDU too big"
+        when 2 then "No such name"
+        when 3 then "Bad value"
+        when 4 then "Read Only"
+        when 5 then "General Error"
+        when 6 then "Access denied"
+        when 7 then "Wrong type"
+        when 8 then "Wrong length"
+        when 9 then "Wrong encoding"
+        when 10 then "Wrong value"
+        when 11 then "No creation"
+        when 12 then "Inconsistent value"
+        when 13 then "Resource unavailable"
+        when 14 then "Commit failed"
+        when 15 then "Undo Failed"
+        when 16 then "Authorization Error"
+        when 17 then "Not Writable"
+        when 18 then "Inconsistent Name"
+      end
+      raise Error, message
+    end
   end
 end
