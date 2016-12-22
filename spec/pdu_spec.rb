@@ -22,8 +22,7 @@ RSpec.describe NETSNMP::PDU do
       it { expect(pdu_response.request_id).to be(9999) }
 
       it { expect(pdu_response.varbinds.length).to be(1) }
-      it { expect(pdu_response.varbinds[0].oid).to be_a(NETSNMP::OID) } 
-      it { expect(pdu_response.varbinds[0].oid.code).to eq("1.3.6.1.2.1.1.1.0") } 
+      it { expect(pdu_response.varbinds[0].oid).to eq("1.3.6.1.2.1.1.1.0") } 
       it { expect(pdu_response.varbinds[0].value).to eq("test") } 
     end
   end

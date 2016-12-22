@@ -9,7 +9,7 @@ RSpec.describe NETSNMP::OID do
     it { expect { described_class.build("blablabla") }.to raise_error(NETSNMP::Error) }
   end
 
-  describe "#to_der" do
-    it { expect(subject.to_der).to eq("\x06\b+\x06\x01\x02\x01\x01\x01\x00".b) }
+  describe ".to_asn" do
+    it { expect(described_class.to_asn(subject).to_der).to eq("\x06\b+\x06\x01\x02\x01\x01\x01\x00".b) }
   end
 end
