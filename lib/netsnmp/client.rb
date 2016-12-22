@@ -65,7 +65,7 @@ module NETSNMP
       response = handle_retries { @session.send(request) }
       yield response if block_given?
       varbind = response.varbinds.first
-      [varbind.oid.code, varbind.value]
+      [varbind.oid, varbind.value]
     end
 
     # Perform a SNMP Walk (issues multiple subsequent GENEXT requests within the subtree rooted on an OID)
@@ -75,7 +75,7 @@ module NETSNMP
     # @return [Enumerator] the enumerator-collection of the oid-value pairs
     #
     def walk(oid: )
-      walkoid = OID.build(oid)
+      walkoid = oid
       Enumerator.new do |y|
         code = walkoid
         first_response_code = nil
@@ -83,8 +83,8 @@ module NETSNMP
           loop do
             get_next(oid: code) do |response|
               response.varbinds.each do |varbind|
-                code = varbind.oid_code
-                if !walkoid.parent_of?(code) or 
+                code = varbind.oid
+                if !OID.parent?(walkoid, code) or 
                     varbind.value.eql?(:endofmibview) or
                     code == first_response_code
                   throw(:walk)             
@@ -115,7 +115,7 @@ module NETSNMP
     #  response = @session.send(request)
     #  Enumerator.new do |y|
     #    response.varbinds.each do |varbind|
-    #      y << [ varbind.oid_code, varbind.value ]
+    #      y << [ varbind.oid, varbind.value ]
     #    end
     #  end
     #end

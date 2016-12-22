@@ -12,12 +12,8 @@ module NETSNMP
       @value = convert_val(value) if value
     end
 
-    def oid_code
-      @oid.code.to_s
-    end
-
     def to_s
-      "#<#{self.class}:0x#{object_id.to_s(16)} @oid=#{@oid.to_s} @value=#{@value}>"
+      "#<#{self.class}:0x#{object_id.to_s(16)} @oid=#{@oid} @value=#{@value}>"
     end
 
     def to_der
@@ -25,7 +21,7 @@ module NETSNMP
     end
 
     def to_asn
-      asn_oid = @oid.to_asn
+      asn_oid = OID.to_asn(@oid)
       asn_val = if @type
         asn_type, asn_val = convert_to_asn(@type, @value)
         OpenSSL::ASN1::ASN1Data.new(asn_val, asn_type, :APPLICATION)
