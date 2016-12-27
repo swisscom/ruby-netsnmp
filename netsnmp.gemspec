@@ -15,7 +15,7 @@ DESC
   gem.homepage    = ""
   gem.platform    = Gem::Platform::RUBY
   gem.required_ruby_version = '>=2.1.0'
-  gem.metadata["allowed_push_hosts"] = "https://rubygems.org/"
+  gem.metadata["allowed_push_host"] = "https://rubygems.org/"
 
   # Manifest
   gem.files         = `git ls-files`.split("\n") - Dir['tmp/**/*']
