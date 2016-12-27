@@ -7,8 +7,6 @@
 
 The `netsnmp` gem provides a ruby native implementation of the SNMP protocol (v1/2c abd v3).
 
-This gem started as a cleanup from [net-snmp](https://github.com/mixtli/net-snmp) and its follow-up [net-snmp2](https://github.com/jbreeden/net-snmp2), both of which have been mostly inactive for the last year(s).
-
 ## Installation
 
 Add this line to your application's Gemfile:
