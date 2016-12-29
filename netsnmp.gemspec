@@ -24,8 +24,8 @@ DESC
   gem.require_paths = ["lib"]
 
   gem.executables = Dir["bin/*"].map { |e| File.basename e }
-  gem.add_development_dependency "rake", ["~> 10.4.2"]
-  gem.add_development_dependency "rspec", ["~> 3.3.0"]
+  gem.add_development_dependency "rake", ["~> 10.1", ">= 10.1.0"]
+  gem.add_development_dependency "rspec", ["~> 3.5", ">= 3.5.0"]
 
-  gem.add_development_dependency "celluloid-io", ["~> 0.17.2"]
+  gem.add_development_dependency "celluloid-io", ["~> 0.17", ">= 0.17.2"]
 end
