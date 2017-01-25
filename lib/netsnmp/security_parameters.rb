@@ -106,7 +106,7 @@ module NETSNMP
     # @param [String] stream the encoded incoming payload
     # @param [String] salt the incoming payload''s salt
     #
-    # @raise [NETSMP::Error] if the message's integration has been violated 
+    # @raise [NETSNMP::Error] if the message's integration has been violated 
     def verify(stream, salt)
       return if @security_level < 1
       verisalt = sign(stream)
