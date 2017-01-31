@@ -3,6 +3,7 @@ require "netsnmp/version"
 require "openssl"
 require "io/wait"
 require "securerandom"
+require "ipaddr"
 
 
 # core structures
