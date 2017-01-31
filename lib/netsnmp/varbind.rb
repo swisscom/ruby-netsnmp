@@ -28,16 +28,18 @@ module NETSNMP
       else
         case @value
         when String
-          OpenSSL::ASN1::OctetString
+          OpenSSL::ASN1::OctetString.new(@value)
         when Integer
-          OpenSSL::ASN1::Integer
+          OpenSSL::ASN1::Integer.new(@value)
         when true, false
-          OpenSSL::ASN1::Boolean
+          OpenSSL::ASN1::Boolean.new(@value)
         when nil
-          OpenSSL::ASN1::Null
+          OpenSSL::ASN1::Null.new(nil)
+        when IPAddr
+          OpenSSL::ASN1::ASN1Data.new(@value.hton, 0, :APPLICATION)
         else
           raise Error, "#{@value}: unsupported varbind type"
-        end.new(@value)
+        end
       end
       OpenSSL::ASN1::Sequence.new( [asn_oid, asn_val] )
     end
@@ -75,6 +77,7 @@ module NETSNMP
     def convert_application_asn(asn)
       case asn.tag
         when 0 # IP Address
+          IPAddr.new_ntoh(asn.value)
         when 1 # ASN counter 32
           asn.value.unpack("n*")[0] || 0
         when 2 # gauge
