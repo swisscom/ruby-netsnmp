@@ -140,6 +140,8 @@ module NETSNMP
         when 16 then "Authorization Error"
         when 17 then "Not Writable"
         when 18 then "Inconsistent Name"
+        else
+          "Unknown Error: (#{status})"
       end
       raise Error, message
     end
