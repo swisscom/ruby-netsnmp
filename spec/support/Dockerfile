@@ -1,7 +1,7 @@
 FROM python:2
 Maintainer Tiago Cardoso <tiago.cardoso@swisscom.com>
 
-RUN easy_install snmpsim
+RUN easy_install snmpsim==0.3.0
 RUN easy_install pycrypto 
 EXPOSE 1161
 # Create non-privileged user
