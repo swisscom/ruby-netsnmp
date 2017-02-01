@@ -6,7 +6,7 @@ module NETSNMP
 
     attr_reader :oid, :value
 
-    def initialize(oid , value: nil, type: nil)
+    def initialize(oid , value: nil, type: nil, **opts)
       @oid = OID.build(oid)
       @type = type
       @value = convert_val(value) if value
