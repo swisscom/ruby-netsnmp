@@ -5,13 +5,9 @@ module NETSNMP
 
     attr_reader :engine_id
 
-    def initialize(type: , headers:,
-                           request_id: nil,
-                           error_status: 0,
-                           error_index: 0,
-                           varbinds: [])
+    def initialize(type: , headers:, **options)
       @engine_id, @context = headers
-      super(type: type, headers: [3, nil], request_id: request_id, varbinds: varbinds)
+      super(type: type, headers: [3, nil], **options)
     end
 
     def encode_headers_asn
