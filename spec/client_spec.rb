@@ -22,7 +22,7 @@ RSpec.describe NETSNMP::Client do
       let(:walk_result) { <<-WALK
 1.3.6.1.2.1.1.1.0: Device description
 1.3.6.1.2.1.1.2.0: 1.3.6.1.4.1.3454
-1.3.6.1.2.1.1.3.0: Timeticks: (78171676) 9 days. 1:8:36.76
+1.3.6.1.2.1.1.3.0: Timeticks: (78171676) 9 days, 1:8:36.76
 1.3.6.1.2.1.1.4.0: The Owner
 1.3.6.1.2.1.1.5.0: DEVICE-192.168.1.1
 1.3.6.1.2.1.1.6.0: The Cloud
@@ -48,7 +48,7 @@ WALK
       let(:walk_result) { <<-WALK
 1.3.6.1.2.1.1.1.0: Device description
 1.3.6.1.2.1.1.2.0: 1.3.6.1.4.1.3454
-1.3.6.1.2.1.1.3.0: Timeticks: (78171676) 9 days. 1:8:36.76
+1.3.6.1.2.1.1.3.0: Timeticks: (78171676) 9 days, 1:8:36.76
 1.3.6.1.2.1.1.4.0: The Owner
 1.3.6.1.2.1.1.5.0: DEVICE-192.168.1.1
 1.3.6.1.2.1.1.6.0: The Cloud
