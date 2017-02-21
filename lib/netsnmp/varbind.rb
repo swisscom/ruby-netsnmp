@@ -23,8 +23,7 @@ module NETSNMP
     def to_asn
       asn_oid = OID.to_asn(@oid)
       asn_val = if @type
-        asn_type, asn_val = convert_to_asn(@type, @value)
-        OpenSSL::ASN1::ASN1Data.new(asn_val, asn_type, :APPLICATION)
+        convert_to_asn(@type, @value)
       else
         case @value
         when String
@@ -37,6 +36,8 @@ module NETSNMP
           OpenSSL::ASN1::Null.new(nil)
         when IPAddr
           OpenSSL::ASN1::ASN1Data.new(@value.hton, 0, :APPLICATION)
+        when Timetick
+          @value.to_asn
         else
           raise Error, "#{@value}: unsupported varbind type"
         end
@@ -74,17 +75,24 @@ module NETSNMP
     end
 
     def convert_to_asn(typ, value)
-      return [typ, value] unless typ.is_a?(Symbol)
-      case typ
-        when :ipaddress then 0
-        when :counter32 then 1
-        when :gauge then 2
-        when :timetick then [3, [ value].pack("N") ]
-        when :opaque then 4
-        when :nsap then 5
-        when :counter64 then 6
-        when :uinteger then 7
+      asn_type = typ
+      asn_val = value
+      if typ.is_a?(Symbol)
+        asn_type = case typ
+          when :ipaddress then 0
+          when :counter32 then 1
+          when :gauge then 2
+          when :timetick
+            return Timetick.new(value).to_asn
+          when :opaque then 4
+          when :nsap then 5
+          when :counter64 then 6
+          when :uinteger then 7
+          else  
+            raise Error, "#{typ}: unsupported application type"
+        end
       end
+      OpenSSL::ASN1::ASN1Data.new(asn_val, asn_type, :APPLICATION)
     end
 
     def convert_application_asn(asn)
@@ -95,7 +103,7 @@ module NETSNMP
           asn.value.unpack("n*")[0] || 0
         when 2 # gauge
         when 3 # timeticks
-          asn.value.unpack("N*")[0] || 0
+          Timetick.new(asn.value.unpack("N*")[0] || 0)
         when 4 # opaque
         when 5 # NSAP
         when 6 # ASN Counter 64
