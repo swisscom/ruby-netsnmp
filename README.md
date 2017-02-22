@@ -57,7 +57,7 @@ All of these issues are resolved here.
 * Client Interface, which supports SNMP v3, v2c, and v1
 * Supports get, getnext, set and walk calls. 
 * Proxy IO object support (for eventmachine/celluloid-io)
-* Ruby >= 2.1 support
+* Ruby >= 2.1 support (modern)
 * Pure Ruby (no FFI)
 
 ## Examples
@@ -74,10 +74,12 @@ manager = NETSNMP::Client.new(host: "localhost", port: 33445, username: "simulat
                               context: "a172334d7d97871b72241397f713fa12")
 
 # SNMP get
-manager.get(oid: "sysName.0") #=> 'tt'
+# sysName.0
+manager.get(oid: "1.3.6.1.2.1.1.0") #=> 'tt'
 
 # SNMP walk
-manager.walk("sysORDescr") do |oid_code, value|
+# sysORDescr
+manager.walk("1.3.6.1.2.1.1.1") do |oid_code, value|
   # do something with them  
   puts "for #{oid_code}: #{value}"
 end
@@ -91,13 +93,46 @@ manager2 = NETSNMP::Client.new(host: "localhost", port: 33445, username: "simula
                                context: "0886e1397d572377c17c15036a1e6c66")
 
 # setting to 43, becos yes
-manager2.set("sysUpTimeInstance", 43) 
+# sysUpTimeInstance
+manager2.set("1.3.6.1.2.1.1.3.0", value: 43) 
 
 manager2.close
 ```
 
 SNMP v2/v1 examples will be similar (beware of the differences in the initialization attributes). 
 
+## SNMP Application Types
+
+All previous examples were done specifying primitive types, i.e. unless specified otherwise, it's gonna try to convert a ruby "primitive" type to an ASN.1 primitive type, and vice-versa:
+
+* Integer      -> ASN.1 Integer
+* String      -> ASN.1 Octet String
+* nil         -> ASN.1 Null
+* true, false -> ASN.1 Boolean
+
+That means that, if you pass `value: 43` to the `#set` call, it's going to build a varbind with an ASN.1 Integer. If You issue a `#get` and the response contains an ASN.1 Integer, it's going to return an Integer. 
+
+However, SNMP defines application-specific ASN.1 types, for which there is support, albeit limited. Currently, there is support for ip addresses and timeticks. 
+
+* IPAddr -> ASN.1 context-specific
+
+If you create an `IPAddr` object (ruby standard library `ipaddr`) and pass it to the `#set` call, it will map to the SNMP content-specific code. If the response of a `#get` call contains an ip address, it will map to an `IPAddr` object. 
+
+* NETSNMP::Timeticks -> ASN.1 content-specific
+
+The `NETSNMP::Timeticks` type is internal to this library, but it is a ruby `Numeric` type. You are safe to use it "as a numeric", that is, perform calculations.
+
+
+You can find usage examples [here](https://github.com/swisscom/ruby-netsnmp/blob/master/spec/varbind_spec.rb). If you need support to a missing type, you have the following options:
+
+* Use the `:type` parameter in `#set` calls:
+```ruby
+# as a symbol
+manager.set("somecounteroid", value: 999999, type: :counter64)
+# as the SNMP specific type id, if you're familiar with the protocol
+manager.set("somecounteroid", value: 999999, type: 6)
+```
+* Fork this library, extend support, write a test and submit a PR (the desired solution ;) )
 
 ## Concurrency
 
