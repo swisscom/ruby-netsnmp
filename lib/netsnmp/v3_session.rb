@@ -47,14 +47,22 @@ module NETSNMP
       end
     end
 
+    # Timeliness is part of SNMP V3 Security
+    # The topic is described very nice here https://www.snmpsharpnet.com/?page_id=28
+    # https://www.ietf.org/rfc/rfc2574.txt 1.4.1 Timeliness
+    # The probe is outdated after 150 seconds which results in a PDU Error, therefore it should expire before that and be renewed
+    # The 150 Seconds is specified in https://www.ietf.org/rfc/rfc2574.txt 2.2.3
     def security_parameters
       if @security_parameters.engine_id.empty?
+        @security_parameters.engine_id = probe_for_engine
+      elsif Time.now - @timeliness > 149
         @security_parameters.engine_id = probe_for_engine
       end
       @security_parameters
     end
 
     # sends a probe snmp v3 request, to get the additional info with which to handle the security aspect
+    # Set the timeliness of the probe to ensure the prober expiration after 150 Seconds
     #
     def probe_for_engine
       report_sec_params = SecurityParameters.new(security_level: 0,
@@ -62,6 +70,7 @@ module NETSNMP
       pdu = ScopedPDU.build(:get, headers: [])
       encoded_report_pdu = Message.encode(pdu, security_parameters: report_sec_params)
 
+      @timeliness = Time.now
       encoded_response_pdu = @transport.send(encoded_report_pdu)
 
       _, engine_id, @engine_boots, @engine_time = decode(encoded_response_pdu, security_parameters: report_sec_params)
