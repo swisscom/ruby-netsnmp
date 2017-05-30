@@ -45,15 +45,23 @@ module NETSNMP
       @session.close
     end
 
+    # Performs an SNMP GET Request and returns Array with all values
+    #
+    # @see {NETSNMP::Varbind#new}
+    #
+    def get_all(oid_opts)
+      request = @session.build_pdu(:get, oid_opts)
+      response = handle_retries { @session.send(request) }
+      yield response if block_given?
+      response.varbinds.map(&:value)
+    end
+
     # Performs an SNMP GET Request
     #
     # @see {NETSNMP::Varbind#new}
     #
-    def get(oid_opts)
-      request = @session.build_pdu(:get, oid_opts)
-      response = handle_retries { @session.send(request) }
-      yield response if block_given?
-      response.varbinds.first.value
+    def get(oid_opts, &block)
+      get_all(oid_opts, &block).first
     end
 
     # Performs an SNMP GETNEXT Request

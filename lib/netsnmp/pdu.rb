@@ -90,7 +90,9 @@ module NETSNMP
     # @param [Hash] options additional request varbind options
     # @option options [Object] :value the value for the oid
     def add_varbind(oid: , **options)
-      @varbinds << Varbind.new(oid, **options)
+      Array(oid).each do |single_oid|
+        @varbinds << Varbind.new(single_oid, **options)
+      end
     end
     alias_method :<<, :add_varbind
 
