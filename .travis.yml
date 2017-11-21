@@ -9,7 +9,7 @@ before_install:
   - sudo apt-get install -y snmp
   - sudo apt-get install -y libsnmp-dev
   - sudo apt-get install -y snmp-mibs-downloader 
-  - sudo apt-get install -o Dpkg::Options::="--force-confold" --force-yes -y docker-engine
+  - sudo apt-get install -o Dpkg::Options::="--force-confold" --force-yes -y docker-ce
 
 before_script:
   - sudo download-mibs 
@@ -38,5 +38,5 @@ matrix:
   - rvm: ruby-head
   - rvm: jruby-head
     # to figure out later
-  - rvm: jruby-9.1.7.0
+  - rvm: jruby-9.1.14.0
   - rvm: rbx-2
