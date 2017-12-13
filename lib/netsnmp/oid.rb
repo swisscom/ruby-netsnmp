@@ -21,7 +21,7 @@ module NETSNMP
     end
 
     def to_asn(oid)
-      OpenSSL::ASN1::ObjectId.new(oid)
+      ASN1::ObjectId.new(oid)
     end
 
     # @param [OID, String] child oid another oid

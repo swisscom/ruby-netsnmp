@@ -11,8 +11,8 @@ module NETSNMP
     end
 
     def encode_headers_asn
-      [ OpenSSL::ASN1::OctetString.new(@engine_id || ""),
-        OpenSSL::ASN1::OctetString.new(@context   || "") ] 
+      [ ASN1::OctetString.new(@engine_id || ""),
+        ASN1::OctetString.new(@context   || "") ] 
     end 
 
   end

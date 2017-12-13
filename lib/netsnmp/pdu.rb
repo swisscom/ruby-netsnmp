@@ -10,8 +10,8 @@ module NETSNMP
       def decode(der)
         asn_tree = case der
         when String
-          OpenSSL::ASN1.decode(der)
-        when OpenSSL::ASN1::ASN1Data
+          ASN1.decode(der)
+        when ASN1::ASN1Data
           der
         else
           raise "#{der}: unexpected data"
@@ -96,25 +96,25 @@ module NETSNMP
 
 
     def to_asn
-      request_id_asn = OpenSSL::ASN1::Integer.new( @request_id )
-      error_asn = OpenSSL::ASN1::Integer.new( @error_status )
-      error_index_asn = OpenSSL::ASN1::Integer.new( @error_index )
+      request_id_asn = ASN1::Integer.new( @request_id )
+      error_asn = ASN1::Integer.new( @error_status )
+      error_index_asn = ASN1::Integer.new( @error_index )
 
-      varbind_asns = OpenSSL::ASN1::Sequence.new( @varbinds.map(&:to_asn) )
+      varbind_asns = ASN1::Sequence.new( @varbinds.map(&:to_asn) )
 
-      request_asn = OpenSSL::ASN1::ASN1Data.new( [request_id_asn,
+      request_asn = ASN1::ASN1Data.new( [request_id_asn,
                                                   error_asn, error_index_asn,
                                                   varbind_asns], @type,
                                                   :CONTEXT_SPECIFIC )
 
-      OpenSSL::ASN1::Sequence.new( [ *encode_headers_asn, request_asn ] )
+      ASN1::Sequence.new( [ *encode_headers_asn, request_asn ] )
     end
 
     private
 
     def encode_headers_asn
-      [ OpenSSL::ASN1::Integer.new( @version ),
-        OpenSSL::ASN1::OctetString.new( @community ) ]
+      [ ASN1::Integer.new( @version ),
+        ASN1::OctetString.new( @community ) ]
     end
 
 

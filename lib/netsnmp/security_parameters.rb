@@ -1,4 +1,7 @@
 # frozen_string_literal: true
+
+require "openssl"
+
 module NETSNMP
   # This module encapsulates the public API for encrypting/decrypting and signing/verifying.
   # 
@@ -59,7 +62,7 @@ module NETSNMP
       if encryption
         encrypted_pdu, salt = encryption.encrypt(pdu.to_der, engine_boots: engine_boots, 
                                                              engine_time: engine_time)
-        [OpenSSL::ASN1::OctetString.new(encrypted_pdu), OpenSSL::ASN1::OctetString.new(salt) ]
+        [ASN1::OctetString.new(encrypted_pdu), ASN1::OctetString.new(salt) ]
       else
         [ pdu.to_asn, salt ]
       end
@@ -70,11 +73,11 @@ module NETSNMP
     # @param [Integer] engine_time the reported engine time
     # @param [Integer] engine_boots the reported engine boots
     def decode(der, salt: , engine_time: , engine_boots: )
-      asn = OpenSSL::ASN1.decode(der)
+      asn = ASN1.decode(der)
       if encryption
         encrypted_pdu = asn.value
         pdu_der = encryption.decrypt(encrypted_pdu, salt: salt, engine_time: engine_time, engine_boots: engine_boots)
-        OpenSSL::ASN1.decode(pdu_der)      
+        ASN1.decode(pdu_der)      
       else
         asn
       end

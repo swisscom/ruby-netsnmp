@@ -20,7 +20,7 @@ module NETSNMP
     end
 
     def to_asn
-      OpenSSL::ASN1::ASN1Data.new([@ticks].pack("N"), 3, :APPLICATION)
+      ASN1::ASN1Data.new([@ticks].pack("N"), 3, :APPLICATION)
     end
 
     def coerce(other)
