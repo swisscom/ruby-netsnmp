@@ -24,6 +24,9 @@ DESC
   gem.require_paths = ["lib"]
 
   gem.executables = Dir["bin/*"].map { |e| File.basename e }
+  if RUBY_ENGINE == "jruby"
+    gem.add_dependency "rasn1"
+  end
   gem.add_development_dependency "rake", ["~> 10.1", ">= 10.1.0"]
   gem.add_development_dependency "rspec", ["~> 3.5", ">= 3.5.0"]
 

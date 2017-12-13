@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 require "netsnmp/version"
-require "openssl"
 require "io/wait"
 require "securerandom"
 require "ipaddr"
@@ -60,6 +59,7 @@ require "netsnmp/errors"
 
 require "netsnmp/timeticks"
 
+require "netsnmp/asn1"
 require "netsnmp/oid"
 require "netsnmp/varbind"
 require "netsnmp/pdu"
