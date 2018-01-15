@@ -18,6 +18,7 @@ before_script:
 after_script: spec/support/stop_docker.sh
 
 install:
+  - gem update --system
   - bundle install --path .bundle
 
 script:
