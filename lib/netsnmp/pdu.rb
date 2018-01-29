@@ -73,7 +73,7 @@ module NETSNMP
       @type = type
       @varbinds = []
       varbinds.each do |varbind|
-        add_varbind(varbind)
+        add_varbind(oid: varbind)
       end
       @request_id = request_id || SecureRandom.random_number(MAXREQUESTID)
       check_error_status(@error_status)
