@@ -119,7 +119,7 @@ module NETSNMP
             varbinds: request_pdu.varbinds.collect{|v| {oid: v.oid} },
             request_id: request_pdu.request_id
           )
-          encoded_response = Message.encode(pdu, security_parameters: @security, engine_boots: @boots, engine_time: v3_time)
+          encoded_response = Message.encode(pdu, security_parameters: security, engine_boots: @boots, engine_time: v3_time)
         else
           response_pdu = PDU.build(:response,
             headers: [request_pdu.version, request_pdu.community],
