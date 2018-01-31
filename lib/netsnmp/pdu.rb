@@ -49,8 +49,10 @@ module NETSNMP
           when :get       then 0
           when :getnext   then 1
 #          when :getbulk   then 5
-          when :set       then 3
           when :response  then 2
+          when :set       then 3
+          when :inform    then 6
+          when :trap      then 7
           else raise Error, "#{type} is not supported as type"
         end
         new(args.merge(type: typ))
