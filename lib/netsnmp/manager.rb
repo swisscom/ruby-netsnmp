@@ -108,7 +108,7 @@ module NETSNMP
       # Process the request
       case request_pdu.type
       when Inform
-        logger.info "received an inform request"
+        logger.info "received inform from #{ip}"
 
         # Acknowledge the inform
         if request_pdu.version == 3
@@ -135,10 +135,10 @@ module NETSNMP
           handler.inform(request_pdu, ip, port, self)
         end
       when V1_Trap, V2_Trap
-        logger.info "received trap"
+        logger.info "received trap from #{ip}"
         # reference: https://github.com/hallidave/ruby-snmp/blob/320e2395c082c8f54f070ce3be05d96f1dbfb500/lib/snmp/pdu.rb#L354
 
-        if handler.respond_to? :trap
+        if handler.respond_to? :inform
           handler.trap(request_pdu, ip, port, self)
         end
       else
