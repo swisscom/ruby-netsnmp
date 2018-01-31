@@ -131,6 +131,17 @@ module NETSNMP
       response.varbinds.map(&:value)
     end
 
+    # Perform a SNMP INFORM Request
+    #
+    # @see {NETSNMP::Varbind#new}
+    #
+    def inform(oid_opts)
+      request = @session.build_pdu(:inform, oid_opts)
+      response = handle_retries { @session.send(request) }
+      yield response if block_given? 
+      response
+    end
+
 
     private
 
