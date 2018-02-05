@@ -15,6 +15,16 @@ RSpec.describe NETSNMP::Varbind do
       end
       context "when passed a type" do
         # TODO: tidy this for IP Addresses
+        it "converts gauge32" do
+          gauge = 805
+          varbind = described_class.new(".1.3.6.1.2.1.1.3.0", type: :gauge, value: gauge)
+          expect(varbind.to_der).to end_with("B\x02\x03%".b)
+        end
+        it "converts counter32" do
+          gauge = 998932
+          varbind = described_class.new(".1.3.6.1.2.1.1.3.0", type: :counter32, value: gauge)
+          expect(varbind.to_der).to end_with("A\x02>\x14".b)
+        end
         it "converts integer ticks" do
           timetick = 1
           varbind = described_class.new(".1.3.6.1.2.1.1.3.0", type: :timetick, value: timetick)
