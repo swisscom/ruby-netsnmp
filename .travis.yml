@@ -5,24 +5,14 @@ services:
 before_install:
   - sudo apt-add-repository multiverse 
   - sudo apt-get update
-  - sudo apt-get install -y sed
-  - sudo apt-get install -y snmp
-  - sudo apt-get install -y libsnmp-dev
-  - sudo apt-get install -y snmp-mibs-downloader 
   - sudo apt-get install -o Dpkg::Options::="--force-confold" --force-yes -y docker-ce
-
-before_script:
-  - sudo download-mibs 
-  - sudo sed -i 's/^mibs/#mibs/g' /etc/snmp/snmp.conf
-  - spec/support/start_docker.sh
-after_script: spec/support/stop_docker.sh
 
 install:
   - gem update --system
   - bundle install --path .bundle
 
 script:
-  - bundle exec rake spec:ci
+  - spec/support/specs.sh
 
 language: ruby
 rvm:
