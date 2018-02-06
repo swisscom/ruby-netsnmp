@@ -71,7 +71,7 @@ module NETSNMP
       when OpenSSL::BN
       else
        asn_value # assume it's already primitive
-      end 
+      end
     end
 
     def convert_to_asn(typ, value)
@@ -80,15 +80,19 @@ module NETSNMP
       if typ.is_a?(Symbol)
         asn_type = case typ
           when :ipaddress then 0
-          when :counter32 then 1
-          when :gauge then 2
+          when :counter32
+            asn_val = [value].pack("n*")
+            1
+          when :gauge
+            asn_val = [value].pack("n*")
+            2
           when :timetick
             return Timetick.new(value).to_asn
           when :opaque then 4
           when :nsap then 5
           when :counter64 then 6
           when :uinteger then 7
-          else  
+          else
             raise Error, "#{typ}: unsupported application type"
         end
       end
@@ -102,6 +106,7 @@ module NETSNMP
         when 1 # ASN counter 32
           asn.value.unpack("n*")[0] || 0
         when 2 # gauge
+          asn.value.unpack("n*")[0] || 0
         when 3 # timeticks
           Timetick.new(asn.value.unpack("N*")[0] || 0)
         when 4 # opaque
