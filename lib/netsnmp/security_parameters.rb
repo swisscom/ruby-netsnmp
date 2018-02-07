@@ -10,9 +10,16 @@ module NETSNMP
 
     IPAD = "\x36" * 64
     OPAD = "\x5c" * 64
+    
+    # Timeliness is part of SNMP V3 Security
+    # The topic is described very nice here https://www.snmpsharpnet.com/?page_id=28
+    # https://www.ietf.org/rfc/rfc2574.txt 1.4.1 Timeliness
+    # The probe is outdated after 150 seconds which results in a PDU Error, therefore it should expire before that and be renewed
+    # The 150 Seconds is specified in https://www.ietf.org/rfc/rfc2574.txt 2.2.3
+    TIMELINESS_THRESHOLD = 150
 
     attr_reader :security_level, :username
-    attr_accessor :engine_id
+    attr_reader :engine_id
 
     # @param [String] username the snmp v3 username
     # @param [String] engine_id the device engine id (initialized to '' for report)
@@ -47,6 +54,10 @@ module NETSNMP
       @priv_pass_key = passkey(@priv_password) unless @priv_password.nil?
     end
 
+    def engine_id=(id)
+      @timeliness = Process.clock_gettime(Process::CLOCK_MONOTONIC, :second)
+      @engine_id = id
+    end
 
     # @param [#to_asn, #to_der] pdu the pdu to encode (must quack like a asn1 type)
     # @param [String] salt the salt to use
@@ -111,6 +122,12 @@ module NETSNMP
       return if @security_level < 1
       verisalt = sign(stream)
       raise Error, "invalid message authentication salt" unless verisalt == salt
+    end
+
+    def must_revalidate?
+      return @engine_id.empty? unless authorizable?
+      return true if @engine_id.empty? || @timeliness.nil?
+      (Process.clock_gettime(Process::CLOCK_MONOTONIC, :second) - @timeliness) >= TIMELINESS_THRESHOLD
     end
 
     private
@@ -194,5 +211,8 @@ module NETSNMP
       end
     end
 
+    def authorizable?
+      @auth_protocol && @auth_protocol != :none 
+    end
   end
 end

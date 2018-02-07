@@ -37,4 +37,30 @@ RSpec.describe NETSNMP::SecurityParameters do
     end
   end
 
+  context "#must_revalidate?" do
+    let(:security_options) { { username: "authprivmd5des", auth_password: "maplesyrup",
+                             auth_protocol: :md5, priv_password: "maplesyrup",
+                             priv_protocol: :des, security_level: :auth_priv } }
+    subject { described_class.new(**security_options) }
+    context "for v3" do
+      context "when initialized" do
+        it { expect(subject.must_revalidate?).to be_truthy }
+      end
+      context "when given a new engine id" do
+        before { subject.engine_id = "NEWENGINE" }
+        it { expect(subject.must_revalidate?).to be_falsy }
+        context "when limit surpasses" do
+          before do
+            subject.instance_variable_set(:@timeliness, Process.clock_gettime(Process::CLOCK_MONOTONIC, :second) - 150)
+          end 
+          it { expect(subject.must_revalidate?).to be_truthy }
+          context "when given a new engine id" do
+            before { subject.engine_id = "UPDATEDENGINE" }
+            it { expect(subject.must_revalidate?).to be_falsy }
+          end
+        end
+      end
+    end
+  end
+
 end
