@@ -48,7 +48,7 @@ module NETSNMP
     end
 
     def security_parameters
-      if @security_parameters.engine_id.empty?
+      if @security_parameters.must_revalidate?
         @security_parameters.engine_id = probe_for_engine
       end
       @security_parameters
