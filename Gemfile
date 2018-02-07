@@ -1,17 +1,17 @@
+# frozen_string_literal: true
+
 source "https://rubygems.org/"
 ruby RUBY_VERSION
 
 gemspec
 
-gem 'coveralls', require: false
+gem "coveralls", require: false
 
 group :development do
-  gem 'pry'
+  gem "pry"
 end
 
-if RUBY_VERSION < "2.2"
-  gem "nio4r", "~> 1.2"
-end
+gem "nio4r", "~> 1.2" if RUBY_VERSION < "2.2"
 
 platforms :mri do
   gem "pry-byebug", require: false
@@ -19,3 +19,5 @@ platforms :mri do
 end
 
 gem "xorcist"
+
+gem "rubocop", require: false

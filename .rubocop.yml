@@ -1,0 +1,11 @@
+inherit_from: .rubocop_todo.yml
+
+AllCops:
+  TargetRubyVersion: 2.3
+
+Layout/IndentHeredoc:
+  Enabled: false
+
+Style/NumericPredicate:
+  Exclude:
+    - lib/netsnmp.rb

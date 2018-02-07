@@ -1,13 +1,14 @@
 # frozen_string_literal: true
+
 module NETSNMP
-  # Let's just remind that there is no session in snmp, this is just an abstraction. 
-  # 
+  # Let's just remind that there is no session in snmp, this is just an abstraction.
+  #
   class Session
     TIMEOUT = 2
 
-    # @param [Hash] opts the options set 
+    # @param [Hash] opts the options set
     def initialize(version: 1, community: "public", **options)
-      @version   = 1
+      @version   = version
       @community = community
       validate(options)
     end
@@ -25,7 +26,7 @@ module NETSNMP
     # @return [NETSNMP::PDU] a pdu
     #
     def build_pdu(type, *vars)
-      PDU.build(type, headers: [ @version, @community ], varbinds: vars)
+      PDU.build(type, headers: [@version, @community], varbinds: vars)
     end
 
     # send a pdu, receives a pdu
@@ -35,7 +36,7 @@ module NETSNMP
     # @return [NETSNMP::PDU] the response pdu
     #
     def send(pdu)
-      encoded_request = encode(pdu) 
+      encoded_request = encode(pdu)
       encoded_response = @transport.send(encoded_request)
       decode(encoded_response)
     end
@@ -46,7 +47,7 @@ module NETSNMP
       proxy = options[:proxy]
       if proxy
         @proxy = true
-        @transport = proxy 
+        @transport = proxy
       else
         host, port = options.values_at(:host, :port)
         raise "you must provide an hostname/ip under :host" unless host
@@ -54,15 +55,14 @@ module NETSNMP
         @transport = Transport.new(host, port.to_i, timeout: options.fetch(:timeout, TIMEOUT))
       end
       @version = case @version
-        when Integer then @version # assume the use know what he's doing
-        when /v?1/ then 0 
-        when /v?2c?/ then 1 
-        when /v?3/ then 3
-        else
-          raise "unsupported snmp version (#{@version})"
-      end
+                 when Integer then @version # assume the use know what he's doing
+                 when /v?1/ then 0
+                 when /v?2c?/ then 1
+                 when /v?3/ then 3
+                 else
+                   raise "unsupported snmp version (#{@version})"
+                 end
     end
-
 
     def encode(pdu)
       pdu.to_der
@@ -75,13 +75,13 @@ module NETSNMP
     class Transport
       MAXPDUSIZE = 0xffff + 1
 
-      def initialize(host, port, timeout: )
+      def initialize(host, port, timeout:)
         @socket = UDPSocket.new
-        @socket.connect( host, port )
+        @socket.connect(host, port)
         @timeout = timeout
       end
 
-      def close 
+      def close
         @socket.close
       end
 
@@ -96,9 +96,9 @@ module NETSNMP
         end
       end
 
-      def recv(bytesize=MAXPDUSIZE)
+      def recv(bytesize = MAXPDUSIZE)
         perform_io do
-          datagram, _ = @socket.recvfrom_nonblock(bytesize)
+          datagram, = @socket.recvfrom_nonblock(bytesize)
           datagram
         end
       end
@@ -118,11 +118,9 @@ module NETSNMP
       end
 
       def wait(mode)
-        unless @socket.__send__(mode, @timeout)
-          raise Timeout::Error, "Timeout after #{@timeout} seconds"
-        end   
+        return if @socket.__send__(mode, @timeout)
+        raise Timeout::Error, "Timeout after #{@timeout} seconds"
       end
-
     end
   end
 end

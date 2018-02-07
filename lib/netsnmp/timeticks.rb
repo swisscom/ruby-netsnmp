@@ -1,11 +1,11 @@
+# frozen_string_literal: true
+
 module NETSNMP
   class Timetick < Numeric
-
     # @param [Integer] ticks number of microseconds since the time it was read
     def initialize(ticks)
       @ticks = ticks
     end
-
 
     def to_s
       days = days_since
@@ -24,7 +24,7 @@ module NETSNMP
     end
 
     def coerce(other)
-      [ Timetick.new(other), self]
+      [Timetick.new(other), self]
     end
 
     def <=>(other)
@@ -32,23 +32,22 @@ module NETSNMP
     end
 
     def +(other)
-      Timetick.new( (to_i + other.to_i))
+      Timetick.new((to_i + other.to_i))
     end
 
     def -(other)
-      Timetick.new( (to_i - other.to_i))
+      Timetick.new((to_i - other.to_i))
     end
 
     def *(other)
-      Timetick.new( (to_i * other.to_i))
+      Timetick.new((to_i * other.to_i))
     end
 
     def /(other)
-      Timetick.new( (to_i / other.to_i))
+      Timetick.new((to_i / other.to_i))
     end
 
     private
-
 
     def days_since
       Rational(@ticks, 8_640_000)
@@ -61,10 +60,9 @@ module NETSNMP
     def minutes_since(hours)
       Rational((hours.to_f - hours.to_i) * 60)
     end
-      
+
     def milliseconds_since(minutes)
       Rational((minutes.to_f - minutes.to_i) * 60)
     end
-
   end
 end

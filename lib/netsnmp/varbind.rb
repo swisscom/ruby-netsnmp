@@ -1,12 +1,12 @@
 # frozen_string_literal: true
+
 module NETSNMP
   # Abstracts the PDU variable structure into a ruby object
   #
   class Varbind
-
     attr_reader :oid, :value
 
-    def initialize(oid , value: nil, type: nil, **opts)
+    def initialize(oid, value: nil, type: nil, **_opts)
       @oid = OID.build(oid)
       @type = type
       @value = convert_val(value) if value
@@ -23,28 +23,27 @@ module NETSNMP
     def to_asn
       asn_oid = OID.to_asn(@oid)
       asn_val = if @type
-        convert_to_asn(@type, @value)
-      else
-        case @value
-        when String
-          OpenSSL::ASN1::OctetString.new(@value)
-        when Integer
-          OpenSSL::ASN1::Integer.new(@value)
-        when true, false
-          OpenSSL::ASN1::Boolean.new(@value)
-        when nil
-          OpenSSL::ASN1::Null.new(nil)
-        when IPAddr
-          OpenSSL::ASN1::ASN1Data.new(@value.hton, 0, :APPLICATION)
-        when Timetick
-          @value.to_asn
-        else
-          raise Error, "#{@value}: unsupported varbind type"
-        end
-      end
-      OpenSSL::ASN1::Sequence.new( [asn_oid, asn_val] )
+                  convert_to_asn(@type, @value)
+                else
+                  case @value
+                  when String
+                    OpenSSL::ASN1::OctetString.new(@value)
+                  when Integer
+                    OpenSSL::ASN1::Integer.new(@value)
+                  when true, false
+                    OpenSSL::ASN1::Boolean.new(@value)
+                  when nil
+                    OpenSSL::ASN1::Null.new(nil)
+                  when IPAddr
+                    OpenSSL::ASN1::ASN1Data.new(@value.hton, 0, :APPLICATION)
+                  when Timetick
+                    @value.to_asn
+                  else
+                    raise Error, "#{@value}: unsupported varbind type"
+                  end
+                end
+      OpenSSL::ASN1::Sequence.new([asn_oid, asn_val])
     end
-
 
     def convert_val(asn_value)
       case asn_value
@@ -68,9 +67,9 @@ module NETSNMP
       when OpenSSL::ASN1::ASN1Data
         # application data
         convert_application_asn(asn_value)
-      when OpenSSL::BN
+      # when OpenSSL::BN
       else
-       asn_value # assume it's already primitive
+        asn_value # assume it's already primitive
       end
     end
 
@@ -79,40 +78,40 @@ module NETSNMP
       asn_val = value
       if typ.is_a?(Symbol)
         asn_type = case typ
-          when :ipaddress then 0
-          when :counter32
-            asn_val = [value].pack("n*")
-            1
-          when :gauge
-            asn_val = [value].pack("n*")
-            2
-          when :timetick
-            return Timetick.new(value).to_asn
-          when :opaque then 4
-          when :nsap then 5
-          when :counter64 then 6
-          when :uinteger then 7
-          else
-            raise Error, "#{typ}: unsupported application type"
-        end
+                   when :ipaddress then 0
+                   when :counter32
+                     asn_val = [value].pack("n*")
+                     1
+                   when :gauge
+                     asn_val = [value].pack("n*")
+                     2
+                   when :timetick
+                     return Timetick.new(value).to_asn
+                   when :opaque then 4
+                   when :nsap then 5
+                   when :counter64 then 6
+                   when :uinteger then 7
+                   else
+                     raise Error, "#{typ}: unsupported application type"
+                   end
       end
       OpenSSL::ASN1::ASN1Data.new(asn_val, asn_type, :APPLICATION)
     end
 
     def convert_application_asn(asn)
       case asn.tag
-        when 0 # IP Address
-          IPAddr.new_ntoh(asn.value)
-        when 1 # ASN counter 32
-          asn.value.unpack("n*")[0] || 0
-        when 2 # gauge
-          asn.value.unpack("n*")[0] || 0
-        when 3 # timeticks
-          Timetick.new(asn.value.unpack("N*")[0] || 0)
-        when 4 # opaque
-        when 5 # NSAP
-        when 6 # ASN Counter 64
-        when 7 # ASN UInteger
+      when 0 # IP Address
+        IPAddr.new_ntoh(asn.value)
+      when 1 # ASN counter 32
+        asn.value.unpack("n*")[0] || 0
+      when 2 # gauge
+        asn.value.unpack("n*")[0] || 0
+      when 3 # timeticks
+        Timetick.new(asn.value.unpack("N*")[0] || 0)
+        # when 4 # opaque
+        # when 5 # NSAP
+        # when 6 # ASN Counter 64
+        # when 7 # ASN UInteger
       end
     end
   end

@@ -1,7 +1,11 @@
+# frozen_string_literal: true
+
 RSpec.describe NETSNMP::V3Session do
-  let(:security_options) { { username: "authprivmd5des", auth_password: "maplesyrup",
-                             auth_protocol: :md5, priv_password: "maplesyrup",
-                             priv_protocol: :des, security_level: :auth_priv } }
+  let(:security_options) do
+    { username: "authprivmd5des", auth_password: "maplesyrup",
+      auth_protocol: :md5, priv_password: "maplesyrup",
+      priv_protocol: :des, security_level: :auth_priv }
+  end
   it "generates the security parameters handler" do
     sess = described_class.new(security_options.merge(host: "localhost", port: SNMPPORT))
     # not generated yet
@@ -16,6 +20,6 @@ RSpec.describe NETSNMP::V3Session do
   end
 
   it "fails if the pass object doesn't follow the expected api" do
-    expect { described_class.new(host: "localhost", port: SNMPPORT, security_parameters: double) }.to raise_error(NETSNMP::Error) 
+    expect { described_class.new(host: "localhost", port: SNMPPORT, security_parameters: double) }.to raise_error(NETSNMP::Error)
   end
 end

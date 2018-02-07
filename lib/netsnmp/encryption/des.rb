@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 module NETSNMP
   module Encryption
     using StringExtensions
@@ -9,8 +10,7 @@ module NETSNMP
         @local = local
       end
 
-
-      def encrypt(decrypted_data, engine_boots: , engine_time: nil)
+      def encrypt(decrypted_data, engine_boots:, **)
         cipher = OpenSSL::Cipher::DES.new(:CBC)
 
         iv, salt = generate_encryption_key(engine_boots)
@@ -23,15 +23,14 @@ module NETSNMP
           decrypted_data << ("\x00" * (8 - diff))
         end
 
-
         encrypted_data = cipher.update(decrypted_data) + cipher.final
-        NETSNMP.debug {"encrypted:\n#{Hexdump.dump(encrypted_data)}" }
+        NETSNMP.debug { "encrypted:\n#{Hexdump.dump(encrypted_data)}" }
         [encrypted_data, salt]
       end
 
-      def decrypt(encrypted_data, salt: , engine_boots: nil, engine_time: nil)
-        raise Error, "invalid priv salt received" unless salt.length % 8 == 0
-        raise Error, "invalid encrypted PDU received" unless encrypted_data.length % 8 == 0
+      def decrypt(encrypted_data, salt:, **)
+        raise Error, "invalid priv salt received" unless (salt.length % 8).zero?
+        raise Error, "invalid encrypted PDU received" unless (encrypted_data.length % 8).zero?
 
         cipher = OpenSSL::Cipher::DES.new(:CBC)
         cipher.padding = 0
@@ -42,17 +41,17 @@ module NETSNMP
         cipher.key = des_key
         cipher.iv = iv
         decrypted_data = cipher.update(encrypted_data) + cipher.final
-        NETSNMP.debug {"decrypted:\n#{Hexdump.dump(decrypted_data)}" }
+        NETSNMP.debug { "decrypted:\n#{Hexdump.dump(decrypted_data)}" }
 
         hlen, bodylen = OpenSSL::ASN1.traverse(decrypted_data) { |_, _, x, y, *| break x, y }
-        decrypted_data.byteslice(0, hlen+bodylen)
+        decrypted_data.byteslice(0, hlen + bodylen)
       end
 
-
       private
+
       # 8.1.1.1
       def generate_encryption_key(boots)
-        pre_iv = @priv_key[8,8]
+        pre_iv = @priv_key[8, 8]
         salt = [0xff & (boots >> 24),
                 0xff & (boots >> 16),
                 0xff & (boots >> 8),
@@ -61,19 +60,19 @@ module NETSNMP
                 0xff & (@local >> 16),
                 0xff & (@local >> 8),
                 0xff &  @local].pack("c*")
-         @local = @local == 0xffffffff ? 0 : @local + 1
+        @local = @local == 0xffffffff ? 0 : @local + 1
 
-         iv = pre_iv.xor(salt)
-         [iv, salt]
-       end
+        iv = pre_iv.xor(salt)
+        [iv, salt]
+      end
 
-       def generate_decryption_key(salt)
-         pre_iv = @priv_key[8,8]
-         pre_iv.xor(salt)
-       end
+      def generate_decryption_key(salt)
+        pre_iv = @priv_key[8, 8]
+        pre_iv.xor(salt)
+      end
 
-      def des_key 
-        @priv_key[0,8]
+      def des_key
+        @priv_key[0, 8]
       end
     end
   end

@@ -1,12 +1,12 @@
 # frozen_string_literal: true
+
 module NETSNMP
   # Abstraction for the v3 semantics.
   class V3Session < Session
-
     # @param [String, Integer] version SNMP version (always 3)
     def initialize(version: 3, context: "", **opts)
       @context = context
-      @security_parameters = opts.delete(:security_parameters) 
+      @security_parameters = opts.delete(:security_parameters)
       super
     end
 
@@ -15,12 +15,12 @@ module NETSNMP
     # @return [NETSNMP::ScopedPDU] a pdu
     def build_pdu(type, *vars)
       engine_id = security_parameters.engine_id
-      pdu = ScopedPDU.build(type, headers: [engine_id, @context], varbinds: vars)
+      ScopedPDU.build(type, headers: [engine_id, @context], varbinds: vars)
     end
 
     # @see {NETSNMP::Session#send}
     def send(*)
-      pdu, _ = super
+      pdu, = super
       pdu
     end
 
@@ -28,29 +28,27 @@ module NETSNMP
 
     def validate(**options)
       super
-      if s = @security_parameters
+      if (s = @security_parameters)
         # inspect public API
         unless s.respond_to?(:encode) &&
                s.respond_to?(:decode) &&
                s.respond_to?(:sign)   &&
                s.respond_to?(:verify)
-          raise Error, "#{s} doesn't respect the sec params public API (#encode, #decode, #sign)" 
-        end 
+          raise Error, "#{s} doesn't respect the sec params public API (#encode, #decode, #sign)"
+        end
       else
-        @security_parameters = SecurityParameters.new(security_level: options[:security_level], 
+        @security_parameters = SecurityParameters.new(security_level: options[:security_level],
                                                       username:       options[:username],
                                                       auth_protocol:  options[:auth_protocol],
                                                       priv_protocol:  options[:priv_protocol],
                                                       auth_password:  options[:auth_password],
                                                       priv_password:  options[:priv_password])
-  
+
       end
     end
 
     def security_parameters
-      if @security_parameters.must_revalidate?
-        @security_parameters.engine_id = probe_for_engine
-      end
+      @security_parameters.engine_id = probe_for_engine if @security_parameters.must_revalidate?
       @security_parameters
     end
 
@@ -69,7 +67,7 @@ module NETSNMP
     end
 
     def encode(pdu)
-      Message.encode(pdu, security_parameters: @security_parameters, 
+      Message.encode(pdu, security_parameters: @security_parameters,
                           engine_boots: @engine_boots,
                           engine_time: @engine_time)
     end
