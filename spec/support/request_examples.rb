@@ -18,6 +18,14 @@ RSpec.shared_examples "an snmp client" do
     it "fetches the varbinds for a given oid" do
       expect(value).to eq(get_result)
     end
+    context "with multiple oids" do
+      let(:value) { subject.get({ oid: get_oid }, oid: next_oid) }
+      it "returns the values for both" do
+        expect(value).to be_a(Array)
+        expect(value).to include(/#{get_result}/)
+        expect(value).to include(/#{next_result}/)
+      end
+    end
   end
 
   describe "#get_next" do

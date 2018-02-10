@@ -49,23 +49,24 @@ module NETSNMP
     #
     # @see {NETSNMP::Varbind#new}
     #
-    def get(oid_opts)
-      request = @session.build_pdu(:get, oid_opts)
+    def get(*oid_opts)
+      request = @session.build_pdu(:get, *oid_opts)
       response = handle_retries { @session.send(request) }
       yield response if block_given?
-      response.varbinds.first.value
+      values = response.varbinds.map(&:value)
+      values.size > 1 ? values : values.first
     end
 
     # Performs an SNMP GETNEXT Request
     #
     # @see {NETSNMP::Varbind#new}
     #
-    def get_next(oid_opts)
-      request = @session.build_pdu(:getnext, oid_opts)
+    def get_next(*oid_opts)
+      request = @session.build_pdu(:getnext, *oid_opts)
       response = handle_retries { @session.send(request) }
       yield response if block_given?
-      varbind = response.varbinds.first
-      [varbind.oid, varbind.value]
+      values = response.varbinds.map { |v| [v.oid, v.value] }
+      values.size > 1 ? values : values.first
     end
 
     # Perform a SNMP Walk (issues multiple subsequent GENEXT requests within the subtree rooted on an OID)
@@ -124,11 +125,12 @@ module NETSNMP
     #
     # @see {NETSNMP::Varbind#new}
     #
-    def set(oid_opts)
-      request = @session.build_pdu(:set, oid_opts)
+    def set(*oid_opts)
+      request = @session.build_pdu(:set, *oid_opts)
       response = handle_retries { @session.send(request) }
       yield response if block_given?
-      response.varbinds.map(&:value)
+      values = response.varbinds.map(&:value)
+      values.size > 1 ? values : values.first
     end
 
     private
