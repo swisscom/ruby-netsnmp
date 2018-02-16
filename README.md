@@ -219,25 +219,51 @@ All encoding/decoding/encryption/decryption/digests are done using `openssl`, wh
 
 ## Tests
 
-This library uses RSpec. The client specs are "integration" tests, in that we communicate with an snmp agent simulator.
+This library uses RSpec. The client specs are "integration" tests, in that we communicate with an [snmpsim-built snmp agent simulator](https://github.com/etingof/snmpsim).
 
-To start the simulator locally, you'll need docker 1.9 or higher (Why 1.9? ```--build-arg``` parameter support was needed for our builds in the CI. You could use a lower version by providing the proxy environment variables in the Dockerfile directly, provided you don't merge these changes to master, thereby exposing your proxy).
+### RSpec
 
-```
-> spec/support/start_docker.sh
-```
-
-this builds and starts the docker image in deamonized mode. You can afterwards run your specs:
+You can run all tests by typing:
 
 ```
+> bundle exec rake spec
+# or
 > bundle exec rspec
+...
 ```
 
-To stop the image, you can just:
+### SNMP Simulator
+
+You can install the package yourself (ex: `pip install snmpsim`) and run the server locally, and then set the `SNMP_PORT` environment variable, where the snmp simulator is running.
+
+#### Docker
+
+The preferred way to use the snmp simulator is by using docker.
+
+In order to start the simulator container, run:
 
 ```
-> spec/supoprt/stop_docker.sh
+> spec/support/spec.sh start
 ```
+
+after, you just need to set the `SNMP_PORT` variable to the port found typing:
+
+```
+> docker port test-snmp 1161/udp
+```
+
+and run the tests. 
+
+#### CI
+
+If you want to replicate what the CI is doing, just do:
+
+```
+> spec/support/spec.sh run
+```
+
+Which should: build and run the simulator container, run the tests, run rubocop, and remove all artifacts.
+
 
 ## Contributing
 
