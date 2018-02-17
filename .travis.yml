@@ -12,7 +12,7 @@ install:
   - bundle install --path .bundle
 
 script:
-  - spec/support/specs.sh
+  - spec/support/specs.sh run
 
 language: ruby
 rvm:

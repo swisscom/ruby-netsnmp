@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+
 function start {
   docker pull honeyryderchuck/snmp-server-emulator:latest
   docker run -d -p :1161/udp --name test-snmp -v $(pwd)/spec/support/snmpsim:/home/snmp_server/.snmpsim honeyryderchuck/snmp-server-emulator \
@@ -19,6 +20,15 @@ function start {
 
 }
 
+function run {
+  sleep 20 # give some time for the simulator to boot
+  
+  port="$(docker port test-snmp 1161/udp)"
+  export SNMP_PORT=$(echo $port | cut -d':' -f2)
+  
+  bundle exec rake spec:ci
+  bundle exec rubocop
+}
 
 function finish {
   docker stop test-snmp
@@ -27,13 +37,16 @@ function finish {
 
 trap finish EXIT
 
-start
-sleep 20 # give some time for the simulator to boot
-
-port="$(docker port test-snmp 1161/udp)"
-export SNMP_PORT=$(echo $port | cut -d':' -f2)
-
-bundle exec rake spec:ci
-bundle exec rubocop
-
-
+case "$1" in
+  start)
+    start
+    docker logs -f test-snmp
+    ;;
+  run)
+    start
+    run
+    ;;
+  *)
+    echo $"Usage: $0 {start|run}"
+    exit 1
+esac
