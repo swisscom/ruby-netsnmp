@@ -15,7 +15,7 @@ module NETSNMP
 
         cipher.encrypt
         cipher.iv = iv
-        cipher.key = aes_key
+        cipher.key = des_key
 
         if (diff = decrypted_data.length % 8) != 0
           decrypted_data << ("\x00" * (8 - diff))
@@ -29,6 +29,7 @@ module NETSNMP
 
       def decrypt(encrypted_data, salt:, engine_boots:, engine_time:)
         raise Error, "invalid priv salt received" unless (salt.length % 8).zero?
+        raise Error, "invalid encrypted PDU received" unless (encrypted_data.length % 8).zero?
 
         cipher = OpenSSL::Cipher::AES128.new(:CFB)
         cipher.padding = 0
@@ -36,7 +37,7 @@ module NETSNMP
         iv = generate_decryption_key(engine_boots, engine_time, salt)
 
         cipher.decrypt
-        cipher.key = aes_key
+        cipher.key = des_key
         cipher.iv = iv
         decrypted_data = cipher.update(encrypted_data) + cipher.final
         NETSNMP.debug { "decrypted:\n#{Hexdump.dump(decrypted_data)}" }
@@ -75,7 +76,7 @@ module NETSNMP
          0xff &  time].pack("c*") + salt
       end
 
-      def aes_key
+      def des_key
         @priv_key[0, 16]
       end
     end
