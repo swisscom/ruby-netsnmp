@@ -57,7 +57,7 @@ All of these issues are resolved here.
 * Client Interface, which supports SNMP v3, v2c, and v1
 * Supports get, getnext, set and walk calls.
 * Proxy IO object support (for eventmachine/celluloid-io)
-* Ruby >= 2.1 support (modern)
+* Ruby >= 2.3 support (modern)
 * Pure Ruby (no FFI)
 
 ## Examples
