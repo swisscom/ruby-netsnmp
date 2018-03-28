@@ -20,4 +20,4 @@ end
 
 gem "xorcist"
 
-gem "rubocop", require: false
+gem "rubocop", "0.52.1", require: false
