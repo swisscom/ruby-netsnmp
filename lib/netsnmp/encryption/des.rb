@@ -30,7 +30,6 @@ module NETSNMP
 
       def decrypt(encrypted_data, salt:, **)
         raise Error, "invalid priv salt received" unless (salt.length % 8).zero?
-        raise Error, "invalid encrypted PDU received" unless (encrypted_data.length % 8).zero?
 
         cipher = OpenSSL::Cipher::DES.new(:CBC)
         cipher.padding = 0
