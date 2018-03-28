@@ -1,4 +1,3 @@
-
 RSpec.describe NETSNMP::Encryption::AES do
   subject { described_class.new(secret_key) }
   let(:data_to_encrypt) { "C\b19710917" }
