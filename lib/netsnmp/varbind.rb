@@ -81,9 +81,11 @@ module NETSNMP
                    when :ipaddress then 0
                    when :counter32
                      asn_val = [value].pack("N*")
+                     asn_val = asn_val[1..-1] while asn_val.start_with?("\x00")
                      1
                    when :gauge
                      asn_val = [value].pack("N*")
+                     asn_val = asn_val[1..-1] while asn_val.start_with?("\x00")
                      2
                    when :timetick
                      return Timetick.new(value).to_asn

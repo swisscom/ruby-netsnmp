@@ -16,7 +16,6 @@ RSpec.describe NETSNMP::Varbind do
         expect(varbind.to_der).to end_with("\x04\x00\x00\x00\x01".b) # ends with an octet string rep of 1 timetick
       end
       context "when passed a type" do
-        # TODO: tidy this for IP Addresses
         it "converts gauge32" do
           gauge = 805
           varbind = described_class.new(".1.3.6.1.2.1.1.3.0", type: :gauge, value: gauge)
@@ -25,7 +24,7 @@ RSpec.describe NETSNMP::Varbind do
         it "converts counter32" do
           gauge = 998932
           varbind = described_class.new(".1.3.6.1.2.1.1.3.0", type: :counter32, value: gauge)
-          expect(varbind.to_der).to end_with("A\x02>\x14".b)
+          expect(varbind.to_der).to end_with("\x0F>\x14".b)
         end
         it "converts integer ticks" do
           timetick = 1
