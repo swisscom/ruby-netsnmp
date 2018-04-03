@@ -80,10 +80,10 @@ module NETSNMP
         asn_type = case typ
                    when :ipaddress then 0
                    when :counter32
-                     asn_val = [value].pack("n*")
+                     asn_val = [value].pack("N*")
                      1
                    when :gauge
-                     asn_val = [value].pack("n*")
+                     asn_val = [value].pack("N*")
                      2
                    when :timetick
                      return Timetick.new(value).to_asn
@@ -102,10 +102,11 @@ module NETSNMP
       case asn.tag
       when 0 # IP Address
         IPAddr.new_ntoh(asn.value)
-      when 1 # ASN counter 32
-        asn.value.unpack("n*")[0] || 0
-      when 2 # gauge
-        asn.value.unpack("n*")[0] || 0
+      when 1, # ASN counter 32
+           2 # gauge
+        val = asn.value
+        val.prepend("\x00") while val.bytesize < 4
+        asn.value.unpack("N*")[0] || 0
       when 3 # timeticks
         Timetick.new(asn.value.unpack("N*")[0] || 0)
         # when 4 # opaque
