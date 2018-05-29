@@ -135,6 +135,17 @@ module NETSNMP
       values.size > 1 ? values : values.first
     end
 
+    # Perform a SNMP INFORM Request
+    #
+    # @see {NETSNMP::Varbind#new}
+    #
+    def inform(oid_opts)
+      request = @session.build_pdu(:inform, oid_opts)
+      response = handle_retries { @session.send(request) }
+      yield response if block_given? 
+      response
+    end
+
     private
 
     # Handles timeout errors by reissuing the same pdu until it runs out or retries.
