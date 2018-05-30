@@ -139,11 +139,12 @@ module NETSNMP
     #
     # @see {NETSNMP::Varbind#new}
     #
-    def inform(oid_opts)
-      request = @session.build_pdu(:inform, oid_opts)
+    def inform(*oid_opts)
+      request = @session.build_pdu(:inform, *oid_opts)
       response = handle_retries { @session.send(request) }
-      yield response if block_given? 
-      response
+      yield response if block_given?
+      values = response.varbinds.map(&:value)
+      values.size > 1 ? values : values.first
     end
 
     private
