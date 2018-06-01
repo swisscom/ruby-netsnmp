@@ -22,7 +22,6 @@ rvm:
   - 2.4
   - 2.5
   - ruby-head
-  - jruby-9.1.16.0
   - jruby-head
   - rbx-2
 matrix:
@@ -30,5 +29,4 @@ matrix:
   - rvm: ruby-head
   - rvm: jruby-head
     # to figure out later
-  - rvm: jruby-9.1.15.0
   - rvm: rbx-2
