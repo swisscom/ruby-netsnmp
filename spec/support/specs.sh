@@ -27,7 +27,6 @@ function run {
   export SNMP_PORT=$(echo $port | cut -d':' -f2)
   
   bundle exec rake spec:ci
-  bundle exec rubocop
 }
 
 function finish {
