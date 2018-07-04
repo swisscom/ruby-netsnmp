@@ -16,8 +16,7 @@ gem "nio4r", "~> 1.2" if RUBY_VERSION < "2.2"
 platforms :mri do
   gem "pry-byebug", require: false
   gem "stackprof", require: false
+  gem "xorcist", require: false
 end
-
-gem "xorcist"
 
 gem "rubocop", "0.52.1", require: false
