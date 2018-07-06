@@ -26,11 +26,28 @@ RSpec.describe NETSNMP::Varbind do
           varbind = described_class.new(".1.3.6.1.2.1.1.3.0", type: :counter32, value: gauge)
           expect(varbind.to_der).to end_with("\x0F>\x14".b)
         end
+        it "converts counter64" do
+          gauge = 998932
+          varbind = described_class.new(".1.3.6.1.2.1.1.3.0", type: :counter64, value: gauge)
+          expect(varbind.to_der).to end_with("\x0F>\x14".b)
+        end
         it "converts integer ticks" do
           timetick = 1
           varbind = described_class.new(".1.3.6.1.2.1.1.3.0", type: :timetick, value: timetick)
           expect(varbind.to_der).to end_with("\x04\x00\x00\x00\x01".b)
         end
+      end
+      it "encrypts and then decrypts counter32" do
+        counter = 12852839
+        varbind = described_class.new(".1.3.6.1.2.1.1.3.0", type: :counter32, value: counter)
+        asn = varbind.to_asn.value.last
+        expect(varbind.convert_application_asn(asn)).to eq(12852839)
+      end
+      it "encrypts and then decrypts counter64" do
+        counter = 12852839
+        varbind = described_class.new(".1.3.6.1.2.1.1.3.0", type: :counter64, value: counter)
+        asn = varbind.to_asn.value.last
+        expect(varbind.convert_application_asn(asn)).to eq(12852839)
       end
     end
   end

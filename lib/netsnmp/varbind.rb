@@ -91,7 +91,10 @@ module NETSNMP
                      return Timetick.new(value).to_asn
                    when :opaque then 4
                    when :nsap then 5
-                   when :counter64 then 6
+                   when :counter64
+                     asn_val = [value].pack("N*")
+                     asn_val = asn_val[1..-1] while asn_val.start_with?("\x00")
+                     6
                    when :uinteger then 7
                    else
                      raise Error, "#{typ}: unsupported application type"
@@ -105,7 +108,8 @@ module NETSNMP
       when 0 # IP Address
         IPAddr.new_ntoh(asn.value)
       when 1, # ASN counter 32
-           2 # gauge
+           2, # gauge
+           6  # ASN Counter 64
         val = asn.value
         val.prepend("\x00") while val.bytesize < 4
         asn.value.unpack("N*")[0] || 0
