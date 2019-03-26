@@ -91,7 +91,15 @@ module NETSNMP
                      return Timetick.new(value).to_asn
                    when :opaque then 4
                    when :nsap then 5
-                   when :counter64 then 6
+                   when :counter64
+                     asn_val = "".b
+                     loop do
+                       asn_val.prepend([value].pack("N*"))
+                       value -= (2**32 - 1)
+                       break if value.negative?
+                     end
+                     asn_val = asn_val[1..-1] while asn_val.start_with?("\x00")
+                     6
                    when :uinteger then 7
                    else
                      raise Error, "#{typ}: unsupported application type"
@@ -108,12 +116,18 @@ module NETSNMP
            2 # gauge
         val = asn.value
         val.prepend("\x00") while val.bytesize < 4
-        asn.value.unpack("N*")[0] || 0
+        val.unpack("N*")[0] || 0
       when 3 # timeticks
         Timetick.new(asn.value.unpack("N*")[0] || 0)
         # when 4 # opaque
         # when 5 # NSAP
-        # when 6 # ASN Counter 64
+      when 6 # ASN Counter 64
+        val = asn.value
+        val.prepend("\x00") while val.bytesize % 4 != 0
+        val = val.unpack("N*")
+        val.reverse_each.with_index.reduce(0) do |acc, (num, index)|
+          acc + num + (2**(index * 32) - 1)
+        end
         # when 7 # ASN UInteger
       end
     end
