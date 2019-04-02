@@ -28,24 +28,36 @@ RSpec.describe NETSNMP::Varbind do
           expect(varbind.convert_application_asn(asn)).to eq(gauge)
         end
         it "converts counter32" do
-          gauge = 998932
-          varbind = described_class.new(".1.3.6.1.2.1.1.3.0", type: :counter32, value: gauge)
+          counter = 998932
+          varbind = described_class.new(".1.3.6.1.2.1.1.3.0", type: :counter32, value: counter)
           expect(varbind.to_der).to end_with("\x0F>\x14".b)
           asn = varbind.to_asn.value.last
-          expect(varbind.convert_application_asn(asn)).to eq(gauge)
+          expect(varbind.convert_application_asn(asn)).to eq(counter)
         end
-        it "onverts counter64" do
-          gauge = 998932
-          varbind = described_class.new(".1.3.6.1.2.1.1.3.0", type: :counter64, value: gauge)
+        it "converts counter64" do
+          counter = 998932
+          varbind = described_class.new(".1.3.6.1.2.1.1.3.0", type: :counter64, value: counter)
           expect(varbind.to_der).to end_with("\x0F>\x14".b)
           asn = varbind.to_asn.value.last
-          expect(varbind.convert_application_asn(asn)).to eq(gauge)
+          expect(varbind.convert_application_asn(asn)).to eq(counter)
 
-          gauge = 4294967296
-          varbind = described_class.new(".1.3.6.1.2.1.1.3.0", type: :counter64, value: gauge)
+          counter = 4294967296
+          varbind = described_class.new(".1.3.6.1.2.1.1.3.0", type: :counter64, value: counter)
           expect(varbind.to_der).to end_with("\x01\x00\x00\x00\x00".b)
           asn = varbind.to_asn.value.last
-          expect(varbind.convert_application_asn(asn)).to eq(gauge)
+          expect(varbind.convert_application_asn(asn)).to eq(counter)
+
+          counter = 309084502
+          varbind = described_class.new(".1.3.6.1.2.1.1.3.0", type: :counter64, value: counter)
+          expect(varbind.to_der).to include("F\x04".b)
+          asn = varbind.to_asn.value.last
+          expect(varbind.convert_application_asn(asn)).to eq(counter)
+
+          counter = 2_613_579_752_238
+          varbind = described_class.new(".1.3.6.1.2.1.1.3.0", type: :counter64, value: counter)
+          expect(varbind.to_der).to include("F\x06".b)
+          asn = varbind.to_asn.value.last
+          expect(varbind.convert_application_asn(asn)).to eq(counter)
         end
         it "converts integer ticks" do
           timetick = 1

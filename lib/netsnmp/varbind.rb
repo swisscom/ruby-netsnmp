@@ -92,12 +92,12 @@ module NETSNMP
                    when :opaque then 4
                    when :nsap then 5
                    when :counter64
-                     asn_val = "".b
-                     loop do
-                       asn_val.prepend([value].pack("N*"))
-                       value -= (2**32 - 1)
-                       break if value.negative?
-                     end
+                     asn_val = [
+                       (value >> 96) & 0xFFFFFFFF,
+                       (value >> 64) & 0xFFFFFFFF,
+                       (value >> 32) & 0xFFFFFFFF,
+                       value & 0xFFFFFFFF
+                     ].pack("NNNN")
                      asn_val = asn_val[1..-1] while asn_val.start_with?("\x00")
                      6
                    when :uinteger then 7
@@ -123,11 +123,8 @@ module NETSNMP
         # when 5 # NSAP
       when 6 # ASN Counter 64
         val = asn.value
-        val.prepend("\x00") while val.bytesize % 4 != 0
-        val = val.unpack("N*")
-        val.reverse_each.with_index.reduce(0) do |acc, (num, index)|
-          acc + num + (2**(index * 32) - 1)
-        end
+        val.prepend("\x00") while val.bytesize % 16 != 0
+        val.unpack("NNNN").reduce(0) { |sum, elem| (sum << 32) + elem }
         # when 7 # ASN UInteger
       end
     end
