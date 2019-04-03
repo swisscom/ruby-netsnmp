@@ -8,7 +8,7 @@ before_install:
   - sudo apt-get install -o Dpkg::Options::="--force-confold" --force-yes -y docker-ce
 
 install:
-  - gem update --system
+  - gem i rubygems-update -v '<3' && update_rubygems
   - bundle install --path .bundle
 
 script:
