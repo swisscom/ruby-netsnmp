@@ -123,6 +123,8 @@ If you create an `IPAddr` object (ruby standard library `ipaddr`) and pass it to
 The `NETSNMP::Timeticks` type is internal to this library, but it is a ruby `Numeric` type. You are safe to use it "as a numeric", that is, perform calculations.
 
 
+Counter32 and Counter64 types will map to plain integers.
+
 You can find usage examples [here](https://github.com/swisscom/ruby-netsnmp/blob/master/spec/varbind_spec.rb). If you need support to a missing type, you have the following options:
 
 * Use the `:type` parameter in `#set` calls:
