@@ -69,7 +69,7 @@ RSpec.describe NETSNMP::Varbind do
           # Type: Integer
           expect(header[3..-1].to_i(2)).to eq(2)
           # Length & Value
-          expect(varbind.to_der).to end_with("\x03\x00\x03%".b)
+          expect(varbind.to_der).to end_with("\x02\x03%".b)
 
           # Original Value
           asn = varbind.to_asn.value.last
