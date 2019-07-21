@@ -19,13 +19,75 @@ RSpec.describe NETSNMP::Varbind do
         asn = varbind.to_asn.value.last
         expect(varbind.convert_application_asn(asn)).to eq(timetick)
       end
+
       context "when passed a type" do
+        it "converts gauge32 without a leading byte" do
+          gauge = 127
+          varbind = described_class.new(".1.3.6.1.2.1.1.3.0", type: :gauge, value: gauge)
+          value_str = varbind.to_der[12..-1]
+          header = value_str[0].unpack("B8").first
+
+          # Class: Primitive Application
+          expect(header[0..1]).to eq("01")
+          expect(header[2]).to eq("0")
+          # Type: Integer
+          expect(header[3..-1].to_i(2)).to eq(2)
+          # Length & Value
+          expect(varbind.to_der).to end_with("\x01\x7F".b) # 2 Bytes
+
+          # Original Value
+          asn = varbind.to_asn.value.last
+          expect(varbind.convert_application_asn(asn)).to eq(gauge)
+        end
+        it "converts gauge32 with a leading byte" do
+          gauge = 128
+          varbind = described_class.new(".1.3.6.1.2.1.1.3.0", type: :gauge, value: gauge)
+          value_str = varbind.to_der[12..-1]
+          header = value_str[0].unpack("B8").first
+
+          # Class: Primitive Application
+          expect(header[0..1]).to eq("01")
+          expect(header[2]).to eq("0")
+          # Type: Integer
+          expect(header[3..-1].to_i(2)).to eq(2)
+          # Length & Value
+          expect(varbind.to_der).to end_with("\x02\x00\x80".b) # 4 Bytes, all FF
+
+          # Original Value
+          asn = varbind.to_asn.value.last
+          expect(varbind.convert_application_asn(asn)).to eq(gauge)
+        end
         it "converts gauge32" do
           gauge = 805
           varbind = described_class.new(".1.3.6.1.2.1.1.3.0", type: :gauge, value: gauge)
-          expect(varbind.to_der).to end_with("B\x02\x03%".b)
+          value_str = varbind.to_der[12..-1]
+          header = value_str[0].unpack("B8").first
+
+          # Class: Primitive Application
+          expect(header[0..1]).to eq("01")
+          expect(header[2]).to eq("0")
+          # Type: Integer
+          expect(header[3..-1].to_i(2)).to eq(2)
+          # Length & Value
+          expect(varbind.to_der).to end_with("\x03\x00\x03%".b)
+
+          # Original Value
           asn = varbind.to_asn.value.last
           expect(varbind.convert_application_asn(asn)).to eq(gauge)
+        end
+        it "converts counter32 without a leading byte" do
+          counter = 127
+          varbind = described_class.new(".1.3.6.1.2.1.1.3.0", type: :counter32, value: counter)
+          expect(varbind.to_der).to end_with("\x01\x7F".b)
+          asn = varbind.to_asn.value.last
+          expect(varbind.convert_application_asn(asn)).to eq(counter)
+        end
+        it "converts counter32 with a leading byte" do
+          counter = 128
+          varbind = described_class.new(".1.3.6.1.2.1.1.3.0", type: :counter32, value: counter)
+          expect(varbind.to_der).to end_with("\x02\x00\x80".b)
+          asn = varbind.to_asn.value.last
+          expect(varbind.convert_application_asn(asn)).to eq(counter)
         end
         it "converts counter32" do
           counter = 998932
