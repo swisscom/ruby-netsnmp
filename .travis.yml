@@ -19,10 +19,10 @@ rvm:
   - 2.6
   - ruby-head
   - jruby-head
-  - rbx-2
+  - truffleruby
 matrix:
   allow_failures:
   - rvm: ruby-head
   - rvm: jruby-head
     # to figure out later
-  - rvm: rbx-2
+  - rvm: truffleruby
