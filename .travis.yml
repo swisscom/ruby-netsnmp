@@ -2,11 +2,6 @@ sudo: required
 services:
   - docker
 
-before_install:
-  - sudo apt-add-repository multiverse 
-  - sudo apt-get update
-  - sudo apt-get install -o Dpkg::Options::="--force-confold" --force-yes -y docker-ce
-
 install:
   - gem i rubygems-update -v '<3' && update_rubygems
   - bundle install --path .bundle
@@ -24,10 +19,10 @@ rvm:
   - 2.6
   - ruby-head
   - jruby-head
-  - rbx-2
+  - truffleruby
 matrix:
   allow_failures:
   - rvm: ruby-head
   - rvm: jruby-head
     # to figure out later
-  - rvm: rbx-2
+  - rvm: truffleruby
