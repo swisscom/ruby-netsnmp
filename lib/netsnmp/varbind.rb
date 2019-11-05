@@ -118,7 +118,9 @@ module NETSNMP
         val.prepend("\x00") while val.bytesize < 4
         val.unpack("N*")[0] || 0
       when 3 # timeticks
-        Timetick.new(asn.value.unpack("N*")[0] || 0)
+        val = asn.value
+        val.prepend("\x00") while val.bytesize < 4
+        Timetick.new(val.unpack("N*")[0] || 0)
         # when 4 # opaque
         # when 5 # NSAP
       when 6 # ASN Counter 64
