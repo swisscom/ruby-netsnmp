@@ -38,7 +38,14 @@ module NETSNMP
     def send(pdu)
       encoded_request = encode(pdu)
       encoded_response = @transport.send(encoded_request)
-      decode(encoded_response)
+      response = decode(encoded_response)
+
+      tries = 0
+      while response.request_id != pdu.request_id && tries < 3 do
+        response = decode(@transport.recv)
+        tries = tries + 1
+      end
+      response
     end
 
     private
