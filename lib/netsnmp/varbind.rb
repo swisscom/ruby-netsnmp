@@ -114,13 +114,9 @@ module NETSNMP
         IPAddr.new_ntoh(asn.value)
       when 1, # ASN counter 32
            2 # gauge
-        val = asn.value
-        val.prepend("\x00") while val.bytesize < 4
-        val.unpack("N*")[0] || 0
+        unpack_32_bit_int(asn.value)
       when 3 # timeticks
-        val = asn.value
-        val.prepend("\x00") while val.bytesize < 4
-        Timetick.new(val.unpack("N*")[0] || 0)
+        Timetick.new(unpack_32_bit_int(asn.value))
         # when 4 # opaque
         # when 5 # NSAP
       when 6 # ASN Counter 64
@@ -129,6 +125,12 @@ module NETSNMP
         val.unpack("NNNN").reduce(0) { |sum, elem| (sum << 32) + elem }
         # when 7 # ASN UInteger
       end
+    end
+
+    def unpack_32_bit_int(val)
+      val.prepend("\x00") while val.bytesize < 4
+      directive = "@#{val.bytesize - 4}N*"
+      val.unpack(directive)[0] || 0
     end
   end
 end
