@@ -10,7 +10,7 @@ module NETSNMP
     def initialize(version: 1, community: "public", **options)
       @version   = version
       @community = community
-      validate(options)
+      validate(**options)
     end
 
     # Closes the session
@@ -43,15 +43,12 @@ module NETSNMP
 
     private
 
-    def validate(**options)
-      proxy = options[:proxy]
+    def validate(host: nil, port: 161, proxy: nil, **options)
       if proxy
         @proxy = true
         @transport = proxy
       else
-        host, port = options.values_at(:host, :port)
         raise "you must provide an hostname/ip under :host" unless host
-        port ||= 161 # default snmp port
         @transport = Transport.new(host, port.to_i, timeout: options.fetch(:timeout, TIMEOUT))
       end
       @version = case @version

@@ -55,7 +55,7 @@ module NETSNMP
               when :response  then 2
               else raise Error, "#{type} is not supported as type"
               end
-        new(args.merge(type: typ))
+        new(type: typ, **args)
       end
     end
 
@@ -75,7 +75,7 @@ module NETSNMP
       @type = type
       @varbinds = []
       varbinds.each do |varbind|
-        add_varbind(varbind)
+        add_varbind(**varbind)
       end
       @request_id = request_id || SecureRandom.random_number(MAXREQUESTID)
       check_error_status(@error_status)

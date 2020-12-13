@@ -13,7 +13,7 @@ RSpec.describe NETSNMP::V3Session do
   end
 
   it "allows to pass a custom one" do
-    sec_params = NETSNMP::SecurityParameters.new(security_options)
+    sec_params = NETSNMP::SecurityParameters.new(**security_options)
     sess = described_class.new(host: SNMPHOST, port: SNMPPORT, security_parameters: sec_params)
     # not generated yet
     expect(sess.instance_variable_get(:@security_parameters)).to be(sec_params)

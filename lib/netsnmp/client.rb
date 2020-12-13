@@ -23,8 +23,7 @@ module NETSNMP
     #      puts client.get(oid: "1.3.6.1.2.1.1.5.0")
     #    end
     #
-    def initialize(**options)
-      version = options[:version]
+    def initialize(version: nil, **options)
       version = case version
                 when Integer then version # assume the use know what he's doing
                 when /v?1/ then 0
@@ -33,7 +32,7 @@ module NETSNMP
                 end
 
       @retries = options.fetch(:retries, RETRIES)
-      @session ||= version == 3 ? V3Session.new(options) : Session.new(options)
+      @session ||= version == 3 ? V3Session.new(**options) : Session.new(version: version, **options)
       return unless block_given?
       begin
         yield self

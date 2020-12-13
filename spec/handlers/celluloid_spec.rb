@@ -39,7 +39,7 @@ RSpec.describe "with cellulloid", type: :celluloid do
   after(:each) { proxy.close }
 
   it_behaves_like "an snmp client" do
-    subject { NETSNMP::Client.new(options) }
+    subject { NETSNMP::Client.new(**options) }
     let(:device_options) { { proxy: proxy } }
     let(:protocol_options) { user_options }
     let(:extra_options) { { version: 3, context: "a172334d7d97871b72241397f713fa12" } }
