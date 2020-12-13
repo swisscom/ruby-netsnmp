@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 RSpec.describe NETSNMP::Session do
-  let(:host) { "localhost" }
+  let(:host) { SNMPHOST }
   let(:options) do
     {
       version: "2c",

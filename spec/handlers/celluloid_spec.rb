@@ -35,7 +35,7 @@ RSpec.describe "with cellulloid", type: :celluloid do
   around(:each) do |example|
     within_io_actor { example.run }
   end
-  let(:proxy) { CelluloidHelpers::Proxy.new("localhost", SNMPPORT) }
+  let(:proxy) { CelluloidHelpers::Proxy.new(SNMPHOST, SNMPPORT) }
   after(:each) { proxy.close }
 
   it_behaves_like "an snmp client" do

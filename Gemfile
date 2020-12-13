@@ -5,12 +5,16 @@ ruby RUBY_VERSION
 
 gemspec
 
+gem "rake", "~> 12.3"
+
 gem "coveralls", require: false
+gem "rspec", "~> 3.5"
 
 group :development do
   gem "pry"
 end
 
+gem "celluloid-io", "~> 0.17"
 gem "nio4r", "~> 1.2" if RUBY_VERSION < "2.2"
 
 platforms :mri do

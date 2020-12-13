@@ -1,0 +1,7 @@
+version: '3'
+services:
+  netsnmp:
+    environment:
+      - BUNDLE_PATH=/usr/local/bundle
+    volumes:
+      - "/usr/local/bundle:/usr/local/bundle"

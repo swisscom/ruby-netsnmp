@@ -3,11 +3,11 @@
 require_relative "support/request_examples"
 
 RSpec.describe NETSNMP::Client do
-  let(:host) { "localhost" }
+  let(:host) { SNMPHOST }
 
   let(:device_options) do
     {
-      peername: "localhost",
+      peername: SNMPHOST,
       port: SNMPPORT
     }
   end

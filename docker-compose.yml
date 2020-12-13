@@ -1,5 +1,20 @@
 version: '3'
 services:
+  netsnmp:
+    environment:
+      - SNMP_HOST=snmp-server-emulator
+      - SNMP_PORT=1161
+      - CI=1
+      - BUNDLE_SILENCE_ROOT_WARNING=1
+      - BUNDLE_JOBS=10
+    image: ruby:alpine
+    depends_on:
+      - snmp-server-emulator
+    volumes:
+      - ./:/home
+    entrypoint:
+      /home/spec/support/specs.sh
+
   snmp-server-emulator:
     image: honeyryderchuck/snmp-server-emulator:latest
     ports:

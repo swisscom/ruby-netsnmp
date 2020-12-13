@@ -3,7 +3,7 @@
 RSpec.shared_examples "an snmp client" do
   let(:device_options) do
     {
-      host: "localhost",
+      host: SNMPHOST,
       port: SNMPPORT
     }
   end
@@ -11,7 +11,7 @@ RSpec.shared_examples "an snmp client" do
   let(:extra_options) { {} }
   let(:options) { protocol_options.merge(device_options).merge(extra_options) }
 
-  subject { described_class.new(options) }
+  subject { described_class.new(**options) }
 
   describe "#get" do
     let(:value) { subject.get(oid: get_oid) }
