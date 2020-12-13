@@ -31,6 +31,7 @@ RSpec.describe "with cellulloid", type: :celluloid do
     WALK
   end
 
+  before(:all) { Celluloid.boot }
   around(:each) do |example|
     within_io_actor { example.run }
   end
