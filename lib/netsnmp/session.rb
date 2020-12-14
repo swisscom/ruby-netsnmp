@@ -43,13 +43,13 @@ module NETSNMP
 
     private
 
-    def validate(host: nil, port: 161, proxy: nil, **options)
+    def validate(host: nil, port: 161, proxy: nil, timeout: TIMEOUT, **)
       if proxy
         @proxy = true
         @transport = proxy
       else
         raise "you must provide an hostname/ip under :host" unless host
-        @transport = Transport.new(host, port.to_i, timeout: options.fetch(:timeout, TIMEOUT))
+        @transport = Transport.new(host, port.to_i, timeout: timeout)
       end
       @version = case @version
                  when Integer then @version # assume the use know what he's doing
