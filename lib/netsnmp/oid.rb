@@ -12,7 +12,6 @@ module NETSNMP
 
     def build(o)
       case o
-      when OID then o
       when Array
         o.join(".")
       when OIDREGEX
