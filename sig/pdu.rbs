@@ -1,0 +1,48 @@
+module NETSNMP
+  type pdu_type = :get | :getnext | :set | :inform | :trap | :response
+
+  class PDU
+
+    # type pdu_options = {
+    #   headers: [snmp_version?, String?],
+    #   ?request_id: String,
+    #   ?error_status: Integer,
+    #   ?error_index: Integer,
+    #   ?varbinds: Array[varbind_options]
+    # }
+
+    attr_reader varbinds: Array[Varbind]
+    attr_reader type: pdu_type
+    attr_reader version: snmp_version
+    attr_reader community: String
+    attr_reader request_id: Integer
+
+    def self.decode: (String der) -> PDU
+                   | (OpenSSL::ASN1::ASN1Data der) -> PDU
+
+    def self.build: (pdu_type, **untyped) -> PDU
+
+
+    def to_asn: () -> OpenSSL::ASN1::ASN1Data
+
+    def to_der: () -> String
+
+    def add_varbind: (oid: oid, **varbind_options) -> void
+    alias << add_varbind
+
+    private
+
+    def initialize: (
+      type: Integer,
+      headers: [snmp_version?, String?],
+      ?request_id: Integer,
+      ?error_status: Integer,
+      ?error_index: Integer,
+      ?varbinds: Array[varbind_options]
+    ) -> untyped
+
+    def encode_headers_asn: () -> [OpenSSL::ASN1::Integer, OpenSSL::ASN1::OctetString]
+
+    def check_error_status: (Integer) -> void
+  end
+end

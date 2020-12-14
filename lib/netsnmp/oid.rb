@@ -4,7 +4,7 @@ module NETSNMP
   # Abstracts the OID structure
   #
   module OID
-    using RegexpExtensions unless Regexp.method_defined?(:match?)
+    using StringExtensions unless String.method_defined?(:match?)
 
     OIDREGEX = /^[\d\.]*$/
 

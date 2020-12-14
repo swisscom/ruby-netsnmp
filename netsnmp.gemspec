@@ -19,7 +19,7 @@ Gem::Specification.new do |gem|
   gem.metadata["allowed_push_host"] = "https://rubygems.org/"
 
   # Manifest
-  gem.files = Dir["LICENSE.txt", "README.md", "AUTHORS", "lib/**/*.rb"]
+  gem.files = Dir["LICENSE.txt", "README.md", "AUTHORS", "lib/**/*.rb", "sig/**/*.rbs"]
   gem.test_files    = Dir["spec/**/*.rb"]
   gem.require_paths = ["lib"]
 end

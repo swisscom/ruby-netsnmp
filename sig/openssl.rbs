@@ -1,0 +1,20 @@
+module OpenSSL
+  module ASN1
+    class ASN1Data
+    end
+    class ObjectId < ASN1Data
+    end
+    class Primitive < ASN1Data
+    end
+    class Integer < ASN1Data
+    end
+    class OctetString < ASN1Data
+    end
+    class Sequence < ASN1Data
+    end
+  end
+end
+
+interface _ToAsn
+  def to_asn: () -> OpenSSL::ASN1::ASN1Data
+end

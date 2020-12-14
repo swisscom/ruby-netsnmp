@@ -1,0 +1,23 @@
+module NETSNMP
+  interface _Logger
+    def <<: (string) -> void
+  end
+
+  interface _Authenticate
+    def reset: () -> void
+    def <<: (string) -> void
+    def digest: () -> String
+  end
+
+  interface _Encrypt
+    def encrypt: (String payload, engine_boots: Integer, engine_time: Integer) -> String
+
+    def decrypt: (String payload, salt: String, engine_boots: Integer, engine_time: Integer) -> String
+  end
+
+  type snmp_version = 0 | 1 | 3 | :v1 | :v2c | :v3 | nil
+
+  def self.debug=: (_Logger) -> void
+
+  def self.debug: { () -> string } -> void
+end

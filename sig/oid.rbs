@@ -1,0 +1,18 @@
+module NETSNMP
+  type oid = String | Array[Integer]
+
+  type oid_type = Integer | :ipaddress | :counter32 | :gauge | :timetick | :opaque | :nsap | :counter64 | :uinteger
+
+  type oid_value = String | Integer | Timetick | true | false | nil | IPAddr
+
+  # type oid_options = {}
+
+  module OID
+
+    def self?.build: (oid) -> String
+
+    def self?.to_asn: (String oid) -> OpenSSL::ASN1::ObjectId
+
+    def self?.parent?: (String oid, String oid) -> bool
+  end
+end

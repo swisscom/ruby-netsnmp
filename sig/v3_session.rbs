@@ -1,0 +1,21 @@
+module NETSNMP
+  class V3Session < Session
+
+    def build_pdu: (pdu_type, *untyped) -> ScopedPDU
+
+    def send: (ScopedPDU pdu) -> ScopedPDU
+    		| (ScopedPDU pdu) -> [PDU, String, Integer, Integer]
+
+    private
+
+    def encode: (ScopedPDU) -> String
+
+    def initialize: (?context: String, **untyped) -> untyped
+
+    def security_parameters: () -> SecurityParameters
+
+    def probe_for_engine: () -> String
+
+    def decode: (String, ?security_parameters: SecurityParameters) -> [PDU, String, Integer, Integer]
+  end
+end

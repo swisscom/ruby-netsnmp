@@ -30,22 +30,22 @@ rescue LoadError
         end
       end
     end
-
-    module RegexpExtensions
-      # If you wonder why this is there: the oauth feature uses a refinement to enhance the
-      # Regexp class locally with #match? , but this is never tested, because ActiveSupport
-      # monkey-patches the same method... Please ActiveSupport, stop being so intrusive!
-      # :nocov:
-      refine(Regexp) do
-        def match?(*args)
-          !match(*args).nil?
-        end
-      end
-    end
   end
 end
 
 module NETSNMP
+  module StringExtensions
+    # If you wonder why this is there: the oauth feature uses a refinement to enhance the
+    # Regexp class locally with #match? , but this is never tested, because ActiveSupport
+    # monkey-patches the same method... Please ActiveSupport, stop being so intrusive!
+    # :nocov:
+    refine(String) do
+      def match?(*args)
+        !match(*args).nil?
+      end
+    end
+  end
+
   def self.debug=(io)
     @debug_output = io
   end
