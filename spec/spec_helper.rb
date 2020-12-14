@@ -1,8 +1,10 @@
 # frozen_string_literal: true
 
-require "simplecov" if ENV["COVERAGE"]
-require "coveralls"
-Coveralls.wear!
+if ENV.key?("CI")
+  require "simplecov"
+  SimpleCov.command_name "#{RUBY_ENGINE}-#{RUBY_VERSION}"
+  SimpleCov.coverage_dir "coverage/#{RUBY_ENGINE}-#{RUBY_VERSION}"
+end
 
 if defined?(SimpleCov)
   SimpleCov.start do

@@ -6,8 +6,6 @@ ruby RUBY_VERSION
 gemspec
 
 gem "rake", "~> 12.3"
-
-gem "coveralls", require: false
 gem "rspec", "~> 3.5"
 
 group :development do
