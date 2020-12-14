@@ -19,8 +19,10 @@ module NETSNMP
     end
 
     # @see {NETSNMP::Session#send}
-    def send(*)
-      pdu, = super
+    def send(pdu)
+      encoded_request = encode(pdu)
+      encoded_response = @transport.send(encoded_request)
+      pdu, = decode(encoded_response)
       pdu
     end
 

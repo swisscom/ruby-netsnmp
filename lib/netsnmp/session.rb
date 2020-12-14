@@ -36,9 +36,9 @@ module NETSNMP
     # @return [NETSNMP::PDU] the response pdu
     #
     def send(pdu)
-      encoded_request = encode(pdu)
+      encoded_request = pdu.to_der
       encoded_response = @transport.send(encoded_request)
-      decode(encoded_response)
+      PDU.decode(encoded_response)
     end
 
     private
@@ -59,14 +59,6 @@ module NETSNMP
                  else
                    raise "unsupported snmp version (#{@version})"
                  end
-    end
-
-    def encode(pdu)
-      pdu.to_der
-    end
-
-    def decode(stream)
-      PDU.decode(stream)
     end
 
     class Transport
