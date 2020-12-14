@@ -4,4 +4,4 @@ services:
     environment:
       - BUNDLE_PATH=/usr/local/bundle
     volumes:
-      - "/usr/local/bundle:/usr/local/bundle"
+      - "./vendor/bundle:/usr/local/bundle"
