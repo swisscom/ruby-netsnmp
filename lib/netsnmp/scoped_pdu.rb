@@ -9,6 +9,8 @@ module NETSNMP
       super(type: type, headers: [3, nil], **options)
     end
 
+    private
+
     def encode_headers_asn
       [OpenSSL::ASN1::OctetString.new(@engine_id || ""),
        OpenSSL::ASN1::OctetString.new(@context || "")]

@@ -1,0 +1,56 @@
+module NETSNMP
+  class SecurityParameters
+    type security_level = :noauth | :auth_no_priv | :auth_priv | 0 | 1 | 3 | nil
+
+    type auth_protocol = :md5 | :sha
+    type priv_protocol = :des | :aes
+
+
+    @auth_protocol: auth_protocol?
+    @auth_password: String?
+    @priv_protocol: priv_protocol?
+    @priv_password: String?
+    @digest: _Authenticate?
+    @encryption: _Encrypt?
+
+    attr_reader security_level: security_level
+    attr_reader username: String
+    attr_reader engine_id: String
+
+    def engine_id=: (String id) -> void
+
+    def encode: (_ToAsn, salt: OpenSSL::ASN1::ASN1Data, engine_time: Integer, engine_boots: Integer) -> [OpenSSL::ASN1::ASN1Data, OpenSSL::ASN1::ASN1Data]
+
+    def decode: (OpenSSL::ASN1::ASN1Data | String der, salt: OpenSSL::ASN1::ASN1Data | String, engine_time: Integer, engine_boots: Integer) -> OpenSSL::ASN1::ASN1Data
+
+    def sign: (String message) -> String?
+
+    def verify: (String stream, String salt) -> void
+
+    def must_revalidate?: () -> bool
+
+    private
+
+    def initialize: (
+      username: String,
+      ?engine_id: String,
+      ?security_level: security_level?,
+      ?auth_protocol: auth_protocol?,
+      ?auth_password: String?,
+      ?priv_protocol: priv_protocol?,
+      ?priv_password: String?,
+    ) -> untyped
+
+    def auth_key: () -> String
+
+    def priv_key: () -> String
+
+    def check_parameters: () -> void
+
+    def localize_key: (String key) -> String
+
+    def passkey: (String password) -> String
+
+    def authorizable?: () -> bool
+  end
+end

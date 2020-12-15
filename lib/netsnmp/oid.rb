@@ -4,13 +4,14 @@ module NETSNMP
   # Abstracts the OID structure
   #
   module OID
+    using StringExtensions unless String.method_defined?(:match?)
+
     OIDREGEX = /^[\d\.]*$/
 
     module_function
 
     def build(o)
       case o
-      when OID then o
       when Array
         o.join(".")
       when OIDREGEX
@@ -29,7 +30,7 @@ module NETSNMP
     # @return [true, false] whether the given OID belongs to the sub-tree
     #
     def parent?(parent_oid, child_oid)
-      child_oid.match(/\A#{parent_oid}\./)
+      child_oid.match?(/\A#{parent_oid}\./)
     end
   end
 end

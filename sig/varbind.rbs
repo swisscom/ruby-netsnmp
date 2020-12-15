@@ -1,0 +1,30 @@
+module NETSNMP
+  type varbind_options = untyped
+
+  class Varbind
+
+    type varbind_value = OpenSSL::ASN1::OctetString | OpenSSL::ASN1::Primitive | OpenSSL::ASN1::ASN1Data | oid_value
+
+    attr_reader oid: String
+    attr_reader value: oid_value
+
+    def to_asn: () -> OpenSSL::ASN1::Sequence
+
+    def to_der: () -> String
+
+    def convert_val: (varbind_value) -> oid_value
+
+
+    def convert_to_asn: (oid_type, oid_value) -> OpenSSL::ASN1::ASN1Data
+
+    def convert_application_asn: (OpenSSL::ASN1::ASN1Data asn) -> oid_value
+
+    private
+
+    def initialize: (oid, ?value: varbind_value, ?type: oid_type) -> untyped
+
+    def unpack_32bit_integer: (String) -> Integer
+
+    def unpack_64bit_integer: (String) -> Integer
+  end
+end

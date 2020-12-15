@@ -19,13 +19,7 @@ Gem::Specification.new do |gem|
   gem.metadata["allowed_push_host"] = "https://rubygems.org/"
 
   # Manifest
-  gem.files         = `git ls-files`.split("\n") - Dir["tmp/**/*"]
-  gem.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
-  gem.executables   = `git ls-files -- bin/*`.split("\n").map { |f| File.basename(f) }
+  gem.files = Dir["LICENSE.txt", "README.md", "AUTHORS", "lib/**/*.rb", "sig/**/*.rbs"]
+  gem.test_files    = Dir["spec/**/*.rb"]
   gem.require_paths = ["lib"]
-
-  gem.add_development_dependency "rake", ["~> 10.1", ">= 10.1.0"]
-  gem.add_development_dependency "rspec", ["~> 3.5", ">= 3.5.0"]
-
-  gem.add_development_dependency "celluloid-io", ["~> 0.17", ">= 0.17.2"]
 end

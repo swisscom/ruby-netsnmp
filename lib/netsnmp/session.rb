@@ -10,7 +10,7 @@ module NETSNMP
     def initialize(version: 1, community: "public", **options)
       @version   = version
       @community = community
-      validate(options)
+      validate(**options)
     end
 
     # Closes the session
@@ -36,23 +36,20 @@ module NETSNMP
     # @return [NETSNMP::PDU] the response pdu
     #
     def send(pdu)
-      encoded_request = encode(pdu)
+      encoded_request = pdu.to_der
       encoded_response = @transport.send(encoded_request)
-      decode(encoded_response)
+      PDU.decode(encoded_response)
     end
 
     private
 
-    def validate(**options)
-      proxy = options[:proxy]
+    def validate(host: nil, port: 161, proxy: nil, timeout: TIMEOUT, **)
       if proxy
         @proxy = true
         @transport = proxy
       else
-        host, port = options.values_at(:host, :port)
         raise "you must provide an hostname/ip under :host" unless host
-        port ||= 161 # default snmp port
-        @transport = Transport.new(host, port.to_i, timeout: options.fetch(:timeout, TIMEOUT))
+        @transport = Transport.new(host, port.to_i, timeout: timeout)
       end
       @version = case @version
                  when Integer then @version # assume the use know what he's doing
@@ -62,14 +59,6 @@ module NETSNMP
                  else
                    raise "unsupported snmp version (#{@version})"
                  end
-    end
-
-    def encode(pdu)
-      pdu.to_der
-    end
-
-    def decode(stream)
-      PDU.decode(stream)
     end
 
     class Transport

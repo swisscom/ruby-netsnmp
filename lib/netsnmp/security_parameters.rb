@@ -24,7 +24,7 @@ module NETSNMP
 
     # @param [String] username the snmp v3 username
     # @param [String] engine_id the device engine id (initialized to '' for report)
-    # @param [Symbol, integer] security_level allowed snmp v3 security level (:auth_priv, :auh_no_priv, etc)
+    # @param [Symbol, integer] security_level allowed snmp v3 security level (:auth_priv, :auth_no_priv, etc)
     # @param [Symbol, nil] auth_protocol a supported authentication protocol (currently supported: :md5, :sha)
     # @param [Symbol, nil] priv_protocol a supported privacy protocol (currently supported: :des, :aes)
     # @param [String, nil] auth_password the authentication password
@@ -99,7 +99,7 @@ module NETSNMP
     # @note this method is used in the process of authenticating a message
     def sign(message)
       # don't sign unless you have to
-      return nil unless @auth_protocol
+      return unless @auth_protocol
 
       key = auth_key.dup
 
@@ -211,7 +211,7 @@ module NETSNMP
     end
 
     def authorizable?
-      @auth_protocol && @auth_protocol != :none
+      @auth_protocol != :none
     end
   end
 end

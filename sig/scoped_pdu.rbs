@@ -1,0 +1,15 @@
+module NETSNMP
+  class ScopedPDU < PDU
+    attr_reader engine_id: String
+
+    private
+
+    def initialize: (
+      type: Integer,
+      headers: [String?, String?],
+      **untyped
+    ) -> void
+
+    def encode_headers_asn: () -> [OpenSSL::ASN1::OctetString, OpenSSL::ASN1::OctetString]
+  end
+end

@@ -4,7 +4,7 @@ module NETSNMP
   # Abstraction for the v3 semantics.
   class V3Session < Session
     # @param [String, Integer] version SNMP version (always 3)
-    def initialize(version: 3, context: "", **opts)
+    def initialize(context: "", **opts)
       @context = context
       @security_parameters = opts.delete(:security_parameters)
       super
@@ -19,8 +19,10 @@ module NETSNMP
     end
 
     # @see {NETSNMP::Session#send}
-    def send(*)
-      pdu, = super
+    def send(pdu)
+      encoded_request = encode(pdu)
+      encoded_response = @transport.send(encoded_request)
+      pdu, = decode(encoded_response)
       pdu
     end
 

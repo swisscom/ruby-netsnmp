@@ -55,7 +55,7 @@ module NETSNMP
               when :response  then 2
               else raise Error, "#{type} is not supported as type"
               end
-        new(args.merge(type: typ))
+        new(type: typ, **args)
       end
     end
 
@@ -64,7 +64,7 @@ module NETSNMP
     attr_reader :version, :community, :request_id
 
     def initialize(type:, headers:,
-                   request_id: nil,
+                   request_id: SecureRandom.random_number(MAXREQUESTID),
                    error_status: 0,
                    error_index: 0,
                    varbinds: [])
@@ -75,9 +75,9 @@ module NETSNMP
       @type = type
       @varbinds = []
       varbinds.each do |varbind|
-        add_varbind(varbind)
+        add_varbind(**varbind)
       end
-      @request_id = request_id || SecureRandom.random_number(MAXREQUESTID)
+      @request_id = request_id
       check_error_status(@error_status)
     end
 

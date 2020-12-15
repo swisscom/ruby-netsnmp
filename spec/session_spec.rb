@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 RSpec.describe NETSNMP::Session do
-  let(:host) { "localhost" }
+  let(:host) { SNMPHOST }
   let(:options) do
     {
       version: "2c",
@@ -9,6 +9,6 @@ RSpec.describe NETSNMP::Session do
       port: SNMPPORT
     }
   end
-  subject { described_class.new(host, options) }
+  subject { described_class.new(host: host, **options) }
   after { subject.close }
 end

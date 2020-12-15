@@ -6,7 +6,7 @@ module NETSNMP
   class Varbind
     attr_reader :oid, :value
 
-    def initialize(oid, value: nil, type: nil, **_opts)
+    def initialize(oid, value: nil, type: nil)
       @oid = OID.build(oid)
       @type = type
       @value = convert_val(value) if value

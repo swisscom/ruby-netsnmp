@@ -1,0 +1,24 @@
+module NETSNMP
+  class Client
+
+    def get: (*untyped) -> untyped
+           | (*untyped) { (PDU) -> void } -> untyped
+
+    def get_next: (*untyped) -> untyped
+                | (*untyped) { (PDU) -> void } -> untyped
+
+    def set: (*untyped) -> untyped
+           | (*untyped) { (PDU) -> void } -> untyped
+
+    def inform: (*untyped) -> untyped
+              | (*untyped) { (PDU) -> void } -> untyped
+
+    def walk: (oid: oid) -> _Each[oid_type, oid_value]
+
+    def close: () -> void
+
+    private
+
+    def initialize: (?version?: snmp_version, **untyped) -> untyped
+  end
+end
