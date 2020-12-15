@@ -27,9 +27,8 @@ jobs:
     - uses: actions/setup-ruby@v1
       with:
         ruby-version: '2.7'
-    - run: |
-      gem install --no-cov simplecov
-      rake coverage:report
+        bundler-cache: true
+    - run: bundle exec rake coverage:report
     - uses: actions/upload-artifact@v2
       with:
         name: coverage-report
