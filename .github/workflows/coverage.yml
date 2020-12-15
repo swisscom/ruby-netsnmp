@@ -10,25 +10,27 @@ name: Coverage
 on:
   workflow_run:
     workflows: ["Tests"]
-    # branches: []
+    branches: ["move-to-github-actions"]
     types: 
-      - completed
+      - success
 
 jobs:
   coverage:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/download-artifact@v1
-        with:
-          name: coverage-report
-      - uses: actions/setup-ruby@v2
-        with:
-          ruby-version: '2.7'
-      - run: gem install --no-cov simplecov
-      - run: rake coverage:report
-      - uses: actions/upload-artifact@v2
-        with:
-          name: coverage-report
-          path: coverage/
+    - uses: haya14busa/action-workflow_run-status@v1
+    - uses: actions/checkout@v2
+    - uses: actions/download-artifact@v1
+      with:
+        name: coverage-report
+    - uses: actions/setup-ruby@v1
+      with:
+        ruby-version: '2.7'
+    - run: |
+      gem install --no-cov simplecov
+      rake coverage:report
+    - uses: actions/upload-artifact@v2
+      with:
+        name: coverage-report
+        path: coverage/
