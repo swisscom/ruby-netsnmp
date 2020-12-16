@@ -9,8 +9,10 @@ name: Coverage
 
 on:
   workflow_run:
-    workflows: ["Tests"]
-    branches: ["move-to-github-actions"]
+    workflows:
+      - Tests
+    branches:
+      - master
     types: 
       - success
 
