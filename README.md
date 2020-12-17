@@ -1,7 +1,6 @@
 # netsnmp
 
-[![Build Status](https://travis-ci.org/swisscom/ruby-netsnmp.svg?branch=master)](https://travis-ci.org/swisscom/ruby-netsnmp)
-[![Coverage Status](https://coveralls.io/repos/github/swisscom/ruby-netsnmp/badge.svg?branch=master)](https://coveralls.io/github/swisscom/ruby-netsnmp?branch=master)
+![Tests](https://github.com/swisscom/ruby-netsnmp/workflows/Tests/badge.svg)
 [![Code Climate](https://codeclimate.com/github/swisscom/ruby-netsnmp/badges/gpa.svg)](https://codeclimate.com/github/swisscom/ruby-netsnmp)
 [![Docs](http://img.shields.io/badge/yard-docs-blue.svg)](https://www.rubydoc.info/github/swisscom/ruby-netsnmp/master)
 
