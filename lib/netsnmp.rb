@@ -73,6 +73,7 @@ require "netsnmp/timeticks"
 require "netsnmp/oid"
 require "netsnmp/varbind"
 require "netsnmp/pdu"
+require "netsnmp/mib"
 require "netsnmp/session"
 
 require "netsnmp/scoped_pdu"
