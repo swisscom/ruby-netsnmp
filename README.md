@@ -222,6 +222,7 @@ All encoding/decoding/encryption/decryption/digests are done using `openssl`, wh
 
 This library uses RSpec. The client specs are "integration" tests, in that we communicate with an [snmpsim-built snmp agent simulator](https://github.com/etingof/snmpsim).
 
+
 ### RSpec
 
 You can run all tests by typing:
@@ -233,37 +234,31 @@ You can run all tests by typing:
 ...
 ```
 
+
+### Docker
+
+The most straightforward way of running the tests is by using the `docker-compose` setup (which is also what's used in the CI). Run it against the ruby version you're targeting:
+
+```
+> docker-compose -f docker-compose.yml -f docker-compose-ruby-${RUBY_MAJOR_VERSION}.${RUBY_MAJOR_VERSION}.yml run netsnmp
+```
+
+The CI runs the tests against all supported ruby versions. If changes break a specific version of ruby, make sure you commit appropriate changes addressing the edge case, or let me know in the issues board, so I can help.
+
 ### SNMP Simulator
+
+The SNMP simulator runs in its own container in the `docker` setup.
 
 You can install the package yourself (ex: `pip install snmpsim`) and run the server locally, and then set the `SNMP_PORT` environment variable, where the snmp simulator is running.
 
-#### Docker
-
-The preferred way to use the snmp simulator is by using docker.
-
-In order to start the simulator container, run:
-
-```
-> spec/support/spec.sh start
-```
-
-after, you just need to set the `SNMP_PORT` variable to the port found typing:
-
-```
-> docker port test-snmp 1161/udp
-```
-
-and run the tests. 
-
 #### CI
 
-If you want to replicate what the CI is doing, just do:
+The job of the CI is:
 
-```
-> spec/support/spec.sh run
-```
-
-Which should: build and run the simulator container, run the tests, run rubocop, and remove all artifacts.
+* Run all the tests;
+* Make sure the tests cover an appropriate surface of the code;
+* Lint the code;
+* (for ruby 3.0) type check the code;
 
 
 ## Contributing
