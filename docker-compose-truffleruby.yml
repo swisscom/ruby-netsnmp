@@ -1,0 +1,7 @@
+version: '3'
+services:
+  netsnmp:
+    image: flavorjones/truffleruby:latest
+    entrypoint:
+      - bash
+      - /home/spec/support/specs.sh

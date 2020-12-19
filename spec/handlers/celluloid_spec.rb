@@ -4,7 +4,7 @@ require "celluloid/io"
 require_relative "../support/request_examples"
 require_relative "../support/celluloid"
 
-RSpec.describe "with cellulloid", type: :celluloid do
+RSpec.describe "with cellulloid", type: :celluloid, if: RUBY_ENGINE == "truffleruby" do
   include CelluloidHelpers
   let(:user_options) do
     { username: "authprivmd5des", auth_password: "maplesyrup",

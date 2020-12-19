@@ -1,6 +1,12 @@
 #!/bin/sh
 
-apk --update add g++ make git
+RUBY_ENGINE=`ruby -e 'puts RUBY_ENGINE'`
+
+if [[ "$RUBY_ENGINE" = "truffleruby" ]]; then
+  apt-get update && apt-get install -y git
+else
+  apk --update add g++ make git
+fi
 
 cd /home
 bundle install --quiet
