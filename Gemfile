@@ -20,7 +20,7 @@ end
 
 gem "rubocop", "0.52.1", require: false
 
-gem "rbs", git: "https://github.com/ruby/rbs.git", branch: "master" if RUBY_VERSION >= "3.0"
+gem "rbs", require: false if RUBY_VERSION >= "3.0"
 
 if RUBY_VERSION < "2.2"
   gem "celluloid-io", "~> 0.17.3"
