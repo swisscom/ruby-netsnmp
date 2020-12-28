@@ -10,16 +10,10 @@ module NETSNMP
 
     module_function
 
-    def build(o)
-      case o
-      when Array
-        o.join(".")
-      when OIDREGEX
-        o = o[1..-1] if o.start_with?(".")
-        o
-      # TODO: MIB to OID
-      else raise Error, "can't convert #{o} to OID"
-      end
+    def build(id)
+      oid = MIB.oid(id)
+      oid = oid[1..-1] if oid.start_with?(".")
+      oid
     end
 
     def to_asn(oid)
