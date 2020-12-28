@@ -34,6 +34,17 @@ rescue LoadError
 end
 
 module NETSNMP
+  module IsNumericExtensions
+    refine String do
+      def integer?
+        each_byte do |byte|
+          return false unless byte >= 48 && byte <= 57
+        end
+        true
+      end
+    end
+  end
+
   module StringExtensions
     # If you wonder why this is there: the oauth feature uses a refinement to enhance the
     # Regexp class locally with #match? , but this is never tested, because ActiveSupport

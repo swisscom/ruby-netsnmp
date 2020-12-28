@@ -52,7 +52,7 @@ module NETSNMP::MIB
       spaced { module_name.as(:name) } >> module_oid >>
         spaced("DEFINITIONS") >> colon_colon_part >>
         spaced("BEGIN") >>
-        exports_part >>
+        exports_part.as(:exports) >>
         linkage_part.as(:imports) >>
         declaration_part.as(:declarations) >>
         spaced("END")
@@ -91,7 +91,7 @@ module NETSNMP::MIB
     rule(:imports) { with_separator(import) }
 
     rule(:import) do
-      spaced { import_identifiers.as(:identifiers) } >> spaced("FROM") >> module_name.as(:name)
+      spaced { import_identifiers.as(:ids) } >> spaced("FROM") >> module_name.as(:name)
     end
 
     rule(:import_identifiers) { with_separator(import_identifier.as(:name), ",") }
