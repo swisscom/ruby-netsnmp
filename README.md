@@ -55,6 +55,7 @@ All of these issues are resolved here.
 
 * Client Interface, which supports SNMP v3, v2c, and v1
 * Supports get, getnext, set and walk calls.
+* MIB support.
 * Proxy IO object support (for eventmachine/celluloid-io)
 * Ruby >= 2.1 support (modern)
 * Pure Ruby (no FFI)
@@ -73,12 +74,11 @@ manager = NETSNMP::Client.new(host: "localhost", port: 33445, username: "simulat
                               context: "a172334d7d97871b72241397f713fa12")
 
 # SNMP get
-# sysName.0
-manager.get(oid: "1.3.6.1.2.1.1.0") #=> 'tt'
+manager.get(oid: "sysName.0") #=> 'tt'
 
 # SNMP walk
 # sysORDescr
-manager.walk(oid: "1.3.6.1.2.1.1.1").each do |oid_code, value|
+manager.walk(oid: "sysORDescr").each do |oid_code, value|
   # do something with them  
   puts "for #{oid_code}: #{value}"
 end
@@ -134,6 +134,29 @@ manager.set("somecounteroid", value: 999999, type: :counter64)
 manager.set("somecounteroid", value: 999999, type: 6)
 ```
 * Fork this library, extend support, write a test and submit a PR (the desired solution ;) )
+
+## MIB
+
+`netsnmp` will load the default MIBs from known or advertised (via `MIBDIRS`) directories (provided that they're installed in the system). These will be used for the OID conversion.
+
+Sometimes you'll need to load more, your own MIBs, in which case, you can use the following API:
+
+```ruby
+require "netsnmp"
+
+NETSNMP::MIB.load("MY-MIB")
+# or, if it's not in any of the known locations
+NETSNMP::MIB.load("/path/to/MY-MIB.txt")
+```
+
+You can install common SNMP mibs by using your package manager:
+
+```
+# using apt-get
+> apt-get install snmp-mibs-downloader
+# using apk
+> apk --update add net-snmp-libs
+```
 
 ## Concurrency
 
@@ -272,7 +295,6 @@ The job of the CI is:
 
 There are some features which this gem doesn't support. It was built to provide a client (or manager, in SNMP language) implementation only, and the requirements were fulfilled. However, these notable misses will stand-out:
 
-* No MIB support (you can only work with OIDs)
 * No server (Agent, in SNMP-ish) implementation.
 * No getbulk support.
 

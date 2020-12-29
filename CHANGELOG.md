@@ -2,6 +2,8 @@
 
 ## master
 
+* MIB Parser.
+
 ### 0.2.0
 
 * Fix kwargs issues, enabling ruby 3.
