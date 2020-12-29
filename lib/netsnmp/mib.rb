@@ -10,12 +10,11 @@ module NETSNMP
 
     module_function
 
+    MIBDIRS = ENV.fetch("MIBDIRS", File.join("/usr", "share", "snmp", "mibs")).split(":")
     PARSER = Parser.new
     @parser_mutex = Mutex.new
     @modules_loaded = []
     @object_identifiers = {}
-
-    MIBDIRS = ENV.fetch("MIBDIRS", File.join("/usr", "share", "snmp", "mibs")).split(":")
 
     # Translates na identifier, such as "sysDescr", into an OID
     def oid(identifier)
@@ -131,7 +130,7 @@ module NETSNMP
       data[:imports].each_with_object({}) do |import, imp|
         imp[String(import[:name])] = case import[:ids]
                                      when Hash
-                                       [import[:ids][:name]]
+                                       [String(import[:ids][:name])]
                                      else
                                        import[:ids].map { |id| String(id[:name]) }
                                      end

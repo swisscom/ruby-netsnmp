@@ -1,0 +1,18 @@
+module NETSNMP
+  module MIB
+    MIBDIRS: Array[String]
+    PARSER: Parser
+
+    @parser_mutex: Mutex
+    @modules_loaded: Array[String]
+    @object_identifiers: Hash[String, String]
+
+    def self?.oid: (String identifier) -> String?
+                 | (Array[_ToS] identifier) -> String?
+
+    def self?.load: (String mod) -> void
+
+    def self?.load_imports: (?Hash[Symbol, untyped] data) -> Hash[String, Array[String]]?
+    def self?.load_defaults: () -> void
+  end
+end

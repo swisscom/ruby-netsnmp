@@ -1,5 +1,5 @@
 module NETSNMP
-  type oid = String | Array[Integer]
+  type oid = String | Array[_ToS]
 
   type oid_type = Integer | :ipaddress | :counter32 | :gauge | :timetick | :opaque | :nsap | :counter64 | :uinteger
 
