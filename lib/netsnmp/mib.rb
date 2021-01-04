@@ -66,14 +66,19 @@ module NETSNMP
     #     MIB.load("/path/to/SNMPv2-MIB.txt")
     #
     def load(mod)
-      mod = "#{mod}.txt" if File.extname(mod).empty?
-
       unless File.file?(mod)
-        dir = MIBDIRS.find do |mibdir|
-          File.exist?(File.join(mibdir, mod))
+        moddir = nil
+        MIBDIRS.each do |mibdir|
+          if File.exist?(File.join(mibdir, mod))
+            moddir = File.join(mibdir, mod)
+            break
+          elsif File.extname(mod).empty? && File.exist?(File.join(mibdir, "#{mod}.txt"))
+            moddir = File.join(mibdir, "#{mod}.txt")
+            break
+          end
         end
-        return false unless dir
-        mod = File.join(dir, mod)
+        return false unless moddir
+        mod = moddir
       end
       return true if @modules_loaded.include?(mod)
       do_load(mod)

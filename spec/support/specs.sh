@@ -3,7 +3,10 @@
 RUBY_ENGINE=`ruby -e 'puts RUBY_ENGINE'`
 
 if [[ "$RUBY_ENGINE" = "truffleruby" ]]; then
-  apt-get update && apt-get install -y git
+  echo "deb http://http.us.debian.org/debian jessie main contrib non-free" >> /etc/apt/sources.list
+  echo "deb http://security.debian.org jessie/updates main contrib non-free" >> /etc/apt/sources.list
+  apt-get update && apt-get install -y git snmp-mibs-downloader
+  export MIBDIRS="/usr/share/mibs/ietf:/usr/share/mibs/iana"
 else
   apk --update add g++ make git net-snmp-libs
 fi
