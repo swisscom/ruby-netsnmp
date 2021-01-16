@@ -2,7 +2,14 @@
 
 ## master
 
+### 0.3.0
+
 * MIB Parser.
+* methods can use MIBs as well as OIDs.
+
+```ruby
+client.get(oid: "sysName.0")
+```
 
 ### 0.2.0
 
