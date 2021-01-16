@@ -236,6 +236,10 @@ NETSNMP::Client.new(share_options.merge(proxy: router_proxy, security_parameters
 end
 ```
 
+## Compatibility
+
+This library supports and is tested against ruby versions 2.1 or more recent, including ruby 3. It also supports and tests against Truffleruby.
+
 ## OpenSSL
 
 All encoding/decoding/encryption/decryption/digests are done using `openssl`, which is (still) a part of the standard library. If at some point `openssl` is removed and not specifically distributed, you'll have to install it yourself. Hopefully this will never happen.
