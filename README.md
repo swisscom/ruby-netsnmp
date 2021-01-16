@@ -32,7 +32,7 @@ This gem provides:
 
 * Implementation in ruby of the SNMP Protocol for v3, v2c and v1 (most notable the rfc3414 and 3826).
 * Client/Manager API with simple interface for get, genext, set and walk.
-* No dependencies.
+* Pure Ruby.
 * Support for concurrency and evented I/O.
 
 ## Why?
