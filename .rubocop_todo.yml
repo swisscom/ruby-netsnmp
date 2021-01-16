@@ -16,7 +16,7 @@ Metrics/AbcSize:
 # Offense count: 2
 # Configuration parameters: CountComments.
 Metrics/ClassLength:
-  Max: 150
+  Max: 1000
 
 # Offense count: 8
 Metrics/CyclomaticComplexity:
@@ -38,16 +38,7 @@ Metrics/PerceivedComplexity:
 
 # Offense count: 10
 Style/Documentation:
-  Exclude:
-    - 'spec/**/*'
-    - 'test/**/*'
-    - 'lib/netsnmp.rb'
-    - 'lib/netsnmp/encryption/aes.rb'
-    - 'lib/netsnmp/encryption/des.rb'
-    - 'lib/netsnmp/encryption/none.rb'
-    - 'lib/netsnmp/scoped_pdu.rb'
-    - 'lib/netsnmp/session.rb'
-    - 'lib/netsnmp/timeticks.rb'
+  Enabled: false
 
 # Offense count: 8
 # Cop supports --auto-correct.

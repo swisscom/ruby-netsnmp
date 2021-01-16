@@ -16,3 +16,6 @@ Layout/IndentHeredoc:
 Style/NumericPredicate:
   Exclude:
     - lib/netsnmp.rb
+
+Style/ClassAndModuleChildren:
+  Enabled: false

@@ -22,7 +22,7 @@ RSpec.describe NETSNMP::Client do
       let(:get_oid) { "1.3.6.1.2.1.1.5.0" }
       let(:next_oid) { "1.3.6.1.2.1.1.6.0" }
       let(:walk_oid) { "1.3.6.1.2.1.1" }
-      let(:set_oid) { "1.3.6.1.2.1.1.3.0" } # sysUpTimeInstance
+      let(:set_oid) { "sysUpTime.0" } # sysUpTimeInstance
       let(:get_result) { "DEVICE-192.168.1.1" }
       let(:next_result) { "The Cloud" }
       let(:walk_result) do
@@ -48,10 +48,10 @@ RSpec.describe NETSNMP::Client do
           community: "public"
         }
       end
-      let(:get_oid) { "1.3.6.1.2.1.1.5.0" }
+      let(:get_oid) { "sysName.0" }
       let(:next_oid) { "1.3.6.1.2.1.1.6.0" }
-      let(:walk_oid) { "1.3.6.1.2.1.1" }
-      let(:set_oid) { "1.3.6.1.2.1.1.3.0" }
+      let(:walk_oid) { "system" }
+      let(:set_oid) { "sysUpTime.0" }
       let(:get_result) { "DEVICE-192.168.1.1" }
       let(:next_result) { "The Cloud" }
       let(:walk_result) do
@@ -78,9 +78,9 @@ RSpec.describe NETSNMP::Client do
         context: "a172334d7d97871b72241397f713fa12"
       }
     end
-    let(:get_oid) { "1.3.6.1.2.1.1.5.0" }
+    let(:get_oid) { "sysName.0" }
     let(:next_oid) { "1.3.6.1.2.1.1.6.0" }
-    let(:set_oid) { "1.3.6.1.2.1.1.3.0" } # sysUpTimeInstance
+    let(:set_oid) { "sysUpTime.0" } # sysUpTimeInstance
     let(:walk_oid) { "1.3.6.1.2.1.1.9.1.3" }
     let(:get_result) { "tt" }
     let(:next_result) { "KK12" }

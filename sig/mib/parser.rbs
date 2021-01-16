@@ -1,0 +1,7 @@
+module NETSNMP
+  module MIB
+    class Parser
+
+    end
+  end
+end

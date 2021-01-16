@@ -77,7 +77,7 @@ module NETSNMP
     # @return [Enumerator] the enumerator-collection of the oid-value pairs
     #
     def walk(oid:)
-      walkoid = oid
+      walkoid = OID.build(oid)
       Enumerator.new do |y|
         code = walkoid
         first_response_code = nil
