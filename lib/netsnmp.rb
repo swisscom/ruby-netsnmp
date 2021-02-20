@@ -76,7 +76,7 @@ module NETSNMP
     ASN_COLORS.each_key do |klass|
       refine(klass) do
         def to_hex
-          "#{COLORIZE[self]} (#{value})"
+          "#{COLORIZE[self]} (#{value.to_s.inspect})"
         end
       end
     end
@@ -95,7 +95,8 @@ module NETSNMP
 
     refine(OpenSSL::ASN1::ASN1Data) do
       def to_hex
-        if value
+        case value
+        when Array
           values = value.map(&:to_der).join
           hex_values = value.map(&:to_hex).map { |s| s.sub("\t", "\t\t") }.map { |s| "\n\t#{s}" }.join
           der = to_der

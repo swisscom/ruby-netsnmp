@@ -89,7 +89,7 @@ module NETSNMP
 
       debug_stream = @debug
 
-      message = (+"" << yield << "\n")
+      message = (+"\n" << yield << "\n")
       message = "\e[#{COLORS[color]}m#{message}\e[0m" if debug_stream.respond_to?(:isatty) && debug_stream.isatty
       debug_stream << message
     end

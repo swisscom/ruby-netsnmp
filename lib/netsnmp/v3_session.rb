@@ -8,6 +8,7 @@ module NETSNMP
       @context = context
       @security_parameters = opts.delete(:security_parameters)
       super
+      @message_serializer = Message.new(debug: @debug, debug_level: @debug_level)
     end
 
     # @see {NETSNMP::Session#build_pdu}
@@ -21,14 +22,9 @@ module NETSNMP
     # @see {NETSNMP::Session#send}
     def send(pdu)
       log { "sending request..." }
-      log(level: 2) { pdu.to_hex }
       encoded_request = encode(pdu)
-      log { Hexdump.dump(encoded_request) }
       encoded_response = @transport.send(encoded_request)
-      log { "received response" }
-      log { Hexdump.dump(encoded_response) }
       response_pdu, = decode(encoded_response)
-      log(level: 2) { response_pdu.to_hex }
       response_pdu
     end
 
@@ -67,27 +63,22 @@ module NETSNMP
                                                  username: @security_parameters.username)
       pdu = ScopedPDU.build(:get, headers: [])
       log { "sending probe..." }
-      log(level: 2) { pdu.to_hex }
-      encoded_report_pdu = Message.encode(pdu, security_parameters: report_sec_params)
-      log { Hexdump.dump(encoded_report_pdu) }
+      encoded_report_pdu = @message_serializer.encode(pdu, security_parameters: report_sec_params)
 
       encoded_response_pdu = @transport.send(encoded_report_pdu)
-      log { "received probe response" }
-      log { Hexdump.dump(encoded_response_pdu) }
 
-      probe_response_pdu, engine_id, @engine_boots, @engine_time = decode(encoded_response_pdu, security_parameters: report_sec_params)
-      log(level: 2) { probe_response_pdu.to_hex }
+      _, engine_id, @engine_boots, @engine_time = decode(encoded_response_pdu, security_parameters: report_sec_params)
       engine_id
     end
 
     def encode(pdu)
-      Message.encode(pdu, security_parameters: @security_parameters,
-                          engine_boots: @engine_boots,
-                          engine_time: @engine_time)
+      @message_serializer.encode(pdu, security_parameters: @security_parameters,
+                                      engine_boots: @engine_boots,
+                                      engine_time: @engine_time)
     end
 
     def decode(stream, security_parameters: @security_parameters)
-      Message.decode(stream, security_parameters: security_parameters)
+      @message_serializer.decode(stream, security_parameters: security_parameters)
     end
   end
 end
