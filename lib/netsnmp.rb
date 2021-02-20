@@ -57,6 +57,59 @@ module NETSNMP
     end
   end
 
+  module ASNExtensions
+    ASN_COLORS = {
+      OpenSSL::ASN1::Sequence => 34, # blue
+      OpenSSL::ASN1::OctetString => 32, # green
+      OpenSSL::ASN1::Integer => 33, # yellow
+      OpenSSL::ASN1::ObjectId => 35, # magenta
+      OpenSSL::ASN1::ASN1Data => 36 # cyan
+    }.freeze
+
+    DEMODULIZE = ->(klass) { klass.name.split("::").last }
+    COLORIZE = lambda do |asn, der = asn.to_der|
+      hex = Hexdump.dump(der, separator: " ")
+      "#{DEMODULIZE[asn.class]}: \e[#{ASN_COLORS[asn.class]}m#{hex}\e[0m"
+    end
+
+    # basic types
+    ASN_COLORS.each_key do |klass|
+      refine(klass) do
+        def to_hex
+          "#{COLORIZE[self]} (#{value})"
+        end
+      end
+    end
+
+    # composite types
+    refine(OpenSSL::ASN1::Sequence) do
+      def to_hex
+        values = value.map(&:to_der).join
+        hex_values = value.map(&:to_hex).map { |s| s.sub("\t", "\t\t") }.map { |s| "\n\t#{s}" }.join
+        der = to_der
+        der = der.sub(values, "")
+
+        "#{COLORIZE[self, der]}#{hex_values}"
+      end
+    end
+
+    refine(OpenSSL::ASN1::ASN1Data) do
+      def to_hex
+        if value
+          values = value.map(&:to_der).join
+          hex_values = value.map(&:to_hex).map { |s| s.sub("\t", "\t\t") }.map { |s| "\n\t#{s}" }.join
+          der = to_der
+          der = der.sub(values, "")
+        else
+          der = to_der
+          hex_values = nil
+        end
+
+        "#{COLORIZE[self, der]}#{hex_values}"
+      end
+    end
+  end
+
   def self.debug=(io)
     @debug_output = io
   end
@@ -67,11 +120,11 @@ module NETSNMP
 
   unless defined?(Hexdump) # support the hexdump gem
     module Hexdump
-      def self.dump(data, width: 8)
+      def self.dump(data, width: 8, separator: "\n")
         pairs = data.unpack("H*").first.scan(/.{4}/)
         pairs.each_slice(width).map do |row|
           row.join(" ")
-        end.join("\n")
+        end.join(separator)
       end
     end
   end

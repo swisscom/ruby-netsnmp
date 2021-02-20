@@ -6,6 +6,8 @@ module NETSNMP
   #
   class PDU
     MAXREQUESTID = 2147483647
+
+    using ASNExtensions
     class << self
       def decode(der)
         asn_tree = case der
@@ -83,6 +85,10 @@ module NETSNMP
 
     def to_der
       to_asn.to_der
+    end
+
+    def to_hex
+      to_asn.to_hex
     end
 
     # Adds a request varbind to the pdu
