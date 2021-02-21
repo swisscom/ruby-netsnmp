@@ -8,6 +8,7 @@ module NETSNMP
   # It also provides validation of the security options passed with a client is initialized in v3 mode.
   class SecurityParameters
     using StringExtensions
+    using ASNExtensions
 
     IPAD = "\x36" * 64
     OPAD = "\x5c" * 64
@@ -72,7 +73,10 @@ module NETSNMP
       if encryption
         encrypted_pdu, salt = encryption.encrypt(pdu.to_der, engine_boots: engine_boots,
                                                              engine_time: engine_time)
-        [OpenSSL::ASN1::OctetString.new(encrypted_pdu), OpenSSL::ASN1::OctetString.new(salt)]
+        [
+          OpenSSL::ASN1::OctetString.new(encrypted_pdu).with_label(:encrypted_pdu),
+          OpenSSL::ASN1::OctetString.new(salt).with_label(:salt)
+        ]
       else
         [pdu.to_asn, salt]
       end

@@ -67,16 +67,12 @@ module NETSNMP
     }.freeze
 
     DEMODULIZE = ->(klass) { klass.name.split("::").last }
-    COLORIZE = lambda do |asn, der = asn.to_der|
-      hex = Hexdump.dump(der, separator: " ")
-      "#{DEMODULIZE[asn.class]}: \e[#{ASN_COLORS[asn.class]}m#{hex}\e[0m"
-    end
 
     # basic types
     ASN_COLORS.each_key do |klass|
       refine(klass) do
         def to_hex
-          "#{COLORIZE[self]} (#{value.to_s.inspect})"
+          "#{colorize_hex} (#{value.to_s.inspect})"
         end
       end
     end
@@ -85,20 +81,27 @@ module NETSNMP
     refine(OpenSSL::ASN1::Sequence) do
       def to_hex
         values = value.map(&:to_der).join
-        hex_values = value.map(&:to_hex).map { |s| s.sub("\t", "\t\t") }.map { |s| "\n\t#{s}" }.join
+        hex_values = value.map(&:to_hex).map { |s| s.gsub(/(\t+)/) { "\t#{Regexp.last_match(1)}" } }.map { |s| "\n\t#{s}" }.join
         der = to_der
         der = der.sub(values, "")
 
-        "#{COLORIZE[self, der]}#{hex_values}"
+        "#{colorize_hex(der)}#{hex_values}"
       end
     end
 
     refine(OpenSSL::ASN1::ASN1Data) do
+      attr_reader :label
+
+      def with_label(label)
+        @label = label
+        self
+      end
+
       def to_hex
         case value
         when Array
           values = value.map(&:to_der).join
-          hex_values = value.map(&:to_hex).map { |s| s.sub("\t", "\t\t") }.map { |s| "\n\t#{s}" }.join
+          hex_values = value.map(&:to_hex).map { |s| s.gsub(/(\t+)/) { "\t#{Regexp.last_match(1)}" } }.map { |s| "\n\t#{s}" }.join
           der = to_der
           der = der.sub(values, "")
         else
@@ -106,17 +109,14 @@ module NETSNMP
           hex_values = nil
         end
 
-        "#{COLORIZE[self, der]}#{hex_values}"
+        "#{colorize_hex(der)}#{hex_values}"
+      end
+
+      def colorize_hex(der = to_der)
+        hex = Hexdump.dump(der, separator: " ")
+        "#{label || DEMODULIZE[self.class]}: \e[#{ASN_COLORS[self.class]}m#{hex}\e[0m"
       end
     end
-  end
-
-  def self.debug=(io)
-    @debug_output = io
-  end
-
-  def self.debug(&blk)
-    @debug_output << blk.call + "\n" if @debug_output
   end
 
   unless defined?(Hexdump) # support the hexdump gem
