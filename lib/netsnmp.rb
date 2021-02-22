@@ -132,6 +132,7 @@ module NETSNMP
 end
 
 require "netsnmp/errors"
+require "netsnmp/loggable"
 
 require "netsnmp/timeticks"
 

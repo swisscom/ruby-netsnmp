@@ -5,6 +5,8 @@ module NETSNMP
   class Message
     using ASNExtensions
 
+    prepend Loggable
+
     AUTHNONE               = OpenSSL::ASN1::OctetString.new("\x00" * 12).with_label(:auth_mask)
     PRIVNONE               = OpenSSL::ASN1::OctetString.new("")
     MSG_MAX_SIZE       = OpenSSL::ASN1::Integer.new(65507).with_label(:max_message_size)
@@ -12,10 +14,7 @@ module NETSNMP
     MSG_VERSION        = OpenSSL::ASN1::Integer.new(3).with_label(:message_version)
     MSG_REPORTABLE     = 4
 
-    def initialize(debug:, debug_level:)
-      @debug = debug
-      @debug_level = debug_level
-    end
+    def initialize(**); end
 
     # @param [String] payload of an snmp v3 message which can be decoded
     # @param [NETSMP::SecurityParameters, #decode] security_parameters knowns how to decode the stream
@@ -44,12 +43,12 @@ module NETSNMP
       priv_param.with_label(:priv_param)
 
       log(level: 2) { asn_tree.to_hex }
+      log(level: 2) { sec_params_asn.to_hex }
+
       # validate_authentication
-      log(level: 2) { auth_param.to_hex }
       auth_param = auth_param.value
       security_parameters.verify(stream.sub(auth_param, AUTHNONE.value), auth_param)
 
-      log { "V3 message has been verified" }
       engine_boots = engine_boots.value.to_i
       engine_time = engine_time.value.to_i
 
@@ -113,30 +112,6 @@ module NETSNMP
         log { Hexdump.dump(encoded) }
       end
       encoded
-    end
-
-    private
-
-    COLORS = {
-      black: 30,
-      red: 31,
-      green: 32,
-      yellow: 33,
-      blue: 34,
-      magenta: 35,
-      cyan: 36,
-      white: 37
-    }.freeze
-
-    def log(level: @debug_level, color: nil)
-      return unless @debug
-      return unless @debug_level >= level
-
-      debug_stream = @debug
-
-      message = (+"\n" << yield << "\n")
-      message = "\e[#{COLORS[color]}m#{message}\e[0m" if debug_stream.respond_to?(:isatty) && debug_stream.isatty
-      debug_stream << message
     end
   end
 end

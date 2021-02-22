@@ -10,6 +10,8 @@ module NETSNMP
     using StringExtensions
     using ASNExtensions
 
+    prepend Loggable
+
     IPAD = "\x36" * 64
     OPAD = "\x5c" * 64
 

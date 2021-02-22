@@ -8,7 +8,7 @@ module NETSNMP
       @context = context
       @security_parameters = opts.delete(:security_parameters)
       super
-      @message_serializer = Message.new(debug: @debug, debug_level: @debug_level)
+      @message_serializer = Message.new(**opts)
     end
 
     # @see {NETSNMP::Session#build_pdu}

@@ -4,16 +4,14 @@ module NETSNMP
   # Let's just remind that there is no session in snmp, this is just an abstraction.
   #
   class Session
+    prepend Loggable
+
     TIMEOUT = 2
-    DEBUG = ENV.key?("NETSNMP_DEBUG") ? $stderr : nil
-    DEBUG_LEVEL = (ENV["NETSNMP_DEBUG"] || 1).to_i
 
     # @param [Hash] opts the options set
-    def initialize(version: 1, community: "public", debug: DEBUG, debug_level: DEBUG_LEVEL, **options)
+    def initialize(version: 1, community: "public", **options)
       @version   = version
       @community = community
-      @debug = debug
-      @debug_level = debug_level
       validate(**options)
     end
 
@@ -70,28 +68,6 @@ module NETSNMP
                  else
                    raise "unsupported snmp version (#{@version})"
                  end
-    end
-
-    COLORS = {
-      black: 30,
-      red: 31,
-      green: 32,
-      yellow: 33,
-      blue: 34,
-      magenta: 35,
-      cyan: 36,
-      white: 37
-    }.freeze
-
-    def log(level: @debug_level, color: nil)
-      return unless @debug
-      return unless @debug_level >= level
-
-      debug_stream = @debug
-
-      message = (+"\n" << yield << "\n")
-      message = "\e[#{COLORS[color]}m#{message}\e[0m" if debug_stream.respond_to?(:isatty) && debug_stream.isatty
-      debug_stream << message
     end
 
     class Transport
