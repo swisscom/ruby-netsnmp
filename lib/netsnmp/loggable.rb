@@ -24,15 +24,13 @@ module NETSNMP
       white: 37
     }.freeze
 
-    def log(level: @debug_level, color: nil)
+    def log(level: @debug_level)
       return unless @debug
       return unless @debug_level >= level
 
       debug_stream = @debug
 
-      message = (+"\n" << yield << "\n")
-      message = "\e[#{COLORS[color]}m#{message}\e[0m" if debug_stream.respond_to?(:isatty) && debug_stream.isatty
-      debug_stream << message
+      debug_stream << (+"\n" << yield << "\n")
     end
   end
 end
