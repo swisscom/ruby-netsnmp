@@ -10,7 +10,6 @@ end
 
 if defined?(SimpleCov)
   SimpleCov.start do
-    minimum_coverage 85
     add_filter ".bundle"
     add_filter "/spec/"
   end

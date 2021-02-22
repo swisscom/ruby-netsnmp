@@ -21,11 +21,11 @@ module NETSNMP
 
     def encode: (_ToAsn, salt: OpenSSL::ASN1::ASN1Data, engine_time: Integer, engine_boots: Integer) -> [OpenSSL::ASN1::ASN1Data, OpenSSL::ASN1::ASN1Data]
 
-    def decode: (OpenSSL::ASN1::ASN1Data | String der, salt: OpenSSL::ASN1::ASN1Data | String, engine_time: Integer, engine_boots: Integer) -> OpenSSL::ASN1::ASN1Data
+    def decode: (OpenSSL::ASN1::ASN1Data | String der, salt: OpenSSL::ASN1::ASN1Data | String, engine_time: Integer, engine_boots: Integer, ?security_level: Integer?) -> OpenSSL::ASN1::ASN1Data
 
     def sign: (String message) -> String?
 
-    def verify: (String stream, String salt) -> void
+    def verify: (String stream, String salt, ?security_level: Integer?) -> void
 
     def must_revalidate?: () -> bool
 

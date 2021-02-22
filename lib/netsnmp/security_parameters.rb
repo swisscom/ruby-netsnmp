@@ -88,15 +88,16 @@ module NETSNMP
     # @param [String] salt the salt from the incoming der
     # @param [Integer] engine_time the reported engine time
     # @param [Integer] engine_boots the reported engine boots
-    def decode(der, salt:, engine_time:, engine_boots:)
+    def decode(der, salt:, engine_time:, engine_boots:, security_level: @security_level)
       asn = OpenSSL::ASN1.decode(der)
-      if encryption
-        encrypted_pdu = asn.value
-        pdu_der = encryption.decrypt(encrypted_pdu, salt: salt, engine_time: engine_time, engine_boots: engine_boots)
-        OpenSSL::ASN1.decode(pdu_der)
-      else
-        asn
-      end
+      return asn if security_level < 3
+
+      return asn unless encryption
+
+      encrypted_pdu = asn.value
+      pdu_der = encryption.decrypt(encrypted_pdu, salt: salt, engine_time: engine_time, engine_boots: engine_boots)
+      log(level: 2) { "message has been decrypted" }
+      OpenSSL::ASN1.decode(pdu_der)
     end
 
     # @param [String] message the already encoded snmp v3 message
@@ -126,10 +127,11 @@ module NETSNMP
     # @param [String] salt the incoming payload''s salt
     #
     # @raise [NETSNMP::Error] if the message's integration has been violated
-    def verify(stream, salt)
-      return if @security_level < 1
+    def verify(stream, salt, security_level: @security_level)
+      return if security_level < 1
       verisalt = sign(stream)
       raise Error, "invalid message authentication salt" unless verisalt == salt
+      log(level: 2) { "message has been verified" }
     end
 
     def must_revalidate?

@@ -32,9 +32,14 @@ module NETSNMP
       sec_params.with_label(:security_params)
       pdu_payload.with_label(:pdu)
 
-      sec_params_asn = OpenSSL::ASN1.decode(sec_params.value).value
+      _, _, message_flags, = headers.value
 
-      engine_id, engine_boots, engine_time, username, auth_param, priv_param = sec_params_asn
+      # get last byte
+      security_level = message_flags.with_label(:message_flags).value.unpack("C*").last
+
+      sec_params_asn = OpenSSL::ASN1.decode(sec_params.value).with_label(:security_params)
+
+      engine_id, engine_boots, engine_time, username, auth_param, priv_param = sec_params_asn.value
       engine_id.with_label(:engine_id)
       engine_boots.with_label(:engine_boots)
       engine_time.with_label(:engine_time)
@@ -47,14 +52,15 @@ module NETSNMP
 
       # validate_authentication
       auth_param = auth_param.value
-      security_parameters.verify(stream.sub(auth_param, AUTHNONE.value), auth_param)
+      security_parameters.verify(stream.sub(auth_param, AUTHNONE.value), auth_param, security_level: security_level)
 
       engine_boots = engine_boots.value.to_i
       engine_time = engine_time.value.to_i
 
       encoded_pdu = security_parameters.decode(pdu_payload, salt: priv_param.value,
                                                             engine_boots: engine_boots,
-                                                            engine_time: engine_time)
+                                                            engine_time: engine_time,
+                                                            security_level: security_level)
 
       log { "received response PDU" }
       pdu = ScopedPDU.decode(encoded_pdu)
