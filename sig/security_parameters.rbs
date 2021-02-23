@@ -1,5 +1,7 @@
 module NETSNMP
   class SecurityParameters
+    prepend Loggable
+
     type security_level = :noauth | :auth_no_priv | :auth_priv | 0 | 1 | 3 | nil
 
     type auth_protocol = :md5 | :sha
