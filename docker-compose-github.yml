@@ -3,5 +3,6 @@ services:
   netsnmp:
     environment:
       - BUNDLE_PATH=/usr/local/bundle
+      - BUNDLE_WITHOUT=development
     volumes:
       - "./vendor/bundle:/usr/local/bundle"
