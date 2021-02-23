@@ -14,8 +14,16 @@ module NETSNMP
 
   module StringExtensions
     refine(String) do
-      def match?(*args)
-        !match(*args).nil?
+      unless String.method_defined?(:match?)
+        def match?(*args)
+          !match(*args).nil?
+        end
+      end
+
+      unless String.method_defined?(:unpack1)
+        def unpack1(format)
+          unpack(format).first
+        end
       end
     end
   end
@@ -87,8 +95,10 @@ module NETSNMP
 
   unless defined?(Hexdump) # support the hexdump gem
     module Hexdump
+      using StringExtensions
+
       def self.dump(data, width: 8, separator: "\n")
-        pairs = data.unpack("H*").first.scan(/.{4}/)
+        pairs = data.unpack1("H*").scan(/.{4}/)
         pairs.each_slice(width).map do |row|
           row.join(" ")
         end.join(separator)
