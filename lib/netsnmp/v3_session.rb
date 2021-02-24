@@ -24,7 +24,14 @@ module NETSNMP
       log { "sending request..." }
       encoded_request = encode(pdu)
       encoded_response = @transport.send(encoded_request)
-      response_pdu, = decode(encoded_response)
+      response_pdu, *args = decode(encoded_response)
+      if response_pdu.type == 8
+        varbind = response_pdu.varbinds.first
+        if varbind.oid == "1.3.6.1.6.3.15.1.1.2.0" # IdNotInTimeWindow
+          _, @engine_boots, @engine_time = args
+          raise IdNotInTimeWindowError, "request timestamp is already out of time window"
+        end
+      end
       response_pdu
     end
 

@@ -57,6 +57,7 @@ module NETSNMP
               when :inform    then 6
               when :trap      then 7
               when :response  then 2
+              when :report    then 8
               else raise Error, "#{type} is not supported as type"
               end
         new(type: typ, **args)

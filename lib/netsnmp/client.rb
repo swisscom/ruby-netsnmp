@@ -153,7 +153,7 @@ module NETSNMP
       retries = @retries
       begin
         yield
-      rescue Timeout::Error => e
+      rescue Timeout::Error, IdNotInTimeWindowError => e
         raise e if retries.zero?
         retries -= 1
         retry

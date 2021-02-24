@@ -12,7 +12,7 @@ module NETSNMP
     # }
 
     attr_reader varbinds: Array[Varbind]
-    attr_reader type: pdu_type
+    attr_reader type: Integer
     attr_reader version: snmp_version
     attr_reader community: String
     attr_reader request_id: Integer
