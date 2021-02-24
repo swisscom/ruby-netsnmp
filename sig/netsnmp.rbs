@@ -16,8 +16,4 @@ module NETSNMP
   end
 
   type snmp_version = 0 | 1 | 3 | :v1 | :v2c | :v3 | nil
-
-  def self.debug=: (_Logger) -> void
-
-  def self.debug: { () -> string } -> void
 end

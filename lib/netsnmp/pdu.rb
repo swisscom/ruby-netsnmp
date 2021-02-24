@@ -5,7 +5,11 @@ module NETSNMP
   # Abstracts the PDU base structure into a ruby object. It gives access to its varbinds.
   #
   class PDU
+    using ASNExtensions
+
     MAXREQUESTID = 2147483647
+
+    using ASNExtensions
     class << self
       def decode(der)
         asn_tree = case der
@@ -53,6 +57,7 @@ module NETSNMP
               when :inform    then 6
               when :trap      then 7
               when :response  then 2
+              when :report    then 8
               else raise Error, "#{type} is not supported as type"
               end
         new(type: typ, **args)
@@ -85,6 +90,10 @@ module NETSNMP
       to_asn.to_der
     end
 
+    def to_hex
+      to_asn.to_hex
+    end
+
     # Adds a request varbind to the pdu
     #
     # @param [OID] oid a valid oid
@@ -96,25 +105,27 @@ module NETSNMP
     alias << add_varbind
 
     def to_asn
-      request_id_asn = OpenSSL::ASN1::Integer.new(@request_id)
-      error_asn = OpenSSL::ASN1::Integer.new(@error_status)
-      error_index_asn = OpenSSL::ASN1::Integer.new(@error_index)
+      request_id_asn = OpenSSL::ASN1::Integer.new(@request_id).with_label(:request_id)
+      error_asn = OpenSSL::ASN1::Integer.new(@error_status).with_label(:error)
+      error_index_asn = OpenSSL::ASN1::Integer.new(@error_index).with_label(:error_index)
 
-      varbind_asns = OpenSSL::ASN1::Sequence.new(@varbinds.map(&:to_asn))
+      varbind_asns = OpenSSL::ASN1::Sequence.new(@varbinds.map(&:to_asn)).with_label(:varbinds)
 
       request_asn = OpenSSL::ASN1::ASN1Data.new([request_id_asn,
                                                  error_asn, error_index_asn,
                                                  varbind_asns], @type,
-                                                :CONTEXT_SPECIFIC)
+                                                :CONTEXT_SPECIFIC).with_label(:request)
 
-      OpenSSL::ASN1::Sequence.new([*encode_headers_asn, request_asn])
+      OpenSSL::ASN1::Sequence.new([*encode_headers_asn, request_asn]).with_label(:pdu)
     end
 
     private
 
     def encode_headers_asn
-      [OpenSSL::ASN1::Integer.new(@version),
-       OpenSSL::ASN1::OctetString.new(@community)]
+      [
+        OpenSSL::ASN1::Integer.new(@version).with_label(:snmp_version),
+        OpenSSL::ASN1::OctetString.new(@community).with_label(:community)
+      ]
     end
 
     # http://www.tcpipguide.com/free/t_SNMPVersion2SNMPv2MessageFormats-5.htm#Table_219

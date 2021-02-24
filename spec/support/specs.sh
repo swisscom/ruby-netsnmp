@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e
+
 RUBY_ENGINE=`ruby -e 'puts RUBY_ENGINE'`
 
 if [[ "$RUBY_ENGINE" = "truffleruby" ]]; then
@@ -11,8 +13,11 @@ else
   apk --update add g++ make git net-snmp-libs
 fi
 
+gem install bundler -v="1.17.3" --no-doc --conservative
 cd /home
-bundle install --quiet
+
+bundle -v
+bundle install
 
 if [[ ${RUBY_VERSION:0:1} = "3" ]]; then
   export RUBYOPT='-rbundler/setup -rrbs/test/setup'

@@ -4,6 +4,8 @@ module NETSNMP
   # Let's just remind that there is no session in snmp, this is just an abstraction.
   #
   class Session
+    prepend Loggable
+
     TIMEOUT = 2
 
     # @param [Hash] opts the options set
@@ -36,9 +38,16 @@ module NETSNMP
     # @return [NETSNMP::PDU] the response pdu
     #
     def send(pdu)
+      log { "sending request..." }
+      log(level: 2) { pdu.to_hex }
       encoded_request = pdu.to_der
+      log { Hexdump.dump(encoded_request) }
       encoded_response = @transport.send(encoded_request)
-      PDU.decode(encoded_response)
+      log { "received response" }
+      log { Hexdump.dump(encoded_response) }
+      response_pdu = PDU.decode(encoded_response)
+      log(level: 2) { response_pdu.to_hex }
+      response_pdu
     end
 
     private

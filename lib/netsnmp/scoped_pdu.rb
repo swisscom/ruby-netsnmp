@@ -2,6 +2,8 @@
 
 module NETSNMP
   class ScopedPDU < PDU
+    using ASNExtensions
+
     attr_reader :engine_id
 
     def initialize(type:, headers:, **options)
@@ -12,8 +14,10 @@ module NETSNMP
     private
 
     def encode_headers_asn
-      [OpenSSL::ASN1::OctetString.new(@engine_id || ""),
-       OpenSSL::ASN1::OctetString.new(@context || "")]
+      [
+        OpenSSL::ASN1::OctetString.new(@engine_id || "").with_label(:engine_id),
+        OpenSSL::ASN1::OctetString.new(@context || "").with_label(:context)
+      ]
     end
   end
 end

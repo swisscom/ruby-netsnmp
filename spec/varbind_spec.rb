@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 RSpec.describe NETSNMP::Varbind do
+  using NETSNMP::StringExtensions
+
   describe "#to_der" do
     it { expect(described_class.new(".1.3.6.1.2.1.1.1.0").to_der).to eq("0\f\006\b+\006\001\002\001\001\001\000\005\000".b) }
 
@@ -25,7 +27,7 @@ RSpec.describe NETSNMP::Varbind do
           gauge = 127
           varbind = described_class.new(".1.3.6.1.2.1.1.3.0", type: :gauge, value: gauge)
           value_str = varbind.to_der[12..-1]
-          header = value_str[0].unpack("B8").first
+          header = value_str[0].unpack1("B8")
 
           # Class: Primitive Application
           expect(header[0..1]).to eq("01")
@@ -43,7 +45,7 @@ RSpec.describe NETSNMP::Varbind do
           gauge = 128
           varbind = described_class.new(".1.3.6.1.2.1.1.3.0", type: :gauge, value: gauge)
           value_str = varbind.to_der[12..-1]
-          header = value_str[0].unpack("B8").first
+          header = value_str[0].unpack1("B8")
 
           # Class: Primitive Application
           expect(header[0..1]).to eq("01")
@@ -61,7 +63,7 @@ RSpec.describe NETSNMP::Varbind do
           gauge = 805
           varbind = described_class.new(".1.3.6.1.2.1.1.3.0", type: :gauge, value: gauge)
           value_str = varbind.to_der[12..-1]
-          header = value_str[0].unpack("B8").first
+          header = value_str[0].unpack1("B8")
 
           # Class: Primitive Application
           expect(header[0..1]).to eq("01")

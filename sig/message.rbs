@@ -1,7 +1,9 @@
 module NETSNMP
-  module Message
-    def self?.decode: (String stream, security_parameters: SecurityParameters) -> [ScopedPDU, String, Integer, Integer]
+  class Message
+    prepend Loggable
 
-    def self?.encode: (ScopedPDU pdu, security_parameters: SecurityParameters, ?engine_boots: Integer, ?engine_time: Integer) -> String
+    def decode: (String stream, security_parameters: SecurityParameters) -> [ScopedPDU, String, Integer, Integer]
+
+    def encode: (ScopedPDU pdu, security_parameters: SecurityParameters, ?engine_boots: Integer, ?engine_time: Integer) -> String
   end
 end

@@ -8,6 +8,7 @@ module NETSNMP
       @context = context
       @security_parameters = opts.delete(:security_parameters)
       super
+      @message_serializer = Message.new(**opts)
     end
 
     # @see {NETSNMP::Session#build_pdu}
@@ -20,10 +21,18 @@ module NETSNMP
 
     # @see {NETSNMP::Session#send}
     def send(pdu)
+      log { "sending request..." }
       encoded_request = encode(pdu)
       encoded_response = @transport.send(encoded_request)
-      pdu, = decode(encoded_response)
-      pdu
+      response_pdu, *args = decode(encoded_response)
+      if response_pdu.type == 8
+        varbind = response_pdu.varbinds.first
+        if varbind.oid == "1.3.6.1.6.3.15.1.1.2.0" # IdNotInTimeWindow
+          _, @engine_boots, @engine_time = args
+          raise IdNotInTimeWindowError, "request timestamp is already out of time window"
+        end
+      end
+      response_pdu
     end
 
     private
@@ -60,7 +69,8 @@ module NETSNMP
       report_sec_params = SecurityParameters.new(security_level: 0,
                                                  username: @security_parameters.username)
       pdu = ScopedPDU.build(:get, headers: [])
-      encoded_report_pdu = Message.encode(pdu, security_parameters: report_sec_params)
+      log { "sending probe..." }
+      encoded_report_pdu = @message_serializer.encode(pdu, security_parameters: report_sec_params)
 
       encoded_response_pdu = @transport.send(encoded_report_pdu)
 
@@ -69,13 +79,13 @@ module NETSNMP
     end
 
     def encode(pdu)
-      Message.encode(pdu, security_parameters: @security_parameters,
-                          engine_boots: @engine_boots,
-                          engine_time: @engine_time)
+      @message_serializer.encode(pdu, security_parameters: @security_parameters,
+                                      engine_boots: @engine_boots,
+                                      engine_time: @engine_time)
     end
 
     def decode(stream, security_parameters: @security_parameters)
-      Message.decode(stream, security_parameters: security_parameters)
+      @message_serializer.decode(stream, security_parameters: security_parameters)
     end
   end
 end

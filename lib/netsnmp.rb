@@ -33,51 +33,9 @@ rescue LoadError
   end
 end
 
-module NETSNMP
-  module IsNumericExtensions
-    refine String do
-      def integer?
-        each_byte do |byte|
-          return false unless byte >= 48 && byte <= 57
-        end
-        true
-      end
-    end
-  end
-
-  module StringExtensions
-    # If you wonder why this is there: the oauth feature uses a refinement to enhance the
-    # Regexp class locally with #match? , but this is never tested, because ActiveSupport
-    # monkey-patches the same method... Please ActiveSupport, stop being so intrusive!
-    # :nocov:
-    refine(String) do
-      def match?(*args)
-        !match(*args).nil?
-      end
-    end
-  end
-
-  def self.debug=(io)
-    @debug_output = io
-  end
-
-  def self.debug(&blk)
-    @debug_output << blk.call + "\n" if @debug_output
-  end
-
-  unless defined?(Hexdump) # support the hexdump gem
-    module Hexdump
-      def self.dump(data, width: 8)
-        pairs = data.unpack("H*").first.scan(/.{4}/)
-        pairs.each_slice(width).map do |row|
-          row.join(" ")
-        end.join("\n")
-      end
-    end
-  end
-end
-
 require "netsnmp/errors"
+require "netsnmp/extensions"
+require "netsnmp/loggable"
 
 require "netsnmp/timeticks"
 
