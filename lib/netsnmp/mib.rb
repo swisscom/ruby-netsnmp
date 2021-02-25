@@ -48,12 +48,10 @@ module NETSNMP
       [prefix, *suffix].join(".")
     end
 
-    # This is a helper function, do not rely on this functionality in future
-    # versions
     def identifier(oid)
-      @object_identifiers.select do |_, full_oid|
-        full_oid.start_with?(oid)
-      end
+      @object_identifiers.select do |_, ids_oid|
+        oid.start_with?(ids_oid)
+      end.sort_by(&:size).first
     end
 
     #
@@ -86,7 +84,7 @@ module NETSNMP
       true
     end
 
-    TYPES = ["OBJECT-TYPE", "OBJECT IDENTIFIER", "MODULE-IDENTITY"].freeze
+    TYPES = ["OBJECT IDENTIFIER", "OBJECT-TYPE", "MODULE-IDENTITY"].freeze
 
     STATIC_MIB_TO_OID = {
       "iso" => "1"
@@ -98,41 +96,54 @@ module NETSNMP
     def do_load(mod)
       data = @parser_mutex.synchronize { PARSER.parse(File.read(mod)) }
 
-      imports = load_imports(data)
+      imports = load_imports(data[:imports])
 
-      data[:declarations].each_with_object(@object_identifiers) do |dec, types|
-        next unless TYPES.include?(dec[:type])
+      declarations = Hash[
+        data[:declarations].reject { |dec| !dec.key?(:name) || !TYPES.include?(dec[:type]) }
+                           .map { |dec| [String(dec[:name]), String(dec[:value]).split(/ +/)] }
+      ]
 
-        oid = String(dec[:value]).split(/ +/).flat_map do |cp|
-          if cp.integer?
-            cp
-          else
-            STATIC_MIB_TO_OID[cp] || @object_identifiers[cp] || begin
-              imported_mod, = imports.find do |_, identifiers|
-                identifiers.include?(cp)
-              end
-
-              raise Error, "didn't find a module to import \"#{cp}\" from" unless imported_mod
-
-              load(imported_mod)
-
-              @object_identifiers[cp]
-            end
-          end
-        end.join(".")
-
-        types[String(dec[:name])] = oid
+      declarations.each do |nme, value|
+        store_oid_in_identifiers(nme, value, imports: imports, declarations: declarations)
       end
+    end
+
+    def store_oid_in_identifiers(nme, value, imports:, declarations:)
+      oid = value.flat_map do |cp|
+        if cp.integer?
+          cp
+        elsif @object_identifiers.key?(cp)
+          @object_identifiers[cp]
+        elsif declarations.key?(cp)
+          store_oid_in_identifiers(cp, declarations[cp], imports: imports, declarations: declarations)
+          @object_identifiers[cp]
+        else
+          STATIC_MIB_TO_OID[cp] || begin
+            imported_mod, = imports.find do |_, identifiers|
+              identifiers.include?(cp)
+            end
+
+            raise Error, "didn't find a module to import \"#{cp}\" from" unless imported_mod
+
+            load(imported_mod)
+
+            @object_identifiers[cp]
+          end
+        end
+      end.join(".")
+
+      @object_identifiers[nme] = oid
     end
 
     #
     # Reformats the import lists into an hash indexed by module name, to a list of
     # imported names
     #
-    def load_imports(data)
-      return unless data[:imports]
+    def load_imports(imports)
+      return unless imports
 
-      data[:imports].each_with_object({}) do |import, imp|
+      imports = [imports] unless imports.respond_to?(:to_ary)
+      imports.each_with_object({}) do |import, imp|
         imp[String(import[:name])] = case import[:ids]
                                      when Hash
                                        [String(import[:ids][:name])]
