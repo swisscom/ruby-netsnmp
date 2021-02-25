@@ -35,7 +35,8 @@ module NETSNMP
       _, _, message_flags, = headers.value
 
       # get last byte
-      security_level = message_flags.with_label(:message_flags).value.unpack("C*").last
+      # discard the left-outermost bits and keep the remaining two
+      security_level = message_flags.with_label(:message_flags).value.unpack("C*").last & 3
 
       sec_params_asn = OpenSSL::ASN1.decode(sec_params.value).with_label(:security_params)
 
