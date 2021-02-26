@@ -2,6 +2,22 @@
 
 ## master
 
+### 0.4.0
+
+#### Features
+
+* New debugging logs: `NETSNMP::Client.new(..., debug: $stderr, debug_level: 2)` (can also be activated with envvar, i.e. `NETSNMP_DEBUG=2`);
+
+#### Improvements
+
+* octet strings are now returned in the original encoding; Binary strings are now returned as an "hex-string", which will be a normal string, but it'll print in hexa format, a la netsnmp.
+
+#### Bugfixes
+
+* incoming v3 message security level is now used to decide whether to decrypt/authorize (it was taking the send security level into account);
+* reacting to incoming REPORT pdu with `IdNotInTimeWindow` OID by updating the time and replay request PDU (something common to Cisco Routers);
+* Fiterling out unused bits from V3 message flags;
+
 ### 0.3.0
 
 * MIB Parser.

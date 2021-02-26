@@ -54,11 +54,12 @@ All of these issues are resolved here.
 ## Features
 
 * Client Interface, which supports SNMP v3, v2c, and v1
-* Supports get, getnext, set and walk calls.
-* MIB support.
+* Supports get, getnext, set and walk calls
+* MIB support
 * Proxy IO object support (for eventmachine/celluloid-io)
 * Ruby >= 2.1 support (modern)
 * Pure Ruby (no FFI)
+* Easy PDU debugging
 
 ## Examples
 
@@ -243,6 +244,16 @@ This library supports and is tested against ruby versions 2.1 or more recent, in
 ## OpenSSL
 
 All encoding/decoding/encryption/decryption/digests are done using `openssl`, which is (still) a part of the standard library. If at some point `openssl` is removed and not specifically distributed, you'll have to install it yourself. Hopefully this will never happen.
+
+## Debugging
+
+You can either set the `NETSNMP_DEBUG` to the desided debug level (currently, 1 and 2). The logs will be written to stderr.
+
+You can also set it for a specific client:
+
+```ruby
+manager2 = NETSNMP::Client.new(debug: $stderr, debug_level: 2, ....)
+```
 
 
 ## Tests
