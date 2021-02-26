@@ -50,18 +50,15 @@ module NETSNMP
     def convert_val(asn_value)
       case asn_value
       when OpenSSL::ASN1::OctetString
-        # yes, we are forcing all output to UTF-8
+        val = asn_value.value
+
         # it's kind of common in snmp, some stuff can't be converted,
         # like Hexa Strings. Parse them into a readable format a la netsnmp
-        val = asn_value.value
-        begin
-          val.encode("UTF-8")
-        rescue Encoding::UndefinedConversionError,
-               Encoding::ConverterNotFoundError,
-               Encoding::InvalidByteSequenceError
-          # hexdump me!
-          val.unpack("H*")[0].upcase.scan(/../).join(" ")
-        end
+        # https://github.com/net-snmp/net-snmp/blob/ed90aaaaea0d9cc6c5c5533f1863bae598d3b820/snmplib/mib.c#L650
+        is_hex_string = val.each_char.any? { |c| !c.match?(/[[:print:]]/) && !c.match?(/[[:space:]]/) }
+
+        val = HexString.new(val) if is_hex_string
+        val
       when OpenSSL::ASN1::Primitive
         val = asn_value.value
         val = val.to_i if val.is_a?(OpenSSL::BN)

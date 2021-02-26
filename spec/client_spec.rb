@@ -67,6 +67,24 @@ RSpec.describe NETSNMP::Client do
         WALK
       end
       let(:set_oid_result) { 43 }
+
+      context "when the returned value is a hex-string" do
+        let(:protocol_options) do
+          {
+            version: "2c",
+            community: "foreignformats/winxp1"
+          }
+        end
+        let(:hex_get_oid) { "1.3.6.1.2.1.25.3.7.1.3.10.1" }
+        let(:hex_get_result) { "\x01\x00\x00\x00" }
+        let(:hex_get_output) { "01 00 00 00" }
+        let(:value) { subject.get(oid: hex_get_oid) }
+
+        it "returns the string, which outputs the hex-representation" do
+          expect(value).to eq(hex_get_result)
+          expect(value.inspect).to include(hex_get_output)
+        end
+      end
     end
   end
 

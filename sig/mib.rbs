@@ -1,5 +1,8 @@
 module NETSNMP
   module MIB
+    type import = {ids: Array[{name: string}], name: string} | {ids: {name: string}, name: string}
+
+
     MIBDIRS: Array[String]
     PARSER: Parser
 
@@ -12,7 +15,7 @@ module NETSNMP
 
     def self?.load: (String mod) -> void
 
-    def self?.load_imports: (?Hash[Symbol, untyped] data) -> Hash[String, Array[String]]?
+    def self?.load_imports: ((Array[import] | import)? data) -> Hash[String, Array[String]]?
     def self?.load_defaults: () -> void
   end
 end
