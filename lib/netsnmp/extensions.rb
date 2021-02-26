@@ -93,16 +93,21 @@ module NETSNMP
     end
   end
 
-  unless defined?(Hexdump) # support the hexdump gem
-    module Hexdump
-      using StringExtensions
+  module Hexdump
+    using StringExtensions
 
-      def self.dump(data, width: 8, separator: "\n")
-        pairs = data.unpack1("H*").scan(/.{4}/)
-        pairs.each_slice(width).map do |row|
-          row.join(" ")
-        end.join(separator)
-      end
+    def self.dump(data, width: 8, in_groups_of: 4, separator: "\n")
+      pairs = data.unpack1("H*").scan(/.{#{in_groups_of}}/)
+      pairs.each_slice(width).map do |row|
+        row.join(" ")
+      end.join(separator)
+    end
+  end
+
+  # Like a string, but it prints an hex-string version of itself
+  class HexString < String
+    def inspect
+      Hexdump.dump(self, in_groups_of: 2, separator: " ")
     end
   end
 end
