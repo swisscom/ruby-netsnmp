@@ -245,6 +245,8 @@ This library supports and is tested against ruby versions 2.1 or more recent, in
 
 All encoding/decoding/encryption/decryption/digests are done using `openssl`, which is (still) a part of the standard library. If at some point `openssl` is removed and not specifically distributed, you'll have to install it yourself. Hopefully this will never happen.
 
+It also uses the `openssl` ASN.1 API to encode/decode BERs, which is known to be strict, and [may not be able to decode PDUs if not compliant with the supported RFC](https://github.com/swisscom/ruby-netsnmp/issues/47).
+
 ## Debugging
 
 You can either set the `NETSNMP_DEBUG` to the desided debug level (currently, 1 and 2). The logs will be written to stderr.
