@@ -33,7 +33,9 @@ module NETSNMP
         if idx
           mod = prefix[0..(idx - 1)]
           type = prefix[(idx + 2)..-1]
-          return unless load(mod)
+          unless module_loaded?(mod)
+            return unless load(mod)
+          end
         else
           type = prefix
         end
@@ -82,6 +84,14 @@ module NETSNMP
       do_load(mod)
       @modules_loaded << mod
       true
+    end
+
+    def module_loaded?(mod)
+      if File.file?(mod)
+        @modules_loaded.include?(mod)
+      else
+        @modules_loaded.map { |path| File.basename(path, ".*") }.include?(mod)
+      end
     end
 
     TYPES = ["OBJECT IDENTIFIER", "OBJECT-TYPE", "MODULE-IDENTITY"].freeze
