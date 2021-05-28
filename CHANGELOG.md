@@ -2,6 +2,10 @@
 
 ## master
 
+### 0.4.1
+
+fixed: namespace scope-based MIB lookups weren't working for custom-loaded MIBs (#48)
+
 ### 0.4.0
 
 #### Features
