@@ -19,3 +19,9 @@ Style/NumericPredicate:
 
 Style/ClassAndModuleChildren:
   Enabled: false
+
+Metrics/PerceivedComplexity:
+  Enabled: false
+
+Metrics/BlockNesting:
+  Enabled: false
