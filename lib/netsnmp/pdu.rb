@@ -37,6 +37,9 @@ module NETSNMP
           { oid: oid, value: val_asn }
         end
 
+        # If a wrong authentication password is set, we can receive a Report PDU (type 8) with only one varbind (usmStatsWrongDigests)
+        error_status = 16 if type == 8 && varbs.first[:oid] == "1.3.6.1.6.3.15.1.1.5.0"
+
         new(type: type, headers: [version, community],
             error_status: error_status,
             error_index: error_index,
@@ -147,7 +150,7 @@ module NETSNMP
                 when 13 then "Resource unavailable"
                 when 14 then "Commit failed"
                 when 15 then "Undo Failed"
-                when 16 then "Authorization Error"
+                when 16 then "Authorization Error (incorrect password, communinty or key)"
                 when 17 then "Not Writable"
                 when 18 then "Inconsistent Name"
                 else
