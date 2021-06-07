@@ -16,6 +16,10 @@ module NETSNMP
 
     def initialize(**); end
 
+    def verify(stream, auth_param, security_level, security_parameters:)
+      security_parameters.verify(stream.sub(auth_param, AUTHNONE.value), auth_param, security_level: security_level)
+    end
+
     # @param [String] payload of an snmp v3 message which can be decoded
     # @param [NETSMP::SecurityParameters, #decode] security_parameters knowns how to decode the stream
     #
@@ -51,9 +55,7 @@ module NETSNMP
       log(level: 2) { asn_tree.to_hex }
       log(level: 2) { sec_params_asn.to_hex }
 
-      # validate_authentication
       auth_param = auth_param.value
-      security_parameters.verify(stream.sub(auth_param, AUTHNONE.value), auth_param, security_level: security_level)
 
       engine_boots = engine_boots.value.to_i
       engine_time = engine_time.value.to_i
@@ -65,6 +67,9 @@ module NETSNMP
 
       log { "received response PDU" }
       pdu = ScopedPDU.decode(encoded_pdu)
+      pdu.auth_param = auth_param
+      pdu.security_level = security_level
+
       log(level: 2) { pdu.to_hex }
       [pdu, engine_id.value, engine_boots, engine_time]
     end
