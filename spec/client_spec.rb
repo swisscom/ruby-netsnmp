@@ -159,6 +159,13 @@ RSpec.describe NETSNMP::Client do
       end
     end
     context "with an auth priv policy" do
+      specify "whith wrong auth password and wrong encrypting password" do
+        options = { username: "authprivmd5des", auth_password: "wrongpassword",
+                    auth_protocol: :md5, priv_password: "wrongpassword",
+                    priv_protocol: :des, host: SNMPHOST, port: SNMPPORT }
+        expect { described_class.new(**options).get(oid: get_oid) }.to raise_error(NETSNMP::Error)
+      end
+
       context "auth in md5, encrypting in des" do
         let(:user_options) do
           { username: "authprivmd5des", auth_password: "maplesyrup",
