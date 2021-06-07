@@ -2,6 +2,12 @@
 
 ## master
 
+### 0.4.2
+
+#### Improvements
+
+Errors of the [usmStats family](http://oidref.com/1.3.6.1.6.3.15.1.1) will now raise an exception, where the message will be the same as `netsnmp` message for the same use-case (#50).
+
 ### 0.4.1
 
 fixed: namespace scope-based MIB lookups weren't working for custom-loaded MIBs (#48)
