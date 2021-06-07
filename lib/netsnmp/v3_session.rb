@@ -24,14 +24,7 @@ module NETSNMP
       log { "sending request..." }
       encoded_request = encode(pdu)
       encoded_response = @transport.send(encoded_request)
-      response_pdu, *args = decode(encoded_response)
-      if response_pdu.type == 8
-        varbind = response_pdu.varbinds.first
-        if varbind.oid == "1.3.6.1.6.3.15.1.1.2.0" # IdNotInTimeWindow
-          _, @engine_boots, @engine_time = args
-          raise IdNotInTimeWindowError, "request timestamp is already out of time window"
-        end
-      end
+      response_pdu, * = decode(encoded_response)
       response_pdu
     end
 
@@ -85,7 +78,33 @@ module NETSNMP
     end
 
     def decode(stream, security_parameters: @security_parameters)
-      @message_serializer.decode(stream, security_parameters: security_parameters)
+      return_pdu = @message_serializer.decode(stream, security_parameters: security_parameters)
+
+      pdu, *args = return_pdu
+
+      # usmStats: http://oidref.com/1.3.6.1.6.3.15.1.1
+      if pdu.type == 8
+        case pdu.varbinds.first.oid
+        when "1.3.6.1.6.3.15.1.1.1.0" # usmStatsUnsupportedSecLevels
+          raise Error, "Unsupported security level"
+        when "1.3.6.1.6.3.15.1.1.2.0" # usmStatsNotInTimeWindows
+          _, @engine_boots, @engine_time = args
+          raise IdNotInTimeWindowError, "Not in time window"
+        when "1.3.6.1.6.3.15.1.1.3.0" # usmStatsUnknownUserNames
+          raise Error, "Unknown user name"
+        when "1.3.6.1.6.3.15.1.1.4.0" # usmStatsUnknownEngineIDs
+          raise Error, "Unknown engine ID" unless @security_parameters.must_revalidate?
+        when "1.3.6.1.6.3.15.1.1.5.0" # usmStatsWrongDigests
+          raise Error, "Authentication failure (incorrect password, community or key)"
+        when "1.3.6.1.6.3.15.1.1.6.0" # usmStatsDecryptionErrors
+          raise Error, "Decryption error"
+        end
+      end
+
+      # validate_authentication
+      @message_serializer.verify(stream, pdu.auth_param, pdu.security_level, security_parameters: @security_parameters)
+
+      return_pdu
     end
   end
 end

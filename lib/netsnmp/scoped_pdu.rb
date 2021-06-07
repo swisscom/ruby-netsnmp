@@ -6,6 +6,8 @@ module NETSNMP
 
     attr_reader :engine_id
 
+    attr_accessor :security_level, :auth_param
+
     def initialize(type:, headers:, **options)
       @engine_id, @context = headers
       super(type: type, headers: [3, nil], **options)
