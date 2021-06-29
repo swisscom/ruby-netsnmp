@@ -96,7 +96,7 @@ module NETSNMP
 
       def recv(bytesize = MAXPDUSIZE)
         perform_io do
-          datagram, = @socket.recvfrom_nonblock(bytesize)
+          datagram, = @socket.recvfrom_nonblock(bytesize, Socket::MSG_DONTWAIT)
           datagram
         end
       end
