@@ -120,7 +120,8 @@ module NETSNMP
         log { "signing V3 message..." }
         auth_salt = OpenSSL::ASN1::OctetString.new(signature).with_label(:auth)
         log(level: 2) { auth_salt.to_hex }
-        encoded.sub!(AUTHNONE.to_der, auth_salt.to_der)
+        none_der = AUTHNONE.to_der
+        encoded[encoded.index(none_der), none_der.size] = auth_salt.to_der
         log { Hexdump.dump(encoded) }
       end
       encoded
