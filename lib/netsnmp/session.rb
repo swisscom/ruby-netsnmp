@@ -75,7 +75,7 @@ module NETSNMP
 
       def initialize(host, port, timeout:)
         @socket = UDPSocket.new
-        @socket.connect(host, port)
+        @destaddr = Socket.sockaddr_in(port, host)
         @timeout = timeout
       end
 
@@ -90,13 +90,13 @@ module NETSNMP
 
       def write(payload)
         perform_io do
-          @socket.send(payload, 0)
+          @socket.sendmsg(payload, Socket::MSG_DONTWAIT | Socket::MSG_NOSIGNAL, @destaddr)
         end
       end
 
       def recv(bytesize = MAXPDUSIZE)
         perform_io do
-          datagram, = @socket.recvfrom_nonblock(bytesize)
+          datagram, = @socket.recvmsg_nonblock(bytesize, Socket::MSG_DONTWAIT)
           datagram
         end
       end

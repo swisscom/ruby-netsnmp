@@ -26,7 +26,7 @@ module CelluloidHelpers
     end
   end
 
-  class Proxy < NETSNMP::Session::Transport
+  class Proxy
     MAXPDUSIZE = 0xffff + 1
 
     def initialize(host, port)
@@ -35,18 +35,22 @@ module CelluloidHelpers
       @timeout = 2
     end
 
-    def close
-      @socket.close
+    def send(payload)
+      @socket.send(payload, 0)
+      recv
     end
 
-    private
-
-    def wait(mode)
+    def recv(bytesize = MAXPDUSIZE)
       Celluloid.timeout(@timeout) do
-        @socket.__send__(mode)
+        datagram, = @socket.recvfrom(bytesize)
+        datagram
       end
     rescue Celluloid::TaskTimeout
       raise Timeout::Error, "Timeout after #{@timeout} seconds"
+    end
+
+    def close
+      @socket.close
     end
   end
 end
