@@ -7,7 +7,7 @@ module NETSNMP
   class PDU
     using ASNExtensions
 
-    MAXREQUESTID = 2147483647
+    MAXREQUESTID = 0x7fffffff
 
     using ASNExtensions
     class << self
