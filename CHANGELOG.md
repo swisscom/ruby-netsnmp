@@ -2,6 +2,16 @@
 
 ## master
 
+### 0.5.0
+
+#### Improvements
+
+* Using the `sendmsg` and `recvmsg` family of socket APIs, which allow for connectionless-oriented communication, and do not require the response packets coming from the same host:port pair (which some old SNMP agents do).
+
+#### Bugfixes
+
+* Fixed corruption of authenticated PDUs when performing auth param substitution in the payload, which was reported as causinng decryption error report PDUs being sent back.
+
 ### 0.4.2
 
 #### Improvements
