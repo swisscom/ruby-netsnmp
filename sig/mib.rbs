@@ -2,16 +2,15 @@ module NETSNMP
   module MIB
     type import = {ids: Array[{name: string}], name: string} | {ids: {name: string}, name: string}
 
-
+    OIDREGEX: Regexp
     MIBDIRS: Array[String]
     PARSER: Parser
 
-    @parser_mutex: Mutex
+    @parser_mutex: Thread::Mutex
     @modules_loaded: Array[String]
     @object_identifiers: Hash[String, String]
 
-    def self?.oid: (String identifier) -> String?
-                 | (Array[_ToS] identifier) -> String?
+    def self?.oid: (oid identifier) -> String?
 
     def self?.load: (String mod) -> void
 

@@ -7,12 +7,14 @@ module NETSNMP
     type auth_protocol = :md5 | :sha | :sha256
     type priv_protocol = :des | :aes
 
+    IPAD: String
+    OPAD: String
 
     @auth_password: String?
     @priv_protocol: priv_protocol?
     @priv_password: String?
     @digest: _Authenticate?
-    @encryption: _Encrypt?
+    @encryption: (Encryption::AES | Encryption::DES)?
 
     attr_reader security_level: security_level
     attr_reader username: String
@@ -52,6 +54,10 @@ module NETSNMP
     def localize_key: (String key) -> String
 
     def passkey: (String password) -> String
+
+    def digest: () -> _Authenticate
+
+    def encryption: () -> (Encryption::AES | Encryption::DES)?
 
     def authorizable?: () -> bool
   end

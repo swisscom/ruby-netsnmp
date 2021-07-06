@@ -9,8 +9,6 @@ module NETSNMP
 
     private
 
-    def initialize: (?debug: _DEBUGGER, ?debug_level: Integer, **untyped) -> void
-
     def log: (?level: Integer) { () -> String } -> void
   end
 end
