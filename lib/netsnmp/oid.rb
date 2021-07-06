@@ -12,6 +12,9 @@ module NETSNMP
 
     def build(id)
       oid = MIB.oid(id)
+
+      raise Error, "no OID found for #{id}" unless oid
+
       oid = oid[1..-1] if oid.start_with?(".")
       oid
     end
