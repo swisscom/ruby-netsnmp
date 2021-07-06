@@ -204,7 +204,7 @@ module NETSNMP
 
       dig = digest.digest
       dig = dig[0, 16] if @auth_protocol == :md5
-      dig
+      dig || ""
     end
 
     def digest
@@ -219,10 +219,8 @@ module NETSNMP
 
     def encryption
       @encryption ||= case @priv_protocol
-                      when :des
-                        Encryption::DES.new(priv_key)
-                      when :aes
-                        Encryption::AES.new(priv_key)
+                      when :des then Encryption::DES.new(priv_key)
+                      when :aes then Encryption::AES.new(priv_key)
                       end
     end
 

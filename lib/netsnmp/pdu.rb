@@ -12,16 +12,9 @@ module NETSNMP
     using ASNExtensions
     class << self
       def decode(der)
-        asn_tree = case der
-                   when String
-                     OpenSSL::ASN1.decode(der)
-                   when OpenSSL::ASN1::ASN1Data
-                     der
-                   else
-                     raise "#{der}: unexpected data"
-                   end
+        der = OpenSSL::ASN1.decode(der) if der.is_a?(String)
 
-        *headers, request = asn_tree.value
+        *headers, request = der.value
 
         version, community = headers.map(&:value)
 
