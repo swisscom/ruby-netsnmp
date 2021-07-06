@@ -8,13 +8,13 @@ require "ipaddr"
 
 # core structures
 
-begin
-  require "xorcist"
-  require "xorcist/refinements"
-  NETSNMP::StringExtensions = Xorcist::Refinements
-rescue LoadError
-  # "no xorcist"
-  module NETSNMP
+module NETSNMP
+  begin
+    require "xorcist"
+    require "xorcist/refinements"
+    StringExtensions = Xorcist::Refinements
+  rescue LoadError
+    # "no xorcist"
     module StringExtensions
       refine String do
         # Bitwise XOR operator for the String class
