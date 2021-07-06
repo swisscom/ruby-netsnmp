@@ -1,6 +1,8 @@
+# Temporary hack until openssl gets types
 module OpenSSL
   module ASN1
     class ASN1Data
+      def to_der: () -> String
     end
     class ObjectId < ASN1Data
     end
@@ -11,6 +13,19 @@ module OpenSSL
     class OctetString < ASN1Data
     end
     class Sequence < ASN1Data
+    end
+  end
+
+  module Digest
+    class MD5
+      def reset: () -> void
+      def <<: (string) -> void
+      def digest: () -> String
+    end
+    class SHA1
+      def reset: () -> void
+      def <<: (string) -> void
+      def digest: () -> String
     end
   end
 end

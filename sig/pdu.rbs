@@ -3,6 +3,7 @@ module NETSNMP
 
   class PDU
 
+    MAXREQUESTID: Integer
     # type pdu_options = {
     #   headers: [snmp_version?, String?],
     #   ?request_id: String,
@@ -13,8 +14,8 @@ module NETSNMP
 
     attr_reader varbinds: Array[Varbind]
     attr_reader type: Integer
-    attr_reader version: snmp_version
-    attr_reader community: String
+    attr_reader version: Integer
+    attr_reader community: String?
     attr_reader request_id: Integer
 
     def self.decode: (String der) -> PDU
@@ -27,6 +28,8 @@ module NETSNMP
 
     def to_der: () -> String
 
+    def to_hex: () -> String
+
     def add_varbind: (oid: oid, **varbind_options) -> void
     alias << add_varbind
 
@@ -34,7 +37,7 @@ module NETSNMP
 
     def initialize: (
       type: Integer,
-      headers: [snmp_version?, String?],
+      headers: [_ToInt?, String?],
       ?request_id: Integer,
       ?error_status: Integer,
       ?error_index: Integer,

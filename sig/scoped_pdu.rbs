@@ -1,6 +1,6 @@
 module NETSNMP
   class ScopedPDU < PDU
-    attr_reader engine_id: String
+    attr_reader engine_id: String?
     attr_reader auth_param: String?
     attr_reader security_level: Integer?
 

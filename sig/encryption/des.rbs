@@ -1,0 +1,23 @@
+module NETSNMP
+  module Encryption
+    class DES
+
+      @priv_key: String
+      @local: Integer
+
+      def encrypt: (String decrypted_data, engine_boots: Integer, **untyped) -> [String, String]
+
+      def decrypt: (String encrypted_data, salt: String, **untyped) -> String
+
+      private
+
+      def initialize: (String priv_key, ?local: Integer) -> untyped
+
+      def generate_encryption_key: (Integer boots) -> [String, String]
+
+      def generate_decryption_key: (String salt) -> String
+
+      def des_key: () -> String
+    end
+  end
+end
