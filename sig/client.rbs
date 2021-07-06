@@ -13,7 +13,7 @@ module NETSNMP
     def inform: (*untyped) -> untyped
               | (*untyped) { (PDU) -> void } -> untyped
 
-    def walk: (oid: oid) -> _Each[oid_type, oid_value]
+    def walk: (oid: oid) -> _Each[[oid_type, oid_value]]
 
     def close: () -> void
 

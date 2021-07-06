@@ -8,6 +8,7 @@ module NETSNMP
   # type oid_options = {}
 
   module OID
+    OIDREGEX: Regexp
 
     def self?.build: (oid) -> String
 

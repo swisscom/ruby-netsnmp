@@ -14,6 +14,17 @@ module NETSNMP
 
   module StringExtensions
     refine(String) do
+      unless String.method_defined?(:delete_prefix)
+        def delete_prefix(prefix)
+          prefix = String(prefix)
+          if rindex(prefix, 0)
+            self[prefix.length..-1]
+          else
+            dup
+          end
+        end
+      end
+
       unless String.method_defined?(:match?)
         def match?(*args)
           !match(*args).nil?

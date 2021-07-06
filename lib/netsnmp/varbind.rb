@@ -80,11 +80,11 @@ module NETSNMP
                    when :ipaddress then 0
                    when :counter32
                      asn_val = [value].pack("N*")
-                     asn_val = asn_val[1..-1] while asn_val[0] == "\x00".b && asn_val[1].unpack1("B") != "1"
+                     asn_val = asn_val.delete_prefix("\x00") while asn_val[0] == "\x00".b && asn_val[1].unpack1("B") != "1"
                      1
                    when :gauge
                      asn_val = [value].pack("N*")
-                     asn_val = asn_val[1..-1] while asn_val[0] == "\x00".b && asn_val[1].unpack1("B") != "1"
+                     asn_val = asn_val.delete_prefix("\x00") while asn_val[0] == "\x00".b && asn_val[1].unpack1("B") != "1"
                      2
                    when :timetick
                      return Timetick.new(value).to_asn
@@ -97,7 +97,7 @@ module NETSNMP
                        (value >> 32) & 0xFFFFFFFF,
                        value & 0xFFFFFFFF
                      ].pack("NNNN")
-                     asn_val = asn_val[1..-1] while asn_val.start_with?("\x00")
+                     asn_val = asn_val.delete_prefix("\x00") while asn_val.start_with?("\x00")
                      6
                    when :uinteger then 7
                    else
