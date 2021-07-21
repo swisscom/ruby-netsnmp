@@ -23,19 +23,19 @@ RSpec.describe NETSNMP::Client do
       let(:next_oid) { "1.3.6.1.2.1.1.6.0" }
       let(:walk_oid) { "1.3.6.1.2.1.1" }
       let(:set_oid) { "sysUpTime.0" } # sysUpTimeInstance
-      let(:get_result) { "DEVICE-192.168.1.1" }
-      let(:next_result) { "The Cloud" }
+      let(:get_result) { "zeus.snmplabs.com (you can change this!)" }
+      let(:next_result) { "San Francisco, California, United States" }
       let(:walk_result) do
-        <<-WALK
-1.3.6.1.2.1.1.1.0: Device description
-1.3.6.1.2.1.1.2.0: 1.3.6.1.4.1.3454
-1.3.6.1.2.1.1.3.0: Timeticks: (78171676) 9 days, 1:8:36.76
-1.3.6.1.2.1.1.4.0: The Owner
-1.3.6.1.2.1.1.5.0: DEVICE-192.168.1.1
-1.3.6.1.2.1.1.6.0: The Cloud
-1.3.6.1.2.1.1.7.0: 72
-1.3.6.1.2.1.1.8.0: Timeticks: (0) 0 days, 0:0:0.0
-        WALK
+        {
+          "1.3.6.1.2.1.1.1.0" => "Linux zeus 4.8.6.5-smp #2 SMP Sun Nov 13 14:58:11 CDT 2016 i686",
+          "1.3.6.1.2.1.1.2.0" => "1.3.6.1.4.1.8072.3.2.10",
+          "1.3.6.1.2.1.1.3.0" => /Timeticks: \(\d+\) \d+ days, \d+:\d+:\d+\.\d+/,
+          "1.3.6.1.2.1.1.4.0" => "SNMP Laboratories, info@snmplabs.com",
+          "1.3.6.1.2.1.1.5.0" => "zeus.snmplabs.com (you can change this!)",
+          "1.3.6.1.2.1.1.6.0" => "San Francisco, California, United States",
+          "1.3.6.1.2.1.1.7.0" => "72",
+          "1.3.6.1.2.1.1.8.0" => /Timeticks: \(\d+\) \d+ days, \d+:\d+:\d+\.\d+/
+        }
       end
       let(:set_oid_result) { 43 }
     end
@@ -52,19 +52,19 @@ RSpec.describe NETSNMP::Client do
       let(:next_oid) { "1.3.6.1.2.1.1.6.0" }
       let(:walk_oid) { "system" }
       let(:set_oid) { "sysUpTime.0" }
-      let(:get_result) { "DEVICE-192.168.1.1" }
-      let(:next_result) { "The Cloud" }
+      let(:get_result) { "zeus.snmplabs.com (you can change this!)" }
+      let(:next_result) { "San Francisco, California, United States" }
       let(:walk_result) do
-        <<-WALK
-1.3.6.1.2.1.1.1.0: Device description
-1.3.6.1.2.1.1.2.0: 1.3.6.1.4.1.3454
-1.3.6.1.2.1.1.3.0: Timeticks: (78171676) 9 days, 1:8:36.76
-1.3.6.1.2.1.1.4.0: The Owner
-1.3.6.1.2.1.1.5.0: DEVICE-192.168.1.1
-1.3.6.1.2.1.1.6.0: The Cloud
-1.3.6.1.2.1.1.7.0: 72
-1.3.6.1.2.1.1.8.0: Timeticks: (0) 0 days, 0:0:0.0
-        WALK
+        {
+          "1.3.6.1.2.1.1.1.0" =>  "Linux zeus 4.8.6.5-smp #2 SMP Sun Nov 13 14:58:11 CDT 2016 i686",
+          "1.3.6.1.2.1.1.2.0" =>  "1.3.6.1.4.1.8072.3.2.10",
+          "1.3.6.1.2.1.1.3.0" =>  /Timeticks: \(\d+\) \d+ days, \d+:\d+:\d+\.\d+/,
+          "1.3.6.1.2.1.1.4.0" =>  "SNMP Laboratories, info@snmplabs.com",
+          "1.3.6.1.2.1.1.5.0" =>  "zeus.snmplabs.com (you can change this!)",
+          "1.3.6.1.2.1.1.6.0" =>  "San Francisco, California, United States",
+          "1.3.6.1.2.1.1.7.0" =>  "72",
+          "1.3.6.1.2.1.1.8.0" =>  /Timeticks: \(\d+\) \d+ days, \d+:\d+:\d+\.\d+/
+        }
       end
       let(:set_oid_result) { 43 }
 
@@ -101,18 +101,18 @@ RSpec.describe NETSNMP::Client do
     let(:set_oid) { "sysUpTime.0" } # sysUpTimeInstance
     let(:walk_oid) { "1.3.6.1.2.1.1.9.1.3" }
     let(:get_result) { "tt" }
-    let(:next_result) { "KK12" }
+    let(:next_result) { "KK12 (edit /etc/snmp/snmpd.conf)" }
     let(:walk_result) do
-      <<-WALK
-1.3.6.1.2.1.1.9.1.3.1: The SNMP Management Architecture MIB.
-1.3.6.1.2.1.1.9.1.3.2: The MIB for Message Processing and Dispatching.
-1.3.6.1.2.1.1.9.1.3.3: The management information definitions for the SNMP User-based Security Model.
-1.3.6.1.2.1.1.9.1.3.4: The MIB module for SNMPv2 entities
-1.3.6.1.2.1.1.9.1.3.5: The MIB module for managing TCP implementations
-1.3.6.1.2.1.1.9.1.3.6: The MIB module for managing IP and ICMP implementations
-1.3.6.1.2.1.1.9.1.3.7: The MIB module for managing UDP implementations
-1.3.6.1.2.1.1.9.1.3.8: View-based Access Control Model for SNMP.
-      WALK
+      {
+        "1.3.6.1.2.1.1.9.1.3.1" => "The SNMP Management Architecture MIB.",
+        "1.3.6.1.2.1.1.9.1.3.2" => "The MIB for Message Processing and Dispatching.",
+        "1.3.6.1.2.1.1.9.1.3.3" => "The management information definitions for the SNMP User-based Security Model.",
+        "1.3.6.1.2.1.1.9.1.3.4" => "The MIB module for SNMPv2 entities",
+        "1.3.6.1.2.1.1.9.1.3.5" => "The MIB module for managing TCP implementations",
+        "1.3.6.1.2.1.1.9.1.3.6" => "The MIB module for managing IP and ICMP implementations",
+        "1.3.6.1.2.1.1.9.1.3.7" => "The MIB module for managing UDP implementations",
+        "1.3.6.1.2.1.1.9.1.3.8" => "View-based Access Control Model for SNMP."
+      }
     end
     let(:set_oid_result) { 43 }
     context "with a no auth no priv policy" do

@@ -22,8 +22,8 @@ RSpec.shared_examples "an snmp client" do
       let(:value) { subject.get({ oid: get_oid }, oid: next_oid) }
       it "returns the values for both" do
         expect(value).to be_a(Array)
-        expect(value).to include(/#{get_result}/)
-        expect(value).to include(/#{next_result}/)
+        expect(value).to include(get_result)
+        expect(value).to include(next_result)
       end
     end
   end
@@ -40,8 +40,17 @@ RSpec.shared_examples "an snmp client" do
   describe "#walk" do
     let(:value) { subject.walk(oid: walk_oid) }
     it "fetches the varbinds for the next oid" do
-      values = value.map { |oid, val| "#{oid}: #{val}" }.join("\n") << "\n"
-      expect(values).to eq(walk_result)
+      value.each do |oid, val|
+        match = walk_result[oid]
+        case match
+        when String
+          expect(val.to_s).to eq(match)
+        when Regexp
+          expect(val.to_s).to match(match)
+        else
+          next
+        end
+      end
     end
   end
 end

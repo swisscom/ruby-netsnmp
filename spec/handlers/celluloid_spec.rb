@@ -17,18 +17,18 @@ RSpec.describe "with cellulloid", type: :celluloid do
   let(:set_oid) { "1.3.6.1.2.1.1.3.0" } # sysUpTimeInstance
   let(:walk_oid) { "1.3.6.1.2.1.1.9.1.3" }
   let(:get_result) { "tt" }
-  let(:next_result) { "KK12" }
+  let(:next_result) { "KK12 (edit /etc/snmp/snmpd.conf)" }
   let(:walk_result) do
-    <<-WALK
-1.3.6.1.2.1.1.9.1.3.1: The SNMP Management Architecture MIB.
-1.3.6.1.2.1.1.9.1.3.2: The MIB for Message Processing and Dispatching.
-1.3.6.1.2.1.1.9.1.3.3: The management information definitions for the SNMP User-based Security Model.
-1.3.6.1.2.1.1.9.1.3.4: The MIB module for SNMPv2 entities
-1.3.6.1.2.1.1.9.1.3.5: The MIB module for managing TCP implementations
-1.3.6.1.2.1.1.9.1.3.6: The MIB module for managing IP and ICMP implementations
-1.3.6.1.2.1.1.9.1.3.7: The MIB module for managing UDP implementations
-1.3.6.1.2.1.1.9.1.3.8: View-based Access Control Model for SNMP.
-    WALK
+    {
+      "1.3.6.1.2.1.1.9.1.3.1" => "The SNMP Management Architecture MIB.",
+      "1.3.6.1.2.1.1.9.1.3.2" => "The MIB for Message Processing and Dispatching.",
+      "1.3.6.1.2.1.1.9.1.3.3" => "The management information definitions for the SNMP User-based Security Model.",
+      "1.3.6.1.2.1.1.9.1.3.4" => "The MIB module for SNMPv2 entities",
+      "1.3.6.1.2.1.1.9.1.3.5" => "The MIB module for managing TCP implementations",
+      "1.3.6.1.2.1.1.9.1.3.6" => "The MIB module for managing IP and ICMP implementations",
+      "1.3.6.1.2.1.1.9.1.3.7" => "The MIB module for managing UDP implementations",
+      "1.3.6.1.2.1.1.9.1.3.8" => "View-based Access Control Model for SNMP."
+    }
   end
 
   before(:all) { Celluloid.boot }
