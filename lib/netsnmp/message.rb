@@ -7,8 +7,7 @@ module NETSNMP
 
     prepend Loggable
 
-    AUTHNONE               = OpenSSL::ASN1::OctetString.new("\x00" * 12).with_label(:auth_mask)
-    PRIVNONE               = OpenSSL::ASN1::OctetString.new("")
+    PRIVNONE           = OpenSSL::ASN1::OctetString.new("")
     MSG_MAX_SIZE       = OpenSSL::ASN1::Integer.new(65507).with_label(:max_message_size)
     MSG_SECURITY_MODEL = OpenSSL::ASN1::Integer.new(3).with_label(:security_model) # usmSecurityModel
     MSG_VERSION        = OpenSSL::ASN1::Integer.new(3).with_label(:message_version)
@@ -17,7 +16,16 @@ module NETSNMP
     def initialize(**); end
 
     def verify(stream, auth_param, security_level, security_parameters:)
-      security_parameters.verify(stream.sub(auth_param, AUTHNONE.value), auth_param, security_level: security_level)
+      security_parameters.verify(stream.sub(auth_param, authnone(security_parameters).value), auth_param, security_level: security_level)
+    end
+
+    # https://datatracker.ietf.org/doc/html/rfc7860#section-4.2.2 part 3
+    # https://datatracker.ietf.org/doc/html/rfc3414#section-6.3.2 part 3
+    def authnone(security_parameters)
+      # The digest in the msgAuthenticationParameters field is replaced by the 12 zero octets.
+      # 24 octets for sha256
+      number_of_octets = security_parameters.auth_protocol == :sha256 ? 24 : 12
+      OpenSSL::ASN1::OctetString.new("\x00" * number_of_octets).with_label(:auth_mask)
     end
 
     # @param [String] payload of an snmp v3 message which can be decoded
@@ -91,7 +99,7 @@ module NETSNMP
                                                  OpenSSL::ASN1::Integer.new(engine_boots).with_label(:engine_boots),
                                                  OpenSSL::ASN1::Integer.new(engine_time).with_label(:engine_time),
                                                  OpenSSL::ASN1::OctetString.new(security_parameters.username).with_label(:username),
-                                                 AUTHNONE,
+                                                 authnone(security_parameters),
                                                  salt_param
                                                ]).with_label(:security_params)
       log(level: 2) { sec_params.to_hex }
@@ -120,7 +128,7 @@ module NETSNMP
         log { "signing V3 message..." }
         auth_salt = OpenSSL::ASN1::OctetString.new(signature).with_label(:auth)
         log(level: 2) { auth_salt.to_hex }
-        none_der = AUTHNONE.to_der
+        none_der = authnone(security_parameters).to_der
         encoded[encoded.index(none_der), none_der.size] = auth_salt.to_der
         log { Hexdump.dump(encoded) }
       end

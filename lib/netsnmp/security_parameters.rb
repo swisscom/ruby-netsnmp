@@ -22,13 +22,13 @@ module NETSNMP
     # The 150 Seconds is specified in https://www.ietf.org/rfc/rfc2574.txt 2.2.3
     TIMELINESS_THRESHOLD = 150
 
-    attr_reader :security_level, :username
+    attr_reader :security_level, :username, :auth_protocol
     attr_reader :engine_id
 
     # @param [String] username the snmp v3 username
     # @param [String] engine_id the device engine id (initialized to '' for report)
     # @param [Symbol, integer] security_level allowed snmp v3 security level (:auth_priv, :auth_no_priv, etc)
-    # @param [Symbol, nil] auth_protocol a supported authentication protocol (currently supported: :md5, :sha)
+    # @param [Symbol, nil] auth_protocol a supported authentication protocol (currently supported: :md5, :sha, :sha256)
     # @param [Symbol, nil] priv_protocol a supported privacy protocol (currently supported: :des, :aes)
     # @param [String, nil] auth_password the authentication password
     # @param [String, nil] priv_password the privacy password
@@ -110,17 +110,26 @@ module NETSNMP
 
       key = auth_key.dup
 
-      key << "\x00" * (@auth_protocol == :md5 ? 48 : 44)
-      k1 = key.xor(IPAD)
-      k2 = key.xor(OPAD)
+      if @auth_protocol == :sha256
+        # SHA256 => https://datatracker.ietf.org/doc/html/rfc7860#section-4.2.2
+        # The 24 first octets of HMAC are taken as the computed MAC value
+        OpenSSL::HMAC.digest("SHA256", key, message)[0, 24]
+      else
+        # MD5 => https://datatracker.ietf.org/doc/html/rfc3414#section-6.3.2
+        # SHA1 => https://datatracker.ietf.org/doc/html/rfc3414#section-7.3.2
+        key << "\x00" * (@auth_protocol == :md5 ? 48 : 44)
+        k1 = key.xor(IPAD)
+        k2 = key.xor(OPAD)
 
-      digest.reset
-      digest << (k1 + message)
-      d1 = digest.digest
+        digest.reset
+        digest << (k1 + message)
+        d1 = digest.digest
 
-      digest.reset
-      digest << (k2 + d1)
-      digest.digest[0, 12]
+        digest.reset
+        digest << (k2 + d1)
+        # The 12 first octets of the digest are taken as the computed MAC value
+        digest.digest[0, 12]
+      end
     end
 
     # @param [String] stream the encoded incoming payload
@@ -204,6 +213,7 @@ module NETSNMP
       @digest ||= case @auth_protocol
                   when :md5 then OpenSSL::Digest::MD5.new
                   when :sha then OpenSSL::Digest::SHA1.new
+                  when :sha256 then OpenSSL::Digest::SHA256.new
                   else
                     raise Error, "unsupported auth protocol: #{@auth_protocol}"
                   end

@@ -2,7 +2,7 @@
 
 require_relative "support/request_examples"
 
-RSpec.describe NETSNMP::Client do
+RSpec.describe NETSNMP::Client do # rubocop:disable Metrics/BlockLength
   let(:host) { SNMPHOST }
 
   let(:device_options) do
@@ -152,6 +152,15 @@ RSpec.describe NETSNMP::Client do
         let(:user_options) do
           { username: "authsha", security_level: :auth_no_priv,
             auth_password: "maplesyrup", auth_protocol: :sha }
+        end
+        it_behaves_like "an snmp client" do
+          let(:protocol_options) { version_options.merge(user_options).merge(extra_options) }
+        end
+      end
+      context "speaking sha256" do
+        let(:user_options) do
+          { username: "authsha256", security_level: :auth_no_priv,
+            auth_password: "maplesyrup", auth_protocol: :sha256 }
         end
         it_behaves_like "an snmp client" do
           let(:protocol_options) { version_options.merge(user_options).merge(extra_options) }
