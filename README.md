@@ -31,6 +31,7 @@ $ gem install netsnmp
 This gem provides:
 
 * Implementation in ruby of the SNMP Protocol for v3, v2c and v1 (most notable the rfc3414 and 3826).
+* SNMPv3 USM supporting MD5/SHA/SHA256 auth and DES/AES128 privacy crypto algorithms.
 * Client/Manager API with simple interface for get, genext, set and walk.
 * Pure Ruby.
 * Support for concurrency and evented I/O.
@@ -80,7 +81,7 @@ manager.get(oid: "sysName.0") #=> 'tt'
 # SNMP walk
 # sysORDescr
 manager.walk(oid: "sysORDescr").each do |oid_code, value|
-  # do something with them  
+  # do something with them
   puts "for #{oid_code}: #{value}"
 end
 
@@ -214,8 +215,8 @@ gem 'netsnmp'
 
 # or, in the command line
 
-$ gem install netsnmp      
-```                        
+$ gem install netsnmp
+```
 
 and `netsnmp` will automatically pick it up.
 

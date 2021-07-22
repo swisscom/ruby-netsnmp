@@ -2,7 +2,7 @@
 
 require_relative "support/request_examples"
 
-RSpec.describe NETSNMP::Client do # rubocop:disable Metrics/BlockLength
+RSpec.describe NETSNMP::Client do
   let(:host) { SNMPHOST }
 
   let(:device_options) do

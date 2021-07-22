@@ -7,5 +7,9 @@ module NETSNMP
     def decode: (String stream, security_parameters: SecurityParameters) -> [ScopedPDU, String, Integer, Integer]
 
     def encode: (ScopedPDU pdu, security_parameters: SecurityParameters, ?engine_boots: Integer, ?engine_time: Integer) -> String
+
+    private
+
+    def authnone: (SecurityParameters::auth_protocol?) -> OpenSSL::ASN1::ASN1Data
   end
 end

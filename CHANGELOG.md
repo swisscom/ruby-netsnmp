@@ -2,6 +2,12 @@
 
 ## master
 
+### 0.6.0
+
+#### Features
+
+`netsnmp` supports SHA256 as an authentication protocol. You can pass `:sha256` to the `:auth_protocol` argument, as an alternative too `:sha` or `:md5`. (#29)
+
 ### 0.5.0
 
 #### Improvements
@@ -108,4 +114,3 @@ client.get(oid: "sysName.0")
 
 * First version, FFI-based (using C `libnetsnmp`).
 * (This version was very buggy, and isn't recommended for production usage).
-
