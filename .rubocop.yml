@@ -23,5 +23,8 @@ Style/ClassAndModuleChildren:
 Metrics/PerceivedComplexity:
   Enabled: false
 
+Metrics/BlockLength:
+  Enabled: false
+
 Metrics/BlockNesting:
   Enabled: false
