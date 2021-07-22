@@ -110,26 +110,24 @@ module NETSNMP
 
       key = auth_key.dup
 
-      if @auth_protocol == :sha256
-        # SHA256 => https://datatracker.ietf.org/doc/html/rfc7860#section-4.2.2
-        # The 24 first octets of HMAC are taken as the computed MAC value
-        OpenSSL::HMAC.digest("SHA256", key, message)[0, 24]
-      else
-        # MD5 => https://datatracker.ietf.org/doc/html/rfc3414#section-6.3.2
-        # SHA1 => https://datatracker.ietf.org/doc/html/rfc3414#section-7.3.2
-        key << "\x00" * (@auth_protocol == :md5 ? 48 : 44)
-        k1 = key.xor(IPAD)
-        k2 = key.xor(OPAD)
+      # SHA256 => https://datatracker.ietf.org/doc/html/rfc7860#section-4.2.2
+      # The 24 first octets of HMAC are taken as the computed MAC value
+      return OpenSSL::HMAC.digest("SHA256", key, message)[0, 24] if @auth_protocol == :sha256
 
-        digest.reset
-        digest << (k1 + message)
-        d1 = digest.digest
+      # MD5 => https://datatracker.ietf.org/doc/html/rfc3414#section-6.3.2
+      # SHA1 => https://datatracker.ietf.org/doc/html/rfc3414#section-7.3.2
+      key << "\x00" * (@auth_protocol == :md5 ? 48 : 44)
+      k1 = key.xor(IPAD)
+      k2 = key.xor(OPAD)
 
-        digest.reset
-        digest << (k2 + d1)
-        # The 12 first octets of the digest are taken as the computed MAC value
-        digest.digest[0, 12]
-      end
+      digest.reset
+      digest << (k1 + message)
+      d1 = digest.digest
+
+      digest.reset
+      digest << (k2 + d1)
+      # The 12 first octets of the digest are taken as the computed MAC value
+      digest.digest[0, 12]
     end
 
     # @param [String] stream the encoded incoming payload
