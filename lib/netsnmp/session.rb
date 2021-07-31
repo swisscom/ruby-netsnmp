@@ -90,7 +90,7 @@ module NETSNMP
 
       def write(payload)
         perform_io do
-          @socket.sendmsg(payload, Socket::MSG_DONTWAIT | Socket::MSG_NOSIGNAL, @destaddr)
+          @socket.sendmsg(payload, Socket::MSG_DONTWAIT, @destaddr)
         end
       end
 
