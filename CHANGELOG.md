@@ -2,6 +2,12 @@
 
 ## master
 
+### 0.6.1
+
+#### Bugfixes
+
+Removed `MSG_NOSIGNAL` flag from udp socket send calls, given that it's unnecessary for UDP transactions, it's not defined in all environments, like Mac OS.
+
 ### 0.6.0
 
 #### Features
