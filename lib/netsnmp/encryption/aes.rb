@@ -40,7 +40,7 @@ module NETSNMP
         decrypted_data = cipher.update(encrypted_data) + cipher.final
 
         hlen, bodylen = OpenSSL::ASN1.traverse(decrypted_data) { |_, _, x, y, *| break x, y }
-        decrypted_data.byteslice(0, hlen + bodylen)
+        decrypted_data.byteslice(0, hlen + bodylen) || "".b
       end
 
       private

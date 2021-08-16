@@ -22,7 +22,7 @@ module NETSNMP
                         when Array
                           identifier
                         else
-                          identifier.split(".", 2)
+                          identifier.split(".", 2).map(&:to_s)
                         end
 
       # early exit if it's an OID already

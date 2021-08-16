@@ -31,11 +31,11 @@ module NETSNMP
         end
 
         new(type: type,
-            version: version,
+            version: version.to_i,
             community: community,
-            error_status: error_status,
-            error_index: error_index,
-            request_id: request_id,
+            error_status: error_status.to_i,
+            error_index: error_index.to_i,
+            request_id: request_id.to_i,
             varbinds: varbs)
       end
 

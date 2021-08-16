@@ -10,7 +10,7 @@ module NETSNMP
     using StringExtensions
     using ASNExtensions
 
-    prepend Loggable
+    include Loggable
 
     IPAD = "\x36" * 64
     OPAD = "\x5c" * 64
@@ -45,9 +45,15 @@ module NETSNMP
                    auth_protocol: nil,
                    auth_password: nil,
                    priv_protocol: nil,
-                   priv_password: nil
+                   priv_password: nil,
+                   **options
     )
-      @security_level = security_level
+      @security_level = case security_level
+      when Integer then security_level
+      when /no_?auth/         then 0
+      when /auth_?no_?priv/   then 1
+      when /auth_?priv/, nil  then 3
+      end
       @username = username
       @engine_id = engine_id
       @auth_protocol = auth_protocol.to_sym unless auth_protocol.nil?
@@ -57,6 +63,7 @@ module NETSNMP
       check_parameters
       @auth_pass_key = passkey(@auth_password) unless @auth_password.nil?
       @priv_pass_key = passkey(@priv_password) unless @priv_password.nil?
+      initialize_logger(**options)
     end
 
     def engine_id=(id)
@@ -72,8 +79,10 @@ module NETSNMP
     # @return [Array] a pair, where the first argument in the asn structure with the encoded pdu,
     #    and the second is the calculated salt (if it has been encrypted)
     def encode(pdu, salt:, engine_time:, engine_boots:)
-      if encryption
-        encrypted_pdu, salt = encryption.encrypt(pdu.to_der, engine_boots: engine_boots,
+      encryptor = encryption
+
+      if encryptor
+        encrypted_pdu, salt = encryptor.encrypt(pdu.to_der, engine_boots: engine_boots,
                                                              engine_time: engine_time)
         [
           OpenSSL::ASN1::OctetString.new(encrypted_pdu).with_label(:encrypted_pdu),
@@ -92,10 +101,11 @@ module NETSNMP
       asn = OpenSSL::ASN1.decode(der)
       return asn if security_level < 3
 
-      return asn unless encryption
+      encryptor = encryption
+      return asn unless encryptor
 
       encrypted_pdu = asn.value
-      pdu_der = encryption.decrypt(encrypted_pdu, salt: salt, engine_time: engine_time, engine_boots: engine_boots)
+      pdu_der = encryptor.decrypt(encrypted_pdu, salt: salt, engine_time: engine_time, engine_boots: engine_boots)
       log(level: 2) { "message has been decrypted" }
       OpenSSL::ASN1.decode(pdu_der)
     end
@@ -158,14 +168,7 @@ module NETSNMP
     end
 
     def check_parameters
-      @security_level = case @security_level
-                        when Integer then @security_level
-                        when /no_?auth/         then 0
-                        when /auth_?no_?priv/   then 1
-                        when /auth_?priv/, nil  then 3
-                        else
-                          raise Error, "security level not supported: #{@security_level}"
-                        end
+
 
       if @security_level.positive?
         @auth_protocol ||= :md5 # this is the default

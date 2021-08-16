@@ -4,7 +4,7 @@ module NETSNMP
   # Abstracts the OID structure
   #
   module OID
-    using StringExtensions unless String.method_defined?(:match?)
+    using StringExtensions
 
     OIDREGEX = /^[\d\.]*$/
 
@@ -15,7 +15,7 @@ module NETSNMP
 
       raise Error, "no OID found for #{id}" unless oid
 
-      oid = oid[1..-1] if oid.start_with?(".")
+      oid = oid.delete_prefix(".") if oid.start_with?(".")
       oid
     end
 
