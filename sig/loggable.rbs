@@ -6,8 +6,11 @@ module NETSNMP
 
     DEBUG_LEVEL: Integer
     DEBUG: _Debugger
+    COLORS: Hash[Symbol, Integer]
 
-    private
+    def initialize_logger: (?debug: _Debugger, ?debug_level: Integer, **untyped) -> void
+
+     private
 
     def log: (?level: Integer) { () -> String } -> void
   end

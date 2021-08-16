@@ -6,6 +6,9 @@ module NETSNMP
     MIBDIRS: Array[String]
     PARSER: Parser
 
+    TYPES: Array[String]
+    STATIC_MIB_TO_OID: Hash[String, String]
+
     @parser_mutex: Thread::Mutex
     @modules_loaded: Array[String]
     @object_identifiers: Hash[String, String]
@@ -14,7 +17,14 @@ module NETSNMP
 
     def self?.load: (String mod) -> void
 
-    def self?.load_imports: ((Array[import] | import)? data) -> Hash[String, Array[String]]?
+    def self?.load_imports: (Array[import] | import | nil data) -> Hash[String, Array[String]]?
+
     def self?.load_defaults: () -> void
+
+    def self?.do_load: (String mod) -> void
+
+    def self?.module_loaded?: (String mod) -> bool
+
+    def self?.store_oid_in_identifiers: (String name, Array[String] value, imports: Hash[String, Array[String]]?, declarations: Hash[String, Array[String]]) -> void
   end
 end

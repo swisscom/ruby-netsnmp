@@ -3,10 +3,11 @@ module NETSNMP
 
     def build_pdu: (pdu_type, *untyped) -> ScopedPDU
 
-    def send: (ScopedPDU pdu) -> ScopedPDU
-    		| (ScopedPDU pdu) -> [PDU, String, Integer, Integer]
+    def send: (ScopedPDU pdu) -> (PDU | [PDU, String, Integer, Integer])
 
     private
+
+    def validate: (**untyped options) -> void
 
     def encode: (ScopedPDU) -> String
 

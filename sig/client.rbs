@@ -1,5 +1,6 @@
 module NETSNMP
   class Client
+    RETRIES: Integer
 
     def get: (*untyped) -> untyped
            | (*untyped) { (PDU) -> void } -> untyped
@@ -19,6 +20,8 @@ module NETSNMP
 
     private
 
-    def initialize: (?version?: snmp_version, **untyped) -> untyped
+    def initialize: (?version: snmp_version, **untyped) ?{ (instance) -> void } -> void
+
+    def handle_retries: [U] { () -> U } -> U
   end
 end

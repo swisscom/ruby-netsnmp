@@ -2,10 +2,25 @@ module NETSNMP
   class Timetick < Numeric
     @ticks: Integer
 
+    def to_i: () -> Integer
+
     def to_asn: () -> OpenSSL::ASN1::ASN1Data
+
+    def coerce: (Integer ticks) -> [instance, instance]
+
+    def <=>: (_ToI other) -> Integer?
+    def +: (_ToI other) -> instance
+    def -: (_ToI other) -> instance
+    def *: (_ToI other) -> instance
+    def /: (_ToI other) -> instance
 
     private
 
     def initialize: (Integer ticks) -> untyped
+
+    def days_since: () -> Rational
+    def hours_since: (Rational days) -> Rational
+    def minutes_since: (Rational hours) -> Rational
+    def milliseconds_since: (Rational minutes) -> Rational
   end
 end

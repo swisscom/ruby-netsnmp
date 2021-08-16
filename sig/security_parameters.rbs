@@ -1,35 +1,35 @@
 module NETSNMP
   class SecurityParameters
-    prepend Loggable
+    include Loggable
 
-    type security_level = :noauth | :auth_no_priv | :auth_priv | 0 | 1 | 3 | nil
+    type digest = OpenSSL::Digest::MD5 | OpenSSL::Digest::SHA1 | OpenSSL::Digest::SHA256
 
-    type auth_protocol = :md5 | :sha | :sha256
-    type priv_protocol = :des | :aes
+    type security_level = 0 | 1 | 3
 
     IPAD: String
     OPAD: String
+    TIMELINESS_THRESHOLD: Integer
 
     @auth_password: String?
-    @priv_protocol: priv_protocol?
+    @priv_protocol: Symbol?
     @priv_password: String?
-    @digest: _Authenticate?
+    @digest: digest
     @encryption: (Encryption::AES | Encryption::DES)?
 
     attr_reader security_level: security_level
     attr_reader username: String
     attr_reader engine_id: String
-    attr_reader auth_protocol: auth_protocol?
+    attr_reader auth_protocol: Symbol?
 
     def engine_id=: (String id) -> void
 
-    def encode: (_ToAsn, salt: OpenSSL::ASN1::ASN1Data, engine_time: Integer, engine_boots: Integer) -> [OpenSSL::ASN1::ASN1Data, OpenSSL::ASN1::ASN1Data]
+    def encode: (PDU pdu, salt: OpenSSL::ASN1::ASN1Data, engine_time: Integer, engine_boots: Integer) -> [OpenSSL::ASN1::ASN1Data, OpenSSL::ASN1::ASN1Data]
 
-    def decode: (OpenSSL::ASN1::ASN1Data | String der, salt: OpenSSL::ASN1::ASN1Data | String, engine_time: Integer, engine_boots: Integer, ?security_level: Integer?) -> OpenSSL::ASN1::ASN1Data
+    def decode: (OpenSSL::ASN1::ASN1Data | String der, salt: String, engine_time: Integer, engine_boots: Integer, ?security_level: Integer) -> OpenSSL::ASN1::ASN1Data
 
     def sign: (String message) -> String?
 
-    def verify: (String stream, String salt, ?security_level: Integer?) -> void
+    def verify: (String stream, String salt, ?security_level: Integer) -> void
 
     def must_revalidate?: () -> bool
 
@@ -38,12 +38,13 @@ module NETSNMP
     def initialize: (
       username: String,
       ?engine_id: String,
-      ?security_level: security_level?,
-      ?auth_protocol: auth_protocol?,
-      ?auth_password: String?,
-      ?priv_protocol: priv_protocol?,
-      ?priv_password: String?,
-    ) -> untyped
+      ?security_level?: security_level | :noauth | :auth_no_priv | :auth_priv,
+      ?auth_protocol?: Symbol,
+      ?auth_password?: String,
+      ?priv_protocol?: Symbol,
+      ?priv_password?: String,
+      **untyped options
+    ) -> void
 
     def auth_key: () -> String
 
@@ -55,7 +56,7 @@ module NETSNMP
 
     def passkey: (String password) -> String
 
-    def digest: () -> _Authenticate
+    def digest: () -> digest
 
     def encryption: () -> (Encryption::AES | Encryption::DES)?
 
