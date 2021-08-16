@@ -18,10 +18,10 @@ module NETSNMP
     attr_reader community: String?
     attr_reader request_id: Integer
 
-    def self.decode: (String der) -> PDU
-                   | (OpenSSL::ASN1::ASN1Data der) -> PDU
+    def self.decode: (String der) -> instance
+                   | (OpenSSL::ASN1::ASN1Data der) -> instance
 
-    def self.build: (pdu_type, **untyped) -> PDU
+    def self.build: (pdu_type, **untyped) -> instance
 
 
     def to_asn: () -> OpenSSL::ASN1::ASN1Data
@@ -37,12 +37,13 @@ module NETSNMP
 
     def initialize: (
       type: Integer,
-      headers: [_ToInt?, String?],
+      version: Integer,
+      community: String?,
       ?request_id: Integer,
       ?error_status: Integer,
       ?error_index: Integer,
-      ?varbinds: Array[varbind_options]
-    ) -> untyped
+      ?varbinds: Array[Hash[Symbol, untyped]]
+    ) -> void
 
     def encode_headers_asn: () -> [OpenSSL::ASN1::Integer, OpenSSL::ASN1::OctetString]
 

@@ -28,7 +28,7 @@ module NETSNMP
     # @return [NETSNMP::PDU] a pdu
     #
     def build_pdu(type, *vars)
-      PDU.build(type, headers: [@version, @community], varbinds: vars)
+      PDU.build(type, version: @version, community: @community, varbinds: vars)
     end
 
     # send a pdu, receives a pdu

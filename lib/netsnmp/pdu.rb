@@ -30,7 +30,9 @@ module NETSNMP
           { oid: oid, value: val_asn }
         end
 
-        new(type: type, headers: [version, community],
+        new(type: type,
+            version: version,
+            community: community,
             error_status: error_status,
             error_index: error_index,
             request_id: request_id,
@@ -61,15 +63,17 @@ module NETSNMP
 
     attr_reader :version, :community, :request_id
 
-    def initialize(type:, headers:,
+    def initialize(type:,
+                   version:,
+                   community:,
                    request_id: SecureRandom.random_number(MAXREQUESTID),
                    error_status: 0,
                    error_index: 0,
                    varbinds: [])
-      @version, @community = headers
-      @version = @version.to_i
+      @version = version.to_i
+      @community = community
       @error_status = error_status
-      @error_index  = error_index
+      @error_index = error_index
       @type = type
       @varbinds = []
       varbinds.each do |varbind|
