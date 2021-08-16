@@ -22,8 +22,7 @@ module NETSNMP
     # The 150 Seconds is specified in https://www.ietf.org/rfc/rfc2574.txt 2.2.3
     TIMELINESS_THRESHOLD = 150
 
-    attr_reader :security_level, :username, :auth_protocol
-    attr_reader :engine_id
+    attr_reader :security_level, :username, :auth_protocol, :engine_id
 
     # @param [String] username the snmp v3 username
     # @param [String] engine_id the device engine id (initialized to '' for report)
@@ -39,21 +38,21 @@ module NETSNMP
     #   not explicitly set), and :priv_password becomes mandatory.
     #
     def initialize(
-                   username:,
-                   engine_id: "",
-                   security_level: nil,
-                   auth_protocol: nil,
-                   auth_password: nil,
-                   priv_protocol: nil,
-                   priv_password: nil,
-                   **options
+      username:,
+      engine_id: "",
+      security_level: nil,
+      auth_protocol: nil,
+      auth_password: nil,
+      priv_protocol: nil,
+      priv_password: nil,
+      **options
     )
       @security_level = case security_level
-      when Integer then security_level
-      when /no_?auth/         then 0
-      when /auth_?no_?priv/   then 1
-      when /auth_?priv/, nil  then 3
-      end
+                        when Integer then security_level
+                        when /no_?auth/         then 0
+                        when /auth_?no_?priv/   then 1
+                        when /auth_?priv/, nil  then 3
+                        end
       @username = username
       @engine_id = engine_id
       @auth_protocol = auth_protocol.to_sym unless auth_protocol.nil?
@@ -83,7 +82,7 @@ module NETSNMP
 
       if encryptor
         encrypted_pdu, salt = encryptor.encrypt(pdu.to_der, engine_boots: engine_boots,
-                                                             engine_time: engine_time)
+                                                            engine_time: engine_time)
         [
           OpenSSL::ASN1::OctetString.new(encrypted_pdu).with_label(:encrypted_pdu),
           OpenSSL::ASN1::OctetString.new(salt).with_label(:salt)
@@ -146,14 +145,17 @@ module NETSNMP
     # @raise [NETSNMP::Error] if the message's integration has been violated
     def verify(stream, salt, security_level: @security_level)
       return if security_level < 1
+
       verisalt = sign(stream)
       raise Error, "invalid message authentication salt" unless verisalt == salt
+
       log(level: 2) { "message has been verified" }
     end
 
     def must_revalidate?
       return @engine_id.empty? unless authorizable?
       return true if @engine_id.empty? || @timeliness.nil?
+
       (Process.clock_gettime(Process::CLOCK_MONOTONIC, :second) - @timeliness) >= TIMELINESS_THRESHOLD
     end
 
@@ -168,14 +170,13 @@ module NETSNMP
     end
 
     def check_parameters
-
-
       if @security_level.positive?
         @auth_protocol ||= :md5 # this is the default
         raise "security level requires an auth password" if @auth_password.nil?
         raise "auth password must have between 8 to 32 characters" unless (8..32).cover?(@auth_password.length)
       end
       return unless @security_level > 1
+
       @priv_protocol ||= :des
       raise "security level requires a priv password" if @priv_password.nil?
       raise "priv password must have between 8 to 32 characters" unless (8..32).cover?(@priv_password.length)
@@ -212,9 +213,9 @@ module NETSNMP
 
     def digest
       @digest ||= case @auth_protocol
-                  when :md5 then OpenSSL::Digest::MD5.new
-                  when :sha then OpenSSL::Digest::SHA1.new
-                  when :sha256 then OpenSSL::Digest::SHA256.new
+                  when :md5 then OpenSSL::Digest.new("MD5")
+                  when :sha then OpenSSL::Digest.new("SHA1")
+                  when :sha256 then OpenSSL::Digest.new("SHA256")
                   else
                     raise Error, "unsupported auth protocol: #{@auth_protocol}"
                   end

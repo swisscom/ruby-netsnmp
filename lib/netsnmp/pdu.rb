@@ -59,9 +59,7 @@ module NETSNMP
       end
     end
 
-    attr_reader :varbinds, :type
-
-    attr_reader :version, :community, :request_id
+    attr_reader :varbinds, :type, :version, :community, :request_id
 
     def initialize(type:,
                    version:,
@@ -128,6 +126,7 @@ module NETSNMP
     # http://www.tcpipguide.com/free/t_SNMPVersion2SNMPv2MessageFormats-5.htm#Table_219
     def check_error_status(status)
       return if status.zero?
+
       message = case status
                 when 1 then "Response-PDU too big"
                 when 2 then "No such name"

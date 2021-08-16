@@ -10,14 +10,14 @@ module NETSNMP
 
     # @param [Hash] opts the options set
     def initialize(version: 1, community: "public", **options)
-      @version   = case version
-      when Integer then version # assume the use know what he's doing
-      when /v?1/ then 0
-      when /v?2c?/ then 1
-      when /v?3/ then 3
-      else
-        raise "unsupported snmp version (#{version})"
-      end
+      @version = case version
+                 when Integer then version # assume the use know what he's doing
+                 when /v?1/ then 0
+                 when /v?2c?/ then 1
+                 when /v?3/ then 3
+                 else
+                   raise "unsupported snmp version (#{version})"
+                 end
       @community = community
       validate(**options)
       initialize_logger(**options)
@@ -66,6 +66,7 @@ module NETSNMP
         @transport = proxy
       else
         raise "you must provide an hostname/ip under :host" unless host
+
         @transport = Transport.new(host, port.to_i, timeout: timeout)
       end
     end
@@ -117,6 +118,7 @@ module NETSNMP
 
       def wait(mode)
         return if @socket.__send__(mode, @timeout)
+
         raise Timeout::Error, "Timeout after #{@timeout} seconds"
       end
     end

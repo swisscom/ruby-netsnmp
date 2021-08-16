@@ -24,6 +24,7 @@ namespace :coverage do
   desc "Aggregates coverage reports"
   task :report do
     return unless ENV.key?("CI")
+
     require "simplecov"
     SimpleCov.collate Dir["coverage/**/.resultset.json"]
   end
@@ -33,5 +34,9 @@ task default: [:spec]
 
 namespace :spec do
   desc "runs tests, check coverage, pushes to coverage server"
-  task ci: %w[spec rubocop]
+  if RUBY_VERSION >= "3.0.0"
+    task ci: %w[spec rubocop]
+  else
+    task ci: %w[spec]
+  end
 end

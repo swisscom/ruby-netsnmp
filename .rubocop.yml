@@ -1,21 +1,30 @@
 inherit_from: .rubocop_todo.yml
 
 AllCops:
-  TargetRubyVersion: 2.3
+  TargetRubyVersion: 2.5
 
 Bundler/DuplicatedGem:
   Enabled: false
 
-Lint/HandleExceptions:
+Lint/SuppressedException:
   Exclude:
     - Rakefile
 
-Layout/IndentHeredoc:
+Lint/SendWithMixinArgument:
+  Enabled: false
+
+Layout/HeredocIndentation:
   Enabled: false
 
 Style/NumericPredicate:
   Exclude:
     - lib/netsnmp.rb
+
+Style/RedundantBegin:
+  Enabled: false
+
+Metrics/ParameterLists:
+  Enabled: false
 
 Style/ClassAndModuleChildren:
   Enabled: false
@@ -27,4 +36,10 @@ Metrics/BlockLength:
   Enabled: false
 
 Metrics/BlockNesting:
+  Enabled: false
+
+Gemspec/RequiredRubyVersion:
+  Enabled: false
+
+Style/SafeNavigation:
   Enabled: false

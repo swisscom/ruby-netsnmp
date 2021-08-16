@@ -16,7 +16,7 @@ end
 gem "xorcist", require: false
 
 gem "parallel", "< 1.19.0", require: false if RUBY_VERSION < "2.4"
-gem "rubocop", "0.52.1", require: false
+gem "rubocop", require: false
 
 gem "rbs" if RUBY_VERSION >= "3.0"
 

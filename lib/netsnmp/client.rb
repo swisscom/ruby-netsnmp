@@ -34,6 +34,7 @@ module NETSNMP
       @retries = options.fetch(:retries, RETRIES)
       @session ||= version == 3 ? V3Session.new(**options) : Session.new(version: version, **options)
       return unless block_given?
+
       begin
         yield self
       ensure
@@ -155,6 +156,7 @@ module NETSNMP
         yield
       rescue Timeout::Error, IdNotInTimeWindowError => e
         raise e if retries.zero?
+
         retries -= 1
         retry
       end

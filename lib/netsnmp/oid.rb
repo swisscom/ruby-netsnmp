@@ -6,7 +6,7 @@ module NETSNMP
   module OID
     using StringExtensions
 
-    OIDREGEX = /^[\d\.]*$/
+    OIDREGEX = /^[\d.]*$/.freeze
 
     module_function
 

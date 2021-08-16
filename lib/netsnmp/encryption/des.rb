@@ -11,7 +11,7 @@ module NETSNMP
       end
 
       def encrypt(decrypted_data, engine_boots:, **)
-        cipher = OpenSSL::Cipher::DES.new(:CBC)
+        cipher = OpenSSL::Cipher.new("des-cbc")
 
         iv, salt = generate_encryption_key(engine_boots)
 
@@ -31,7 +31,7 @@ module NETSNMP
         raise Error, "invalid priv salt received" unless (salt.length % 8).zero?
         raise Error, "invalid encrypted PDU received" unless (encrypted_data.length % 8).zero?
 
-        cipher = OpenSSL::Cipher::DES.new(:CBC)
+        cipher = OpenSSL::Cipher.new("des-cbc")
         cipher.padding = 0
 
         iv = generate_decryption_key(salt)

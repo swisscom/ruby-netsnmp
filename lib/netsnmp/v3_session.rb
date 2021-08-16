@@ -42,11 +42,11 @@ module NETSNMP
         end
       else
         @security_parameters = SecurityParameters.new(security_level: options[:security_level],
-                                                      username:       options[:username],
-                                                      auth_protocol:  options[:auth_protocol],
-                                                      priv_protocol:  options[:priv_protocol],
-                                                      auth_password:  options[:auth_password],
-                                                      priv_password:  options[:priv_password])
+                                                      username: options[:username],
+                                                      auth_protocol: options[:auth_protocol],
+                                                      priv_protocol: options[:priv_protocol],
+                                                      auth_password: options[:auth_password],
+                                                      priv_password: options[:priv_password])
 
       end
     end

@@ -2,8 +2,6 @@ module NETSNMP
   class SecurityParameters
     include Loggable
 
-    type digest = OpenSSL::Digest::MD5 | OpenSSL::Digest::SHA1 | OpenSSL::Digest::SHA256
-
     type security_level = 0 | 1 | 3
 
     IPAD: String
@@ -13,7 +11,7 @@ module NETSNMP
     @auth_password: String?
     @priv_protocol: Symbol?
     @priv_password: String?
-    @digest: digest
+    @digest: OpenSSL::Digest
     @encryption: (Encryption::AES | Encryption::DES)?
 
     attr_reader security_level: security_level
@@ -56,7 +54,7 @@ module NETSNMP
 
     def passkey: (String password) -> String
 
-    def digest: () -> digest
+    def digest: () -> OpenSSL::Digest
 
     def encryption: () -> (Encryption::AES | Encryption::DES)?
 

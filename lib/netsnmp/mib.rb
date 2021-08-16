@@ -6,7 +6,7 @@ module NETSNMP
   module MIB
     using IsNumericExtensions
 
-    OIDREGEX = /^[\d\.]*$/
+    OIDREGEX = /^[\d.]*$/.freeze
 
     module_function
 
@@ -33,9 +33,7 @@ module NETSNMP
         if idx
           mod = prefix[0..(idx - 1)]
           type = prefix[(idx + 2)..-1]
-          unless module_loaded?(mod)
-            return unless load(mod)
-          end
+          return if !module_loaded?(mod) && !load(mod)
         else
           type = prefix
         end
@@ -53,7 +51,7 @@ module NETSNMP
     def identifier(oid)
       @object_identifiers.select do |_, ids_oid|
         oid.start_with?(ids_oid)
-      end.sort_by(&:size).first
+      end.min_by(&:size)
     end
 
     #
@@ -78,9 +76,11 @@ module NETSNMP
           end
         end
         return false unless moddir
+
         mod = moddir
       end
       return true if @modules_loaded.include?(mod)
+
       do_load(mod)
       @modules_loaded << mod
       true

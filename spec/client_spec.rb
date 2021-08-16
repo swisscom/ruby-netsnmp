@@ -56,14 +56,14 @@ RSpec.describe NETSNMP::Client do
       let(:next_result) { "San Francisco, California, United States" }
       let(:walk_result) do
         {
-          "1.3.6.1.2.1.1.1.0" =>  "Linux zeus 4.8.6.5-smp #2 SMP Sun Nov 13 14:58:11 CDT 2016 i686",
-          "1.3.6.1.2.1.1.2.0" =>  "1.3.6.1.4.1.8072.3.2.10",
-          "1.3.6.1.2.1.1.3.0" =>  /Timeticks: \(\d+\) \d+ days, \d+:\d+:\d+\.\d+/,
-          "1.3.6.1.2.1.1.4.0" =>  "SNMP Laboratories, info@snmplabs.com",
-          "1.3.6.1.2.1.1.5.0" =>  "zeus.snmplabs.com (you can change this!)",
-          "1.3.6.1.2.1.1.6.0" =>  "San Francisco, California, United States",
-          "1.3.6.1.2.1.1.7.0" =>  "72",
-          "1.3.6.1.2.1.1.8.0" =>  /Timeticks: \(\d+\) \d+ days, \d+:\d+:\d+\.\d+/
+          "1.3.6.1.2.1.1.1.0" => "Linux zeus 4.8.6.5-smp #2 SMP Sun Nov 13 14:58:11 CDT 2016 i686",
+          "1.3.6.1.2.1.1.2.0" => "1.3.6.1.4.1.8072.3.2.10",
+          "1.3.6.1.2.1.1.3.0" => /Timeticks: \(\d+\) \d+ days, \d+:\d+:\d+\.\d+/,
+          "1.3.6.1.2.1.1.4.0" => "SNMP Laboratories, info@snmplabs.com",
+          "1.3.6.1.2.1.1.5.0" => "zeus.snmplabs.com (you can change this!)",
+          "1.3.6.1.2.1.1.6.0" => "San Francisco, California, United States",
+          "1.3.6.1.2.1.1.7.0" => "72",
+          "1.3.6.1.2.1.1.8.0" => /Timeticks: \(\d+\) \d+ days, \d+:\d+:\d+\.\d+/
         }
       end
       let(:set_oid_result) { 43 }
