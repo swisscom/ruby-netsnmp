@@ -129,9 +129,11 @@ module NETSNMP
           @object_identifiers[cp]
         else
           STATIC_MIB_TO_OID[cp] || begin
-            imported_mod, = imports.find do |_, identifiers|
-              identifiers.include?(cp)
-            end
+            imported_mod, = if imports
+                              imports.find do |_, identifiers|
+                                identifiers.include?(cp)
+                              end
+                            end
 
             raise Error, "didn't find a module to import \"#{cp}\" from" unless imported_mod
 
