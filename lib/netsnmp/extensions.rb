@@ -118,7 +118,7 @@ module NETSNMP
   # Like a string, but it prints an hex-string version of itself
   class HexString < String
     def inspect
-      Hexdump.dump(self, in_groups_of: 2, separator: " ")
+      Hexdump.dump(to_s, in_groups_of: 2, separator: " ")
     end
   end
 end

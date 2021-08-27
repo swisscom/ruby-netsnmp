@@ -15,7 +15,7 @@ module NETSNMP
 
     def self?.oid: (oid identifier) -> String?
 
-    def self?.load: (String mod) -> void
+    def self?.load: (String mod) -> bool
 
     def self?.load_imports: (Array[import] | import | nil data) -> Hash[String, Array[String]]?
 
@@ -26,5 +26,10 @@ module NETSNMP
     def self?.module_loaded?: (String mod) -> bool
 
     def self?.store_oid_in_identifiers: (String name, Array[String] value, imports: Hash[String, Array[String]]?, declarations: Hash[String, Array[String]]) -> void
+
+    # workaround
+    class Parser
+      def parse: (String data) -> Hash[:imports | :declarations, untyped?]
+    end
   end
 end

@@ -14,7 +14,7 @@ module NETSNMP
     @digest: OpenSSL::Digest
     @encryption: (Encryption::AES | Encryption::DES)?
 
-    attr_reader security_level: security_level
+    attr_reader security_level: Integer
     attr_reader username: String
     attr_reader engine_id: String
     attr_reader auth_protocol: Symbol?
@@ -27,7 +27,7 @@ module NETSNMP
 
     def sign: (String message) -> String?
 
-    def verify: (String stream, String salt, ?security_level: Integer) -> void
+    def verify: (String stream, String salt, ?security_level: Integer?) -> void
 
     def must_revalidate?: () -> bool
 
@@ -36,11 +36,11 @@ module NETSNMP
     def initialize: (
       username: String,
       ?engine_id: String,
-      ?security_level?: security_level | :noauth | :auth_no_priv | :auth_priv,
-      ?auth_protocol?: Symbol,
-      ?auth_password?: String,
-      ?priv_protocol?: Symbol,
-      ?priv_password?: String,
+      ?security_level: security_level | :noauth | :auth_no_priv | :auth_priv | nil,
+      ?auth_protocol: Symbol | nil,
+      ?auth_password: String | nil,
+      ?priv_protocol: Symbol | nil,
+      ?priv_password: String | nil,
       **untyped options
     ) -> void
 

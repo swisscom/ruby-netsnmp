@@ -52,6 +52,7 @@ module NETSNMP
                         when /no_?auth/         then 0
                         when /auth_?no_?priv/   then 1
                         when /auth_?priv/, nil  then 3
+                        else 0
                         end
       @username = username
       @engine_id = engine_id
@@ -199,8 +200,8 @@ module NETSNMP
       password_length = password.length
       while password_index < 1048576
         initial = password_index % password_length
-        rotated = password[initial..-1] + password[0, initial]
-        buffer = rotated * (64 / rotated.length) + rotated[0, 64 % rotated.length]
+        rotated = String(password[initial..-1]) + String(password[0, initial])
+        buffer = rotated * (64 / rotated.length) + String(rotated[0, 64 % rotated.length])
         password_index += 64
         digest << buffer
         buffer.clear

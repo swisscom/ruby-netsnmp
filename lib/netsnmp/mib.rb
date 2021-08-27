@@ -20,10 +20,12 @@ module NETSNMP
     def oid(identifier)
       prefix, *suffix = case identifier
                         when Array
-                          identifier
+                          identifier.map(&:to_s)
                         else
                           identifier.split(".", 2).map(&:to_s)
                         end
+
+      return unless prefix
 
       # early exit if it's an OID already
       unless prefix.integer?
@@ -33,7 +35,7 @@ module NETSNMP
         if idx
           mod = prefix[0..(idx - 1)]
           type = prefix[(idx + 2)..-1]
-          return if !module_loaded?(mod) && !load(mod)
+          return if mod && !module_loaded?(mod) && !load(mod)
         else
           type = prefix
         end
