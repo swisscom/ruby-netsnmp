@@ -1,5 +1,6 @@
 module NETSNMP
-  type varbind_options = untyped
+  type varbind_options = {oid: String, value: Varbind::varbind_value }
+                       | {oid: String, value: Varbind::varbind_value, type: oid_type}
 
   class Varbind
 
@@ -15,7 +16,15 @@ module NETSNMP
     def convert_val: (varbind_value) -> oid_value
 
 
-    def convert_to_asn: (oid_type, oid_value) -> OpenSSL::ASN1::ASN1Data
+    def convert_to_asn: (:ip_address, Integer) -> OpenSSL::ASN1::ASN1Data
+                      | (:counter32, Integer) -> OpenSSL::ASN1::ASN1Data
+                      | (:counter64, Integer) -> OpenSSL::ASN1::ASN1Data
+                      | (:uinteger, Integer) -> OpenSSL::ASN1::ASN1Data
+                      | (:gauge, Integer) -> OpenSSL::ASN1::ASN1Data
+                      | (:timetick, Integer) -> OpenSSL::ASN1::ASN1Data
+                      | (:opaque, Integer) -> OpenSSL::ASN1::ASN1Data
+                      | (:nsap, Integer) -> OpenSSL::ASN1::ASN1Data
+                      | (Integer, oid_value) -> OpenSSL::ASN1::ASN1Data
 
     def convert_application_asn: (OpenSSL::ASN1::ASN1Data asn) -> oid_value
 

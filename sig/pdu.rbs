@@ -3,43 +3,39 @@ module NETSNMP
 
   class PDU
 
-    # type pdu_options = {
-    #   headers: [snmp_version?, String?],
-    #   ?request_id: String,
-    #   ?error_status: Integer,
-    #   ?error_index: Integer,
-    #   ?varbinds: Array[varbind_options]
-    # }
+    MAXREQUESTID: Integer
 
     attr_reader varbinds: Array[Varbind]
     attr_reader type: Integer
-    attr_reader version: snmp_version
-    attr_reader community: String
+    attr_reader version: Integer
+    attr_reader community: String?
     attr_reader request_id: Integer
 
-    def self.decode: (String der) -> PDU
-                   | (OpenSSL::ASN1::ASN1Data der) -> PDU
+    def self.decode: (String | OpenSSL::ASN1::ASN1Data der) -> instance
 
-    def self.build: (pdu_type, **untyped) -> PDU
+    def self.build: (pdu_type, **untyped) -> instance
 
 
     def to_asn: () -> OpenSSL::ASN1::ASN1Data
 
     def to_der: () -> String
 
-    def add_varbind: (oid: oid, **varbind_options) -> void
+    def to_hex: () -> String
+
+    def add_varbind: (oid: String, **untyped varbind_options) -> void
     alias << add_varbind
 
     private
 
     def initialize: (
       type: Integer,
-      headers: [snmp_version?, String?],
+      version: Integer,
+      community: String?,
       ?request_id: Integer,
       ?error_status: Integer,
       ?error_index: Integer,
       ?varbinds: Array[varbind_options]
-    ) -> untyped
+    ) -> void
 
     def encode_headers_asn: () -> [OpenSSL::ASN1::Integer, OpenSSL::ASN1::OctetString]
 

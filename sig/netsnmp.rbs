@@ -1,4 +1,6 @@
 module NETSNMP
+  VERSION: String
+
   interface _Logger
     def <<: (string) -> void
   end
@@ -9,11 +11,9 @@ module NETSNMP
     def digest: () -> String
   end
 
-  interface _Encrypt
-    def encrypt: (String payload, engine_boots: Integer, engine_time: Integer) -> String
-
-    def decrypt: (String payload, salt: String, engine_boots: Integer, engine_time: Integer) -> String
+  interface _ToAsn
+    def to_asn: () -> OpenSSL::ASN1::ASN1Data
   end
 
-  type snmp_version = 0 | 1 | 3 | :v1 | :v2c | :v3 | nil
+  type snmp_version = 0 | 1 | 3 | :v1 | :v2c | :v3 | String | nil
 end

@@ -743,7 +743,7 @@ module NETSNMP::MIB
 
     rule(:text) do
       str('"') >> (
-        str('\\') >> any | str('"').absent? >> any
+        str("\\") >> any | str('"').absent? >> any
       ).repeat >> str('"')
     end
   end

@@ -1,8 +1,11 @@
 # frozen_string_literal: true
 
 module NETSNMP
-  Error = Class.new(StandardError)
-  ConnectionFailed = Class.new(Error)
-  AuthenticationFailed = Class.new(Error)
-  IdNotInTimeWindowError = Class.new(Error)
+  class Error < StandardError; end
+
+  class ConnectionFailed < Error; end
+
+  class AuthenticationFailed < Error; end
+
+  class IdNotInTimeWindowError < Error; end
 end

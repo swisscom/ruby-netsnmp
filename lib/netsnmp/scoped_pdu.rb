@@ -8,9 +8,10 @@ module NETSNMP
 
     attr_accessor :security_level, :auth_param
 
-    def initialize(type:, headers:, **options)
-      @engine_id, @context = headers
-      super(type: type, headers: [3, nil], **options)
+    def initialize(type:, engine_id: nil, context: nil, **options)
+      @engine_id = engine_id
+      @context = context
+      super(type: type, version: 3, community: nil, **options)
     end
 
     private

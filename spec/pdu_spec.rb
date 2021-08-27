@@ -11,7 +11,8 @@ RSpec.describe NETSNMP::PDU do
 
   describe "#to_der" do
     let(:pdu_get) do
-      described_class.build(:get, headers: [0, "public"],
+      described_class.build(:get, version: 0,
+                                  community: "public",
                                   request_id: 16170)
     end
 

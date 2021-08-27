@@ -12,16 +12,9 @@ module NETSNMP
     using ASNExtensions
     class << self
       def decode(der)
-        asn_tree = case der
-                   when String
-                     OpenSSL::ASN1.decode(der)
-                   when OpenSSL::ASN1::ASN1Data
-                     der
-                   else
-                     raise "#{der}: unexpected data"
-                   end
+        der = OpenSSL::ASN1.decode(der) if der.is_a?(String)
 
-        *headers, request = asn_tree.value
+        *headers, request = der.value
 
         version, community = headers.map(&:value)
 
@@ -37,10 +30,12 @@ module NETSNMP
           { oid: oid, value: val_asn }
         end
 
-        new(type: type, headers: [version, community],
-            error_status: error_status,
-            error_index: error_index,
-            request_id: request_id,
+        new(type: type,
+            version: version.to_i,
+            community: community,
+            error_status: error_status.to_i,
+            error_index: error_index.to_i,
+            request_id: request_id.to_i,
             varbinds: varbs)
       end
 
@@ -64,19 +59,19 @@ module NETSNMP
       end
     end
 
-    attr_reader :varbinds, :type
+    attr_reader :varbinds, :type, :version, :community, :request_id
 
-    attr_reader :version, :community, :request_id
-
-    def initialize(type:, headers:,
+    def initialize(type:,
+                   version:,
+                   community:,
                    request_id: SecureRandom.random_number(MAXREQUESTID),
                    error_status: 0,
                    error_index: 0,
                    varbinds: [])
-      @version, @community = headers
-      @version = @version.to_i
+      @version = version.to_i
+      @community = community
       @error_status = error_status
-      @error_index  = error_index
+      @error_index = error_index
       @type = type
       @varbinds = []
       varbinds.each do |varbind|
@@ -131,6 +126,7 @@ module NETSNMP
     # http://www.tcpipguide.com/free/t_SNMPVersion2SNMPv2MessageFormats-5.htm#Table_219
     def check_error_status(status)
       return if status.zero?
+
       message = case status
                 when 1 then "Response-PDU too big"
                 when 2 then "No such name"

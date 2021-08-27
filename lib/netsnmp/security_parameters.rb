@@ -10,7 +10,7 @@ module NETSNMP
     using StringExtensions
     using ASNExtensions
 
-    prepend Loggable
+    include Loggable
 
     IPAD = "\x36" * 64
     OPAD = "\x5c" * 64
@@ -22,8 +22,7 @@ module NETSNMP
     # The 150 Seconds is specified in https://www.ietf.org/rfc/rfc2574.txt 2.2.3
     TIMELINESS_THRESHOLD = 150
 
-    attr_reader :security_level, :username, :auth_protocol
-    attr_reader :engine_id
+    attr_reader :security_level, :username, :auth_protocol, :engine_id
 
     # @param [String] username the snmp v3 username
     # @param [String] engine_id the device engine id (initialized to '' for report)
@@ -39,15 +38,22 @@ module NETSNMP
     #   not explicitly set), and :priv_password becomes mandatory.
     #
     def initialize(
-                   username:,
-                   engine_id: "",
-                   security_level: nil,
-                   auth_protocol: nil,
-                   auth_password: nil,
-                   priv_protocol: nil,
-                   priv_password: nil
+      username:,
+      engine_id: "",
+      security_level: nil,
+      auth_protocol: nil,
+      auth_password: nil,
+      priv_protocol: nil,
+      priv_password: nil,
+      **options
     )
-      @security_level = security_level
+      @security_level = case security_level
+                        when Integer then security_level
+                        when /no_?auth/         then 0
+                        when /auth_?no_?priv/   then 1
+                        when /auth_?priv/, nil  then 3
+                        else 0
+                        end
       @username = username
       @engine_id = engine_id
       @auth_protocol = auth_protocol.to_sym unless auth_protocol.nil?
@@ -57,6 +63,7 @@ module NETSNMP
       check_parameters
       @auth_pass_key = passkey(@auth_password) unless @auth_password.nil?
       @priv_pass_key = passkey(@priv_password) unless @priv_password.nil?
+      initialize_logger(**options)
     end
 
     def engine_id=(id)
@@ -72,9 +79,11 @@ module NETSNMP
     # @return [Array] a pair, where the first argument in the asn structure with the encoded pdu,
     #    and the second is the calculated salt (if it has been encrypted)
     def encode(pdu, salt:, engine_time:, engine_boots:)
-      if encryption
-        encrypted_pdu, salt = encryption.encrypt(pdu.to_der, engine_boots: engine_boots,
-                                                             engine_time: engine_time)
+      encryptor = encryption
+
+      if encryptor
+        encrypted_pdu, salt = encryptor.encrypt(pdu.to_der, engine_boots: engine_boots,
+                                                            engine_time: engine_time)
         [
           OpenSSL::ASN1::OctetString.new(encrypted_pdu).with_label(:encrypted_pdu),
           OpenSSL::ASN1::OctetString.new(salt).with_label(:salt)
@@ -92,10 +101,11 @@ module NETSNMP
       asn = OpenSSL::ASN1.decode(der)
       return asn if security_level < 3
 
-      return asn unless encryption
+      encryptor = encryption
+      return asn unless encryptor
 
       encrypted_pdu = asn.value
-      pdu_der = encryption.decrypt(encrypted_pdu, salt: salt, engine_time: engine_time, engine_boots: engine_boots)
+      pdu_der = encryptor.decrypt(encrypted_pdu, salt: salt, engine_time: engine_time, engine_boots: engine_boots)
       log(level: 2) { "message has been decrypted" }
       OpenSSL::ASN1.decode(pdu_der)
     end
@@ -136,14 +146,17 @@ module NETSNMP
     # @raise [NETSNMP::Error] if the message's integration has been violated
     def verify(stream, salt, security_level: @security_level)
       return if security_level < 1
+
       verisalt = sign(stream)
       raise Error, "invalid message authentication salt" unless verisalt == salt
+
       log(level: 2) { "message has been verified" }
     end
 
     def must_revalidate?
       return @engine_id.empty? unless authorizable?
       return true if @engine_id.empty? || @timeliness.nil?
+
       (Process.clock_gettime(Process::CLOCK_MONOTONIC, :second) - @timeliness) >= TIMELINESS_THRESHOLD
     end
 
@@ -158,21 +171,13 @@ module NETSNMP
     end
 
     def check_parameters
-      @security_level = case @security_level
-                        when Integer then @security_level
-                        when /no_?auth/         then 0
-                        when /auth_?no_?priv/   then 1
-                        when /auth_?priv/, nil  then 3
-                        else
-                          raise Error, "security level not supported: #{@security_level}"
-                        end
-
       if @security_level.positive?
         @auth_protocol ||= :md5 # this is the default
         raise "security level requires an auth password" if @auth_password.nil?
         raise "auth password must have between 8 to 32 characters" unless (8..32).cover?(@auth_password.length)
       end
       return unless @security_level > 1
+
       @priv_protocol ||= :des
       raise "security level requires a priv password" if @priv_password.nil?
       raise "priv password must have between 8 to 32 characters" unless (8..32).cover?(@priv_password.length)
@@ -195,8 +200,8 @@ module NETSNMP
       password_length = password.length
       while password_index < 1048576
         initial = password_index % password_length
-        rotated = password[initial..-1] + password[0, initial]
-        buffer = rotated * (64 / rotated.length) + rotated[0, 64 % rotated.length]
+        rotated = String(password[initial..-1]) + String(password[0, initial])
+        buffer = rotated * (64 / rotated.length) + String(rotated[0, 64 % rotated.length])
         password_index += 64
         digest << buffer
         buffer.clear
@@ -204,14 +209,14 @@ module NETSNMP
 
       dig = digest.digest
       dig = dig[0, 16] if @auth_protocol == :md5
-      dig
+      dig || ""
     end
 
     def digest
       @digest ||= case @auth_protocol
-                  when :md5 then OpenSSL::Digest::MD5.new
-                  when :sha then OpenSSL::Digest::SHA1.new
-                  when :sha256 then OpenSSL::Digest::SHA256.new
+                  when :md5 then OpenSSL::Digest.new("MD5")
+                  when :sha then OpenSSL::Digest.new("SHA1")
+                  when :sha256 then OpenSSL::Digest.new("SHA256")
                   else
                     raise Error, "unsupported auth protocol: #{@auth_protocol}"
                   end
@@ -219,10 +224,8 @@ module NETSNMP
 
     def encryption
       @encryption ||= case @priv_protocol
-                      when :des
-                        Encryption::DES.new(priv_key)
-                      when :aes
-                        Encryption::AES.new(priv_key)
+                      when :des then Encryption::DES.new(priv_key)
+                      when :aes then Encryption::AES.new(priv_key)
                       end
     end
 

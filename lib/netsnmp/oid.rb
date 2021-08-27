@@ -4,15 +4,18 @@ module NETSNMP
   # Abstracts the OID structure
   #
   module OID
-    using StringExtensions unless String.method_defined?(:match?)
+    using StringExtensions
 
-    OIDREGEX = /^[\d\.]*$/
+    OIDREGEX = /^[\d.]*$/.freeze
 
     module_function
 
     def build(id)
       oid = MIB.oid(id)
-      oid = oid[1..-1] if oid.start_with?(".")
+
+      raise Error, "no OID found for #{id}" unless oid
+
+      oid = oid.delete_prefix(".") if oid.start_with?(".")
       oid
     end
 

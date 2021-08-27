@@ -5,7 +5,7 @@ module NETSNMP
   class Message
     using ASNExtensions
 
-    prepend Loggable
+    include Loggable
 
     PRIVNONE           = OpenSSL::ASN1::OctetString.new("")
     MSG_MAX_SIZE       = OpenSSL::ASN1::Integer.new(65507).with_label(:max_message_size)
@@ -13,7 +13,9 @@ module NETSNMP
     MSG_VERSION        = OpenSSL::ASN1::Integer.new(3).with_label(:message_version)
     MSG_REPORTABLE     = 4
 
-    def initialize(**); end
+    def initialize(**args)
+      initialize_logger(**args)
+    end
 
     def verify(stream, auth_param, security_level, security_parameters:)
       security_parameters.verify(stream.sub(auth_param, authnone(security_parameters.auth_protocol).value), auth_param, security_level: security_level)
@@ -70,7 +72,7 @@ module NETSNMP
       pdu.security_level = security_level
 
       log(level: 2) { pdu.to_hex }
-      [pdu, engine_id.value, engine_boots, engine_time]
+      [pdu, engine_id.value.to_s, engine_boots, engine_time]
     end
 
     # @param [NETSNMP::ScopedPDU] the PDU to encode in the message

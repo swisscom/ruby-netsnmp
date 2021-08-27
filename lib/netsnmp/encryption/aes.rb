@@ -9,7 +9,7 @@ module NETSNMP
       end
 
       def encrypt(decrypted_data, engine_boots:, engine_time:)
-        cipher = OpenSSL::Cipher::AES128.new(:CFB)
+        cipher = OpenSSL::Cipher.new("aes-128-cfb")
 
         iv, salt = generate_encryption_key(engine_boots, engine_time)
 
@@ -29,7 +29,7 @@ module NETSNMP
       def decrypt(encrypted_data, salt:, engine_boots:, engine_time:)
         raise Error, "invalid priv salt received" unless !salt.empty? && (salt.length % 8).zero?
 
-        cipher = OpenSSL::Cipher::AES128.new(:CFB)
+        cipher = OpenSSL::Cipher.new("aes-128-cfb")
         cipher.padding = 0
 
         iv = generate_decryption_key(engine_boots, engine_time, salt)
@@ -40,7 +40,7 @@ module NETSNMP
         decrypted_data = cipher.update(encrypted_data) + cipher.final
 
         hlen, bodylen = OpenSSL::ASN1.traverse(decrypted_data) { |_, _, x, y, *| break x, y }
-        decrypted_data.byteslice(0, hlen + bodylen)
+        decrypted_data.byteslice(0, hlen + bodylen) || "".b
       end
 
       private

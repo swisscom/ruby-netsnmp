@@ -2,20 +2,34 @@ module NETSNMP
   module MIB
     type import = {ids: Array[{name: string}], name: string} | {ids: {name: string}, name: string}
 
-
+    OIDREGEX: Regexp
     MIBDIRS: Array[String]
     PARSER: Parser
 
-    @parser_mutex: Mutex
+    TYPES: Array[String]
+    STATIC_MIB_TO_OID: Hash[String, String]
+
+    @parser_mutex: Thread::Mutex
     @modules_loaded: Array[String]
     @object_identifiers: Hash[String, String]
 
-    def self?.oid: (String identifier) -> String?
-                 | (Array[_ToS] identifier) -> String?
+    def self?.oid: (oid identifier) -> String?
 
-    def self?.load: (String mod) -> void
+    def self?.load: (String mod) -> bool
 
-    def self?.load_imports: ((Array[import] | import)? data) -> Hash[String, Array[String]]?
+    def self?.load_imports: (Array[import] | import | nil data) -> Hash[String, Array[String]]?
+
     def self?.load_defaults: () -> void
+
+    def self?.do_load: (String mod) -> void
+
+    def self?.module_loaded?: (String mod) -> bool
+
+    def self?.store_oid_in_identifiers: (String name, Array[String] value, imports: Hash[String, Array[String]]?, declarations: Hash[String, Array[String]]) -> void
+
+    # workaround
+    class Parser
+      def parse: (String data) -> Hash[:imports | :declarations, untyped?]
+    end
   end
 end

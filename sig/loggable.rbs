@@ -1,15 +1,12 @@
 module NETSNMP
   module Loggable
-    interface _Debugger
-      def <<: (string) -> void
-    end
-
     DEBUG_LEVEL: Integer
-    DEBUG: _Debugger
+    DEBUG: IO?
+    COLORS: Hash[Symbol, Integer]
 
-    private
+    def initialize_logger: (?debug: IO, ?debug_level: Integer, **untyped) -> void
 
-    def initialize: (?debug: _DEBUGGER, ?debug_level: Integer, **untyped) -> void
+     private
 
     def log: (?level: Integer) { () -> String } -> void
   end

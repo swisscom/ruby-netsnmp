@@ -5,6 +5,7 @@ module NETSNMP
     # @param [Integer] ticks number of microseconds since the time it was read
     def initialize(ticks)
       @ticks = ticks
+      super()
     end
 
     def to_s

@@ -1,6 +1,12 @@
 module NETSNMP
   class Message
-    prepend Loggable
+    include Loggable
+
+    PRIVNONE: OpenSSL::ASN1::OctetString
+    MSG_MAX_SIZE: OpenSSL::ASN1::Integer
+    MSG_SECURITY_MODEL: OpenSSL::ASN1::Integer
+    MSG_VERSION: OpenSSL::ASN1::Integer
+    MSG_REPORTABLE: Integer
 
     def verify: (String stream, String auth_param, Integer? security_level, security_parameters: SecurityParameters) -> void
 
@@ -10,6 +16,8 @@ module NETSNMP
 
     private
 
-    def authnone: (SecurityParameters::auth_protocol?) -> OpenSSL::ASN1::ASN1Data
+    def initialize: (**untyped options) -> void
+
+    def authnone: (Symbol?) -> OpenSSL::ASN1::ASN1Data
   end
 end

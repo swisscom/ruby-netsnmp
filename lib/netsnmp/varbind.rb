@@ -37,8 +37,10 @@ module NETSNMP
                   when nil
                     OpenSSL::ASN1::Null.new(nil)
                   when IPAddr
+                    # @type ivar @value: IPAddr
                     OpenSSL::ASN1::ASN1Data.new(@value.hton, 0, :APPLICATION)
                   when Timetick
+                    # @type ivar @value: Timetick
                     @value.to_asn
                   else
                     raise Error, "#{@value}: unsupported varbind type"
@@ -73,37 +75,41 @@ module NETSNMP
     end
 
     def convert_to_asn(typ, value)
-      asn_type = typ
       asn_val = value
-      if typ.is_a?(Symbol)
-        asn_type = case typ
+
+      asn_type = if typ.is_a?(Symbol)
+                   case typ
                    when :ipaddress then 0
                    when :counter32
                      asn_val = [value].pack("N*")
-                     asn_val = asn_val[1..-1] while asn_val[0] == "\x00".b && asn_val[1].unpack1("B") != "1"
+                     asn_val = asn_val.delete_prefix("\x00") while asn_val[0] == "\x00".b && String(asn_val[1]).unpack1("B") != "1"
                      1
                    when :gauge
                      asn_val = [value].pack("N*")
-                     asn_val = asn_val[1..-1] while asn_val[0] == "\x00".b && asn_val[1].unpack1("B") != "1"
+                     asn_val = asn_val.delete_prefix("\x00") while asn_val[0] == "\x00".b && String(asn_val[1]).unpack1("B") != "1"
                      2
                    when :timetick
+                     # @type var value: Integer
                      return Timetick.new(value).to_asn
                    when :opaque then 4
                    when :nsap then 5
                    when :counter64
+                     # @type var value: Integer
                      asn_val = [
                        (value >> 96) & 0xFFFFFFFF,
                        (value >> 64) & 0xFFFFFFFF,
                        (value >> 32) & 0xFFFFFFFF,
                        value & 0xFFFFFFFF
                      ].pack("NNNN")
-                     asn_val = asn_val[1..-1] while asn_val.start_with?("\x00")
+                     asn_val = asn_val.delete_prefix("\x00") while asn_val.start_with?("\x00")
                      6
                    when :uinteger then 7
                    else
                      raise Error, "#{typ}: unsupported application type"
                    end
-      end
+                 else
+                   typ
+                 end
       OpenSSL::ASN1::ASN1Data.new(asn_val, asn_type, :APPLICATION)
     end
 
@@ -128,12 +134,12 @@ module NETSNMP
 
     def unpack_32bit_integer(payload)
       payload.prepend("\x00") until (payload.bytesize % 4).zero?
-      payload.unpack("N*")[-1] || 0
+      payload.unpack("N*")[-1].to_i
     end
 
     def unpack_64bit_integer(payload)
       payload.prepend("\x00") until (payload.bytesize % 16).zero?
-      payload.unpack("NNNN").reduce(0) { |sum, elem| (sum << 32) + elem }
+      payload.unpack("NNNN").reduce(0) { |sum, elem| (sum << 32) + elem.to_i }
     end
   end
 end

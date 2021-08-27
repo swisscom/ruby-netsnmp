@@ -4,15 +4,23 @@ module NETSNMP
   # Let's just remind that there is no session in snmp, this is just an abstraction.
   #
   class Session
-    prepend Loggable
+    include Loggable
 
     TIMEOUT = 2
 
     # @param [Hash] opts the options set
     def initialize(version: 1, community: "public", **options)
-      @version   = version
+      @version = case version
+                 when Integer then version # assume the use know what he's doing
+                 when /v?1/ then 0
+                 when /v?2c?/ then 1
+                 when /v?3/ then 3
+                 else
+                   raise "unsupported snmp version (#{version})"
+                 end
       @community = community
       validate(**options)
+      initialize_logger(**options)
     end
 
     # Closes the session
@@ -28,7 +36,7 @@ module NETSNMP
     # @return [NETSNMP::PDU] a pdu
     #
     def build_pdu(type, *vars)
-      PDU.build(type, headers: [@version, @community], varbinds: vars)
+      PDU.build(type, version: @version, community: @community, varbinds: vars)
     end
 
     # send a pdu, receives a pdu
@@ -58,16 +66,9 @@ module NETSNMP
         @transport = proxy
       else
         raise "you must provide an hostname/ip under :host" unless host
+
         @transport = Transport.new(host, port.to_i, timeout: timeout)
       end
-      @version = case @version
-                 when Integer then @version # assume the use know what he's doing
-                 when /v?1/ then 0
-                 when /v?2c?/ then 1
-                 when /v?3/ then 3
-                 else
-                   raise "unsupported snmp version (#{@version})"
-                 end
     end
 
     class Transport
@@ -117,6 +118,7 @@ module NETSNMP
 
       def wait(mode)
         return if @socket.__send__(mode, @timeout)
+
         raise Timeout::Error, "Timeout after #{@timeout} seconds"
       end
     end

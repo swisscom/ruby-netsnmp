@@ -16,7 +16,7 @@ module NETSNMP
     # @return [NETSNMP::ScopedPDU] a pdu
     def build_pdu(type, *vars)
       engine_id = security_parameters.engine_id
-      ScopedPDU.build(type, headers: [engine_id, @context], varbinds: vars)
+      ScopedPDU.build(type, engine_id: engine_id, context: @context, varbinds: vars)
     end
 
     # @see {NETSNMP::Session#send}
@@ -42,11 +42,11 @@ module NETSNMP
         end
       else
         @security_parameters = SecurityParameters.new(security_level: options[:security_level],
-                                                      username:       options[:username],
-                                                      auth_protocol:  options[:auth_protocol],
-                                                      priv_protocol:  options[:priv_protocol],
-                                                      auth_password:  options[:auth_password],
-                                                      priv_password:  options[:priv_password])
+                                                      username: options[:username],
+                                                      auth_protocol: options[:auth_protocol],
+                                                      priv_protocol: options[:priv_protocol],
+                                                      auth_password: options[:auth_password],
+                                                      priv_password: options[:priv_password])
 
       end
     end
@@ -61,7 +61,7 @@ module NETSNMP
     def probe_for_engine
       report_sec_params = SecurityParameters.new(security_level: 0,
                                                  username: @security_parameters.username)
-      pdu = ScopedPDU.build(:get, headers: [])
+      pdu = ScopedPDU.build(:get)
       log { "sending probe..." }
       encoded_report_pdu = @message_serializer.encode(pdu, security_parameters: report_sec_params)
 

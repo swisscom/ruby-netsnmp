@@ -1,6 +1,8 @@
 module NETSNMP
   class Session
-    prepend Loggable
+    include Loggable
+
+    TIMEOUT: Integer
 
     @transport: _Transport
     @version: 0 | 1 | 3
@@ -15,17 +17,25 @@ module NETSNMP
     private
 
     def initialize: (?version: snmp_version, ?community: String, **untyped) -> untyped
-   
+
     def validate: (?host: String?, ?port: Integer, ?proxy: _Transport, ?timeout: Integer, **untyped) -> void
 
     class Transport
-      def initialize: (String host, Integer port, timeout: Integer) -> untyped
+      MAXPDUSIZE: Integer
+
       def close: () -> void
-      def send: (String payload) -> String
-      def write: (String) -> void
-      def recv: () -> void
+
+      def send: (String pdu_der) -> String
+
+      def write: (String data) -> void
+
+      def recv: (?Integer size) -> String
 
       private
+
+      def initialize: (String host, Integer port, timeout: Integer) -> void
+
+      def perform_io: [U] { () -> U } -> U
 
       def wait: (:wait_readable | :wait_writable) -> void
     end

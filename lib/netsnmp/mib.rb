@@ -6,7 +6,7 @@ module NETSNMP
   module MIB
     using IsNumericExtensions
 
-    OIDREGEX = /^[\d\.]*$/
+    OIDREGEX = /^[\d.]*$/.freeze
 
     module_function
 
@@ -20,10 +20,12 @@ module NETSNMP
     def oid(identifier)
       prefix, *suffix = case identifier
                         when Array
-                          identifier
+                          identifier.map(&:to_s)
                         else
-                          identifier.split(".", 2)
+                          identifier.split(".", 2).map(&:to_s)
                         end
+
+      return unless prefix
 
       # early exit if it's an OID already
       unless prefix.integer?
@@ -33,9 +35,7 @@ module NETSNMP
         if idx
           mod = prefix[0..(idx - 1)]
           type = prefix[(idx + 2)..-1]
-          unless module_loaded?(mod)
-            return unless load(mod)
-          end
+          return if mod && !module_loaded?(mod) && !load(mod)
         else
           type = prefix
         end
@@ -53,7 +53,7 @@ module NETSNMP
     def identifier(oid)
       @object_identifiers.select do |_, ids_oid|
         oid.start_with?(ids_oid)
-      end.sort_by(&:size).first
+      end.min_by(&:size)
     end
 
     #
@@ -78,9 +78,11 @@ module NETSNMP
           end
         end
         return false unless moddir
+
         mod = moddir
       end
       return true if @modules_loaded.include?(mod)
+
       do_load(mod)
       @modules_loaded << mod
       true
@@ -129,9 +131,11 @@ module NETSNMP
           @object_identifiers[cp]
         else
           STATIC_MIB_TO_OID[cp] || begin
-            imported_mod, = imports.find do |_, identifiers|
-              identifiers.include?(cp)
-            end
+            imported_mod, = if imports
+                              imports.find do |_, identifiers|
+                                identifiers.include?(cp)
+                              end
+                            end
 
             raise Error, "didn't find a module to import \"#{cp}\" from" unless imported_mod
 
