@@ -6,6 +6,10 @@ RUBY_ENGINE=`ruby -e 'puts RUBY_ENGINE'`
 
 if [[ "$RUBY_ENGINE" = "truffleruby" ]]; then
   microdnf install -y git net-snmp-utils
+elif [[ "$RUBY_ENGINE" = "jruby" ]]; then
+  apt-get update
+  apt-get install -y git snmp-mibs-downloader
+  sudo sed -i 's/mibs :/# mibs :/g' /etc/snmp/snmp.conf
 else
   apk --update add g++ make git net-snmp-libs
 fi
