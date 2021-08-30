@@ -8,12 +8,12 @@ gemspec
 gem "rake", "~> 12.3"
 gem "rspec", "~> 3.5"
 
-group :development do
-  gem "pry"
-  gem "pry-byebug", require: false
-end
+gem "pry"
 
-gem "xorcist", require: false
+platform :mri, :truffleruby do
+  gem "pry-byebug", require: false
+  gem "xorcist", require: false
+end
 
 gem "parallel", "< 1.19.0", require: false if RUBY_VERSION < "2.4"
 gem "rubocop", require: false

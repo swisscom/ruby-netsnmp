@@ -2,6 +2,7 @@ inherit_from: .rubocop_todo.yml
 
 AllCops:
   TargetRubyVersion: 2.5
+  NewCops: enable
 
 Bundler/DuplicatedGem:
   Enabled: false
@@ -42,4 +43,7 @@ Gemspec/RequiredRubyVersion:
   Enabled: false
 
 Style/SafeNavigation:
+  Enabled: false
+
+Style/HashConversion:
   Enabled: false

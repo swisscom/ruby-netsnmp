@@ -52,7 +52,6 @@ module NETSNMP
                         when /no_?auth/         then 0
                         when /auth_?no_?priv/   then 1
                         when /auth_?priv/, nil  then 3
-                        else 0
                         end
       @username = username
       @engine_id = engine_id

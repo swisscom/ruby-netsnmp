@@ -36,7 +36,7 @@ module NETSNMP
     def initialize: (
       username: String,
       ?engine_id: String,
-      ?security_level: security_level | :noauth | :auth_no_priv | :auth_priv | nil,
+      ?security_level: Integer | :noauth | :auth_no_priv | :auth_priv | nil,
       ?auth_protocol: Symbol | nil,
       ?auth_password: String | nil,
       ?priv_protocol: Symbol | nil,

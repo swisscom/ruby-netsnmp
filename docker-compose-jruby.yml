@@ -1,0 +1,9 @@
+version: '3'
+services:
+  netsnmp:
+    image: jruby:9.2
+    environment:
+      - JRUBY_OPTS=--debug
+    entrypoint:
+      - bash
+      - /home/spec/support/specs.sh
