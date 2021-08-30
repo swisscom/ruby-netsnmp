@@ -1,0 +1,9 @@
+module NETSNMP
+  module ASNExtensions
+    ASN_COLORS: Hash[singleton(OpenSSL::ASN1::ASN1Data), Integer]
+  end
+
+  module Hexdump
+    def self?.dump: (String data, ?width: Integer, ?in_groups_of: Integer, ?separator: String) -> String
+  end
+end
