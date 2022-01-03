@@ -13,7 +13,7 @@ on:
       - Tests
     branches:
       - master
-    types: 
+    types:
       - success
 
 jobs:
@@ -28,7 +28,7 @@ jobs:
         name: coverage-report
     - uses: actions/setup-ruby@v1
       with:
-        ruby-version: '2.7'
+        ruby-version: '3.1'
         bundler-cache: true
     - run: bundle exec rake coverage:report
     - uses: actions/upload-artifact@v2
