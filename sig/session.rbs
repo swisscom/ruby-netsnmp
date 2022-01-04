@@ -5,6 +5,7 @@ module NETSNMP
     TIMEOUT: Integer
 
     @transport: _Transport
+    @proxy: bool?
     @version: 0 | 1 | 3
     @community: String?
 
@@ -22,6 +23,10 @@ module NETSNMP
 
     class Transport
       MAXPDUSIZE: Integer
+
+      @socket: UDPSocket
+      @destaddr: String
+      @timeout: Integer
 
       def close: () -> void
 

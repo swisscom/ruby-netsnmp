@@ -1,13 +1,17 @@
 module NETSNMP
   class ScopedPDU < PDU
     attr_reader engine_id: String?
-    attr_accessor auth_param: String?
-    attr_accessor security_level: Integer?
+    attr_reader auth_param: String
+    attr_reader security_level: Integer
+
+    @context: String?
 
     private
 
     def initialize: (
       type: Integer,
+      ?auth_param: String,
+      ?security_level: Integer,
       ?engine_id: String,
       ?context: String,
       **untyped

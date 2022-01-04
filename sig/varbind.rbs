@@ -9,6 +9,8 @@ module NETSNMP
     attr_reader oid: String
     attr_reader value: oid_value
 
+    @type: oid_type?
+
     def to_asn: () -> OpenSSL::ASN1::Sequence
 
     def to_der: () -> String
@@ -24,7 +26,7 @@ module NETSNMP
                       | (:timetick, Integer) -> OpenSSL::ASN1::ASN1Data
                       | (:opaque, Integer) -> OpenSSL::ASN1::ASN1Data
                       | (:nsap, Integer) -> OpenSSL::ASN1::ASN1Data
-                      | (Integer, oid_value) -> OpenSSL::ASN1::ASN1Data
+                      | (oid_type, oid_value) -> OpenSSL::ASN1::ASN1Data
 
     def convert_application_asn: (OpenSSL::ASN1::ASN1Data asn) -> oid_value
 

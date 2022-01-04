@@ -194,7 +194,7 @@ module NETSNMP::MIB
     end
 
     rule(:module_name_capabilities) do
-      spaced { uppercase_identifier } >> object_identifier | uppercase_identifier
+      (spaced { uppercase_identifier } >> object_identifier) | uppercase_identifier
     end
 
     rule(:capabilities_groups) do
@@ -368,7 +368,7 @@ module NETSNMP::MIB
     end
 
     rule(:category_id) do
-      spaced { lowercase_identifier } >> bracketed(number) | lowercase_identifier
+      (spaced { lowercase_identifier } >> bracketed(number)) | lowercase_identifier
     end
 
     rule(:notification_type_clause) do
@@ -407,8 +407,8 @@ module NETSNMP::MIB
     end
 
     rule(:enterprise_part) do
-      spaced("ENTERPRISE") >> object_identifier |
-        spaced("ENTERPRISE") >> curly(object_identifier)
+      (spaced("ENTERPRISE") >> object_identifier) |
+        (spaced("ENTERPRISE") >> curly(object_identifier))
     end
 
     rule(:var_part) do
@@ -454,7 +454,7 @@ module NETSNMP::MIB
     end
 
     rule(:max_access_part) do
-      spaced("MAX-ACCESS") >> access | spaced("ACCESS") >> access
+      (spaced("MAX-ACCESS") >> access) | (spaced("ACCESS") >> access)
     end
 
     rule(:access) { lowercase_identifier }
@@ -484,7 +484,7 @@ module NETSNMP::MIB
     end
 
     rule(:object_identifier_defval) do
-      spaced { lowercase_identifier } >> bracketed(number) |
+      (spaced { lowercase_identifier } >> bracketed(number)) |
         number
     end
 
@@ -493,7 +493,7 @@ module NETSNMP::MIB
     end
 
     rule(:index_type) do
-      spaced("IMPLIED") >> idx | idx
+      (spaced("IMPLIED") >> idx) | idx
     end
 
     rule(:idx) do
@@ -525,7 +525,7 @@ module NETSNMP::MIB
     rule(:sub_identifier) do
       fuzzy_lowercase_identifier |
         number |
-        spaced { lowercase_identifier } >> bracketed(number)
+        (spaced { lowercase_identifier } >> bracketed(number))
     end
 
     rule(:type_declaration) do
@@ -542,12 +542,12 @@ module NETSNMP::MIB
 
     rule(:type_declaration_rhs) do
       spaced { choice_clause } |
-        spaced { str("TEXTUAL-CONVENTION") } >>
+        (spaced { str("TEXTUAL-CONVENTION") } >>
         spaced { display_part }.maybe >>
         spaced("STATUS") >> spaced { status } >>
         spaced("DESCRIPTION") >> spaced { text } >>
         spaced { refer_part }.maybe >>
-        spaced("SYNTAX") >> syntax |
+        spaced("SYNTAX") >> syntax) |
         syntax
     end
 
@@ -561,7 +561,7 @@ module NETSNMP::MIB
     end
 
     rule(:syntax) do
-      object_syntax | spaced("BITS").as(:type) >> curly(named_bits)
+      object_syntax | (spaced("BITS").as(:type) >> curly(named_bits))
     end
 
     rule(:display_part) do
@@ -581,27 +581,27 @@ module NETSNMP::MIB
         entry_type |
         simple_syntax |
         application_syntax |
-        type_tag >> simple_syntax |
+        (type_tag >> simple_syntax) |
         row.as(:value)
     end
 
     rule(:simple_syntax) do
-      spaced { str("INTEGER").as(:type) } >> (integer_subtype | enum_spec).maybe |
-        spaced { str("Integer32").as(:type) >> space } >> integer_subtype.maybe |
-        spaced { str("OCTET STRING").as(:type) } >> octetstring_subtype.maybe |
-        spaced { str("OBJECT IDENTIFIER").as(:type) } >> any_subtype |
-        spaced { uppercase_identifier.as(:type) } >> (integer_subtype | enum_spec | octetstring_subtype)
+      (spaced { str("INTEGER").as(:type) } >> (integer_subtype | enum_spec).maybe) |
+        (spaced { str("Integer32").as(:type) >> space } >> integer_subtype.maybe) |
+        (spaced { str("OCTET STRING").as(:type) } >> octetstring_subtype.maybe) |
+        (spaced { str("OBJECT IDENTIFIER").as(:type) } >> any_subtype) |
+        (spaced { uppercase_identifier.as(:type) } >> (integer_subtype | enum_spec | octetstring_subtype))
     end
 
     rule(:application_syntax) do
-      spaced { str("IpAddress").as(:type) >> space } >> any_subtype |
-        spaced { str("NetworkAddress").as(:type) >> space } >> any_subtype |
-        spaced { str("Counter32").as(:type) >> space } >> integer_subtype.maybe |
-        spaced { str("Gauge32").as(:type) >> space } >> integer_subtype.maybe |
-        spaced { str("Unsigned32").as(:type) >> space } >> integer_subtype.maybe |
-        spaced { str("TimeTicks").as(:type) >> space } >> any_subtype |
-        spaced { str("Opaque").as(:type) >> space } >> octetstring_subtype.maybe |
-        spaced { str("Counter64").as(:type) >> space } >> integer_subtype.maybe
+      (spaced { str("IpAddress").as(:type) >> space } >> any_subtype) |
+        (spaced { str("NetworkAddress").as(:type) >> space } >> any_subtype) |
+        (spaced { str("Counter32").as(:type) >> space } >> integer_subtype.maybe) |
+        (spaced { str("Gauge32").as(:type) >> space } >> integer_subtype.maybe) |
+        (spaced { str("Unsigned32").as(:type) >> space } >> integer_subtype.maybe) |
+        (spaced { str("TimeTicks").as(:type) >> space } >> any_subtype) |
+        (spaced { str("Opaque").as(:type) >> space } >> octetstring_subtype.maybe) |
+        (spaced { str("Counter64").as(:type) >> space } >> integer_subtype.maybe)
     end
 
     rule(:conceptual_table) do
@@ -613,8 +613,8 @@ module NETSNMP::MIB
     end
 
     rule(:type_tag) do
-      spaced { square_bracketed(spaced("APPLICATION") >> number.as(:application_type)) } >> spaced("IMPLICIT") |
-        spaced { square_bracketed(spaced("UNIVERSAL") >> number.as(:universal_type)) } >> spaced("IMPLICIT")
+      (spaced { square_bracketed(spaced("APPLICATION") >> number.as(:application_type)) } >> spaced("IMPLICIT")) |
+        (spaced { square_bracketed(spaced("UNIVERSAL") >> number.as(:universal_type)) } >> spaced("IMPLICIT"))
     end
 
     rule(:sequence_items) do
@@ -628,7 +628,7 @@ module NETSNMP::MIB
     rule(:sequence_syntax) do
       str("BITS") |
         sequence_object_syntax |
-        spaced { uppercase_identifier } >> any_subtype
+        (spaced { uppercase_identifier } >> any_subtype)
     end
 
     rule(:sequence_object_syntax) do
@@ -636,20 +636,20 @@ module NETSNMP::MIB
     end
 
     rule(:sequence_simple_syntax) do
-      spaced("INTEGER") >> any_subtype |
-        spaced("Integer32") >> any_subtype |
-        spaced("OCTET STRING") >> any_subtype |
-        spaced("OBJECT IDENTIFIER") >> any_subtype
+      (spaced("INTEGER") >> any_subtype) |
+        (spaced("Integer32") >> any_subtype) |
+        (spaced("OCTET STRING") >> any_subtype) |
+        (spaced("OBJECT IDENTIFIER") >> any_subtype)
     end
 
     rule(:sequence_application_syntax) do
-      spaced { str("IpAddress") >> space } >> any_subtype |
-        spaced { str("COUNTER32") } >> any_subtype |
-        spaced { str("Gauge32") >> space } >> any_subtype |
-        spaced { str("Unsigned32") >> space } >> any_subtype |
-        spaced { str("TimeTicks") >> space } >> any_subtype |
+      (spaced { str("IpAddress") >> space } >> any_subtype) |
+        (spaced { str("COUNTER32") } >> any_subtype) |
+        (spaced { str("Gauge32") >> space } >> any_subtype) |
+        (spaced { str("Unsigned32") >> space } >> any_subtype) |
+        (spaced { str("TimeTicks") >> space } >> any_subtype) |
         str("Opaque") |
-        spaced { str("Counter64") >> space } >> any_subtype
+        (spaced { str("Counter64") >> space } >> any_subtype)
     end
 
     rule(:row) { uppercase_identifier }
@@ -743,7 +743,7 @@ module NETSNMP::MIB
 
     rule(:text) do
       str('"') >> (
-        str("\\") >> any | str('"').absent? >> any
+        (str("\\") >> any) | (str('"').absent? >> any)
       ).repeat >> str('"')
     end
   end

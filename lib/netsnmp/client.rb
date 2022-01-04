@@ -28,10 +28,11 @@ module NETSNMP
                 when Integer then version # assume the use know what he's doing
                 when /v?1/ then 0
                 when /v?2c?/ then 1
-                when /v?3/, nil then 3
+                when /v?3/ then 3
+                else 3 # rubocop:disable Lint/DuplicateBranch
                 end
 
-      @retries = options.fetch(:retries, RETRIES)
+      @retries = options.fetch(:retries, RETRIES).to_i
       @session ||= version == 3 ? V3Session.new(**options) : Session.new(version: version, **options)
       return unless block_given?
 

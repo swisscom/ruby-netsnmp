@@ -10,7 +10,9 @@ module NETSNMP
 
     module_function
 
-    MIBDIRS = ENV.fetch("MIBDIRS", File.join("/usr", "share", "snmp", "mibs")).split(":")
+    MIBDIRS = ENV.fetch("MIBDIRS", File.join("/usr", "share", "snmp", "mibs"))
+                 .split(":")
+                 .flat_map { |dir| [dir, *Dir.glob(File.join(dir, "**", "*")).select(&File.method(:directory?))] }.uniq
     PARSER = Parser.new
     @parser_mutex = Mutex.new
     @modules_loaded = []

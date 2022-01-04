@@ -24,8 +24,10 @@ module NETSNMP
 
     def to_asn
       asn_oid = OID.to_asn(@oid)
-      asn_val = if @type
-                  convert_to_asn(@type, @value)
+      type = @type
+
+      asn_val = if type
+                  convert_to_asn(type, @value)
                 else
                   case @value
                   when String

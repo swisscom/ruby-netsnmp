@@ -6,4 +6,7 @@ module NETSNMP
   module Hexdump
     def self?.dump: (String data, ?width: Integer, ?in_groups_of: Integer, ?separator: String) -> String
   end
+
+  class HexString < String
+  end
 end

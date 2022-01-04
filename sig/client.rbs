@@ -2,6 +2,9 @@ module NETSNMP
   class Client
     RETRIES: Integer
 
+    @retries: Integer
+    @session: Session
+
     def get: (*untyped) -> untyped
            | (*untyped) { (PDU) -> void } -> untyped
 

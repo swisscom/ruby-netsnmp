@@ -4,11 +4,11 @@ module NETSNMP
   class ScopedPDU < PDU
     using ASNExtensions
 
-    attr_reader :engine_id
+    attr_reader :engine_id, :security_level, :auth_param
 
-    attr_accessor :security_level, :auth_param
-
-    def initialize(type:, engine_id: nil, context: nil, **options)
+    def initialize(type:, auth_param: "", security_level: 3, engine_id: nil, context: nil, **options)
+      @auth_param = auth_param
+      @security_level = security_level
       @engine_id = engine_id
       @context = context
       super(type: type, version: 3, community: nil, **options)
