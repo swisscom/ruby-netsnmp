@@ -8,11 +8,12 @@ module NETSNMP
     OPAD: String
     TIMELINESS_THRESHOLD: Integer
 
-    @auth_password: String?
+    @auth_pass_key: String
+    @priv_pass_key: String
     @priv_protocol: Symbol?
-    @priv_password: String?
     @digest: OpenSSL::Digest
     @encryption: (Encryption::AES | Encryption::DES)?
+    @timeliness: Integer
 
     attr_reader security_level: Integer
     attr_reader username: String
@@ -44,11 +45,11 @@ module NETSNMP
       **untyped options
     ) -> void
 
+    @auth_key: String
     def auth_key: () -> String
 
+    @priv_key: String
     def priv_key: () -> String
-
-    def check_parameters: () -> void
 
     def localize_key: (String key) -> String
 

@@ -11,7 +11,7 @@ module NETSNMP
 
     using ASNExtensions
     class << self
-      def decode(der)
+      def decode(der, **args)
         der = OpenSSL::ASN1.decode(der) if der.is_a?(String)
 
         *headers, request = der.value
@@ -36,7 +36,8 @@ module NETSNMP
             error_status: error_status.to_i,
             error_index: error_index.to_i,
             request_id: request_id.to_i,
-            varbinds: varbs)
+            varbinds: varbs,
+            **args)
       end
 
       # factory method that abstracts initialization of the pdu types that the library supports.

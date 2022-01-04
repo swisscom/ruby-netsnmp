@@ -67,9 +67,7 @@ module NETSNMP
                                                             security_level: security_level)
 
       log { "received response PDU" }
-      pdu = ScopedPDU.decode(encoded_pdu)
-      pdu.auth_param = auth_param
-      pdu.security_level = security_level
+      pdu = ScopedPDU.decode(encoded_pdu, auth_param: auth_param, security_level: security_level)
 
       log(level: 2) { pdu.to_hex }
       [pdu, engine_id.value.to_s, engine_boots, engine_time]

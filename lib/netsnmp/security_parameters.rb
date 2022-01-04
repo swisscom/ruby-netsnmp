@@ -48,20 +48,31 @@ module NETSNMP
       **options
     )
       @security_level = case security_level
-                        when Integer then security_level
                         when /no_?auth/         then 0
                         when /auth_?no_?priv/   then 1
-                        when /auth_?priv/, nil  then 3
+                        when /auth_?priv/       then 3
+                        when Integer then security_level
+                        else 3 # rubocop:disable Lint/DuplicateBranch
                         end
       @username = username
       @engine_id = engine_id
       @auth_protocol = auth_protocol.to_sym unless auth_protocol.nil?
       @priv_protocol = priv_protocol.to_sym unless priv_protocol.nil?
-      @auth_password = auth_password
-      @priv_password = priv_password
-      check_parameters
-      @auth_pass_key = passkey(@auth_password) unless @auth_password.nil?
-      @priv_pass_key = passkey(@priv_password) unless @priv_password.nil?
+
+      if @security_level.positive?
+        @auth_protocol ||= :md5 # this is the default
+        raise "security level requires an auth password" if auth_password.nil?
+        raise "auth password must have between 8 to 32 characters" unless (8..32).cover?(auth_password.length)
+      end
+
+      if @security_level > 1
+        @priv_protocol ||= :des
+        raise "security level requires a priv password" if priv_password.nil?
+        raise "priv password must have between 8 to 32 characters" unless (8..32).cover?(priv_password.length)
+      end
+
+      @auth_pass_key = passkey(auth_password) if auth_password
+      @priv_pass_key = passkey(priv_password) if priv_password
       initialize_logger(**options)
     end
 
@@ -144,7 +155,7 @@ module NETSNMP
     #
     # @raise [NETSNMP::Error] if the message's integration has been violated
     def verify(stream, salt, security_level: @security_level)
-      return if security_level < 1
+      return if security_level.nil? || security_level < 1
 
       verisalt = sign(stream)
       raise Error, "invalid message authentication salt" unless verisalt == salt
@@ -167,19 +178,6 @@ module NETSNMP
 
     def priv_key
       @priv_key ||= localize_key(@priv_pass_key)
-    end
-
-    def check_parameters
-      if @security_level.positive?
-        @auth_protocol ||= :md5 # this is the default
-        raise "security level requires an auth password" if @auth_password.nil?
-        raise "auth password must have between 8 to 32 characters" unless (8..32).cover?(@auth_password.length)
-      end
-      return unless @security_level > 1
-
-      @priv_protocol ||= :des
-      raise "security level requires a priv password" if @priv_password.nil?
-      raise "priv password must have between 8 to 32 characters" unless (8..32).cover?(@priv_password.length)
     end
 
     def localize_key(key)
