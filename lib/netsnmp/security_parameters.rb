@@ -125,7 +125,7 @@ module NETSNMP
 
       # MD5 => https://datatracker.ietf.org/doc/html/rfc3414#section-6.3.2
       # SHA1 => https://datatracker.ietf.org/doc/html/rfc3414#section-7.3.2
-      key << "\x00" * (@auth_protocol == :md5 ? 48 : 44)
+      key << ("\x00" * (@auth_protocol == :md5 ? 48 : 44))
       k1 = key.xor(IPAD)
       k2 = key.xor(OPAD)
 
@@ -200,7 +200,7 @@ module NETSNMP
       while password_index < 1048576
         initial = password_index % password_length
         rotated = String(password[initial..-1]) + String(password[0, initial])
-        buffer = rotated * (64 / rotated.length) + String(rotated[0, 64 % rotated.length])
+        buffer = (rotated * (64 / rotated.length)) + String(rotated[0, 64 % rotated.length])
         password_index += 64
         digest << buffer
         buffer.clear
