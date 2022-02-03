@@ -2,6 +2,17 @@
 
 ## master
 
+### 0.6.2
+
+#### Improvements
+
+* extended use of RBS signatures (thx to `openssl` RBS signatures).
+
+#### Bugfixes
+
+* fixed mib loading when there are no imports.
+* fixed default mibs by including subdirs of `/usr/share/snmp/mibs` (in debian, snmp mibs get loaded under `/iana` and `/ietf`)
+
 ### 0.6.1
 
 #### Bugfixes
