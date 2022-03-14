@@ -5,7 +5,7 @@ set -e
 RUBY_ENGINE=`ruby -e 'puts RUBY_ENGINE'`
 
 if [[ "$RUBY_ENGINE" = "truffleruby" ]]; then
-  microdnf install -y git net-snmp-utils
+  dnf install -y git net-snmp-utils
 elif [[ "$RUBY_ENGINE" = "jruby" ]]; then
  echo "
 deb http://deb.debian.org/debian/ buster main contrib non-free
