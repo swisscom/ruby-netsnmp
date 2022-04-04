@@ -8,4 +8,6 @@ module NETSNMP
   class AuthenticationFailed < Error; end
 
   class IdNotInTimeWindowError < Error; end
+
+  class OidNotFound < StandardError; end
 end

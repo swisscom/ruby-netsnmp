@@ -116,6 +116,8 @@ module NETSNMP
     end
 
     def convert_application_asn(asn)
+      raise(OidNotFound, "No Such Instance currently exists at this OID") if asn.value.empty?
+
       case asn.tag
       when 0 # IP Address
         IPAddr.new_ntoh(asn.value)
