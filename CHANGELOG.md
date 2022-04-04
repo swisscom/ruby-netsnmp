@@ -2,6 +2,10 @@
 
 ## master
 
+### 0.6.3
+
+* The `OidNotFound` exception is now raised when a response PDU is received with an empty value.
+
 ### 0.6.2
 
 #### Improvements
