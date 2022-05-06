@@ -63,7 +63,7 @@ module NETSNMP
                                                  username: @security_parameters.username)
       pdu = ScopedPDU.build(:get)
       log { "sending probe..." }
-      encoded_report_pdu = @message_serializer.encode(pdu, security_parameters: report_sec_params)
+      encoded_report_pdu = @message_serializer.encode(pdu, security_parameters: report_sec_params, require_authentication: false)
 
       encoded_response_pdu = @transport.send(encoded_report_pdu)
 

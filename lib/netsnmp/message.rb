@@ -78,7 +78,7 @@ module NETSNMP
     #
     # @return [String] the byte representation of an SNMP v3 Message
     #
-    def encode(pdu, security_parameters:, engine_boots: 0, engine_time: 0)
+    def encode(pdu, security_parameters:, engine_boots: 0, engine_time: 0, require_authentication: true)
       log(level: 2) { pdu.to_hex }
       log { "encoding PDU in V3 message..." }
       scoped_pdu, salt_param = security_parameters.encode(pdu, salt: PRIVNONE,
@@ -90,7 +90,7 @@ module NETSNMP
                                                  OpenSSL::ASN1::Integer.new(engine_boots).with_label(:engine_boots),
                                                  OpenSSL::ASN1::Integer.new(engine_time).with_label(:engine_time),
                                                  OpenSSL::ASN1::OctetString.new(security_parameters.username).with_label(:username),
-                                                 authnone(security_parameters.auth_protocol),
+                                                 authnone(security_parameters.auth_protocol, require_authentication),
                                                  salt_param
                                                ]).with_label(:security_params)
       log(level: 2) { sec_params.to_hex }
@@ -130,10 +130,15 @@ module NETSNMP
 
     # https://datatracker.ietf.org/doc/html/rfc7860#section-4.2.2 part 3
     # https://datatracker.ietf.org/doc/html/rfc3414#section-6.3.2 part 3
-    def authnone(auth_protocol)
+    def authnone(auth_protocol, require_authentication = true)
       # The digest in the msgAuthenticationParameters field is replaced by the 12 zero octets.
       # 24 octets for sha256
-      number_of_octets = auth_protocol == :sha256 ? 24 : 12
+      number_of_octets = if require_authentication
+        auth_protocol == :sha256 ? 24 : 12
+      else
+        # https://datatracker.ietf.org/doc/html/rfc3414#section-3.1 part 8b
+        0
+      end
       OpenSSL::ASN1::OctetString.new("\x00" * number_of_octets).with_label(:auth_mask)
     end
   end

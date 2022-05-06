@@ -12,12 +12,12 @@ module NETSNMP
 
     def decode: (String stream, security_parameters: SecurityParameters) -> [ScopedPDU, String, Integer, Integer]
 
-    def encode: (ScopedPDU pdu, security_parameters: SecurityParameters, ?engine_boots: Integer, ?engine_time: Integer) -> String
+    def encode: (ScopedPDU pdu, security_parameters: SecurityParameters, ?engine_boots: Integer, ?engine_time: Integer, ?require_authentication: bool) -> String
 
     private
 
     def initialize: (**untyped options) -> void
 
-    def authnone: (Symbol?) -> OpenSSL::ASN1::ASN1Data
+    def authnone: (Symbol?, ?bool) -> OpenSSL::ASN1::ASN1Data
   end
 end
