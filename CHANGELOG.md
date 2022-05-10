@@ -2,6 +2,10 @@
 
 ## master
 
+### 0.6.4
+
+Making the octet string in msgAuthenticationParameters 0-length when no authentication is to happen (some SNMP implementations are quite strict in this point).
+
 ### 0.6.3
 
 * The `OidNotFound` exception is now raised when a response PDU is received with an empty value.
