@@ -1,7 +1,7 @@
 inherit_from: .rubocop_todo.yml
 
 AllCops:
-  TargetRubyVersion: 2.5
+  TargetRubyVersion: 2.7
   NewCops: enable
 
 Bundler/DuplicatedGem:
@@ -22,6 +22,9 @@ Style/NumericPredicate:
     - lib/netsnmp.rb
 
 Style/RedundantBegin:
+  Enabled: false
+
+Style/SlicingWithRange:
   Enabled: false
 
 Metrics/ParameterLists:

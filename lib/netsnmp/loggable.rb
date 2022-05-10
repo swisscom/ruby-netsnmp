@@ -3,7 +3,7 @@
 module NETSNMP
   module Loggable
     DEBUG = ENV.key?("NETSNMP_DEBUG") ? $stderr : nil
-    DEBUG_LEVEL = (ENV["NETSNMP_DEBUG"] || 1).to_i
+    DEBUG_LEVEL = ENV.fetch("NETSNMP_DEBUG", 1).to_i
 
     def initialize_logger(debug: DEBUG, debug_level: DEBUG_LEVEL, **)
       @debug = debug
