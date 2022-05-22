@@ -1,5 +1,6 @@
 # netsnmp
 
+[![Gem Version](https://badge.fury.io/rb/netsnmp.svg)](http://rubygems.org/gems/netsnmp)
 ![Tests](https://github.com/swisscom/ruby-netsnmp/workflows/Tests/badge.svg)
 [![Code Climate](https://codeclimate.com/github/swisscom/ruby-netsnmp/badges/gpa.svg)](https://codeclimate.com/github/swisscom/ruby-netsnmp)
 [![Docs](http://img.shields.io/badge/yard-docs-blue.svg)](https://www.rubydoc.info/github/swisscom/ruby-netsnmp/master)
