@@ -20,7 +20,6 @@ Gem::Specification.new do |gem|
 
   # Manifest
   gem.files = Dir["LICENSE.txt", "README.md", "AUTHORS", "lib/**/*.rb", "sig/**/*.rbs"]
-  gem.test_files    = Dir["spec/**/*.rb"]
   gem.require_paths = ["lib"]
 
   gem.add_runtime_dependency "parslet"

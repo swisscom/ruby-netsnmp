@@ -1,5 +1,9 @@
 inherit_from: .rubocop_todo.yml
 
+require:
+  - rubocop-performance
+  - rubocop-thread_safety
+
 AllCops:
   TargetRubyVersion: 2.7
   NewCops: enable
@@ -49,4 +53,7 @@ Style/SafeNavigation:
   Enabled: false
 
 Style/HashConversion:
+  Enabled: false
+
+Performance/MethodObjectAsBlock:
   Enabled: false

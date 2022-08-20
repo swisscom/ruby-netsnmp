@@ -16,7 +16,9 @@ platform :mri, :truffleruby do
 end
 
 gem "parallel", "< 1.19.0", require: false if RUBY_VERSION < "2.4"
-gem "rubocop", require: false
+gem "rubocop"
+gem "rubocop-performance"
+gem "rubocop-thread_safety"
 
 gem "rbs" if RUBY_VERSION >= "3.0"
 

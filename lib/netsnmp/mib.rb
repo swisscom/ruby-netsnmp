@@ -15,8 +15,11 @@ module NETSNMP
                  .flat_map { |dir| [dir, *Dir.glob(File.join(dir, "**", "*")).select(&File.method(:directory?))] }.uniq
     PARSER = Parser.new
     @parser_mutex = Mutex.new
+
+    # rubocop:disable ThreadSafety/MutableClassInstanceVariable
     @modules_loaded = []
     @object_identifiers = {}
+    # rubocop:enable ThreadSafety/MutableClassInstanceVariable
 
     # Translates na identifier, such as "sysDescr", into an OID
     def oid(identifier)
@@ -173,6 +176,12 @@ module NETSNMP
       # loading the defaults MIBS
       load("SNMPv2-MIB")
       load("IF-MIB")
+    end
+
+    def freeze
+      super
+      @modules_loaded.each(&:freeze).freeze
+      @object_identifiers.each_key(&:freeze).each_value(&:freeze).freeze
     end
   end
 end
