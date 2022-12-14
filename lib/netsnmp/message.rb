@@ -134,11 +134,8 @@ module NETSNMP
       # https://datatracker.ietf.org/doc/html/rfc3414#section-3.1 part 8b
       return OpenSSL::ASN1::OctetString.new("").with_label(:auth_mask) unless auth_protocol
 
-      # The digest in the msgAuthenticationParameters field is replaced by the 12 zero octets.
-      # 24 octets for sha256
-      number_of_octets = auth_protocol == :sha256 ? 24 : 12
-
-      OpenSSL::ASN1::OctetString.new("\x00" * number_of_octets).with_label(:auth_mask)
+      # The digest in the msgAuthenticationParameters field is replaced by zero octets.
+      OpenSSL::ASN1::OctetString.new("\x00" * security_parameters.digest_length).with_label(:auth_mask)
     end
   end
 end
