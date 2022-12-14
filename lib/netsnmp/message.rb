@@ -18,7 +18,7 @@ module NETSNMP
     end
 
     def verify(stream, auth_param, security_level, security_parameters:)
-      security_parameters.verify(stream.sub(auth_param, authnone(security_parameters.auth_protocol).value), auth_param, security_level: security_level)
+      security_parameters.verify(stream.sub(auth_param, authnone(security_parameters).value), auth_param, security_level: security_level)
     end
 
     # @param [String] payload of an snmp v3 message which can be decoded
@@ -119,7 +119,7 @@ module NETSNMP
         log { "signing V3 message..." }
         auth_salt = OpenSSL::ASN1::OctetString.new(signature).with_label(:auth)
         log(level: 2) { auth_salt.to_hex }
-        none_der = authnone(security_parameters.auth_protocol).to_der
+        none_der = authnone(security_parameters).to_der
         encoded[encoded.index(none_der), none_der.size] = auth_salt.to_der
         log { Hexdump.dump(encoded) }
       end
@@ -130,9 +130,9 @@ module NETSNMP
 
     # https://datatracker.ietf.org/doc/html/rfc7860#section-4.2.2 part 3
     # https://datatracker.ietf.org/doc/html/rfc3414#section-6.3.2 part 3
-    def authnone(auth_protocol)
+    def authnone(security_parameters)
       # https://datatracker.ietf.org/doc/html/rfc3414#section-3.1 part 8b
-      return OpenSSL::ASN1::OctetString.new("").with_label(:auth_mask) unless auth_protocol
+      return OpenSSL::ASN1::OctetString.new("").with_label(:auth_mask) unless security_parameters.auth_protocol
 
       # The digest in the msgAuthenticationParameters field is replaced by zero octets.
       OpenSSL::ASN1::OctetString.new("\x00" * security_parameters.digest_length).with_label(:auth_mask)
