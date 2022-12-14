@@ -132,7 +132,7 @@ module NETSNMP
     # https://datatracker.ietf.org/doc/html/rfc3414#section-6.3.2 part 3
     def authnone(security_parameters)
       # https://datatracker.ietf.org/doc/html/rfc3414#section-3.1 part 8b
-      return OpenSSL::ASN1::OctetString.new("").with_label(:auth_mask) unless security_parameters.auth_protocol
+      return OpenSSL::ASN1::OctetString.new("").with_label(:auth_mask) unless security_parameters&.auth_protocol
 
       # The digest in the msgAuthenticationParameters field is replaced by zero octets.
       OpenSSL::ASN1::OctetString.new("\x00" * security_parameters.digest_length).with_label(:auth_mask)
