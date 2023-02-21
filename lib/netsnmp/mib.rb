@@ -16,11 +16,8 @@ module NETSNMP
     PARSER = Parser.new
     @parser_mutex = Mutex.new
 
-    # rubocop:disable ThreadSafety/MutableClassInstanceVariable
     @modules_loaded = []
     @object_identifiers = {}
-    # rubocop:enable ThreadSafety/MutableClassInstanceVariable
-
     # Translates na identifier, such as "sysDescr", into an OID
     def oid(identifier)
       prefix, *suffix = case identifier

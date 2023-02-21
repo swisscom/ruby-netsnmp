@@ -557,7 +557,7 @@ module NETSNMP::MIB
 
     rule(:choice_clause) do
       # Ignoring choice syntax
-      spaced { str("CHOICE").as(:type) } >> curly(match("[^\}]").repeat)
+      spaced { str("CHOICE").as(:type) } >> curly(match("[^}]").repeat)
     end
 
     rule(:syntax) do
@@ -689,11 +689,11 @@ module NETSNMP::MIB
     rule(:status) { lowercase_identifier }
 
     rule(:uppercase_identifier) do
-      match("[A-Z]") >> match("[A-Za-z0-9\-]").repeat
+      match("[A-Z]") >> match("[A-Za-z0-9-]").repeat
     end
 
     rule(:lowercase_identifier) do
-      match("[a-z]") >> match("[A-Za-z0-9\-]").repeat
+      match("[a-z]") >> match("[A-Za-z0-9-]").repeat
     end
 
     rule(:type_smi_and_sppi) do
