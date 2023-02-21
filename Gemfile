@@ -23,12 +23,9 @@ gem "rubocop-thread_safety"
 gem "rbs" if RUBY_VERSION >= "3.0"
 
 if RUBY_VERSION < "2.2.0"
-  gem "celluloid", "~> 0.17.3"
-  gem "celluloid-io", "~> 0.17.3"
-  gem "nio4r", "~> 1.2"
   gem "simplecov", "< 0.11.0", require: false
 else
-  gem "celluloid-io", "~> 0.17"
+  gem "celluloid-io", "~> 0.17" if RUBY_VERSION >= "2.3.0"
 
   if RUBY_VERSION < "2.4"
     gem "simplecov", "< 0.11.0", require: false
