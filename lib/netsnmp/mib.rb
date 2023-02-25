@@ -98,7 +98,7 @@ module NETSNMP
       end
     end
 
-    TYPES = ["OBJECT IDENTIFIER", "OBJECT-TYPE", "MODULE-IDENTITY"].freeze
+    TYPES = ["OBJECT IDENTIFIER", "OBJECT-TYPE", "MODULE-IDENTITY", "OBJECT-IDENTITY"].freeze
 
     STATIC_MIB_TO_OID = {
       "iso" => "1"

@@ -3,7 +3,7 @@
 begin
   require "celluloid/io"
 rescue LoadError # rubocop:disable Lint/SuppressedException
-ensure
+else
   require_relative "../support/request_examples"
   require_relative "../support/celluloid"
 

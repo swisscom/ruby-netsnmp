@@ -446,7 +446,7 @@ module NETSNMP::MIB
         spaced("STATUS") >> spaced { status } >>
         spaced("DESCRIPTION") >> spaced { text } >>
         spaced { refer_part }.maybe >>
-        colon_colon_part >> curly(object_identifier)
+        colon_colon_part >> curly(object_identifier.as(:value))
     end
 
     rule(:units_part) do
