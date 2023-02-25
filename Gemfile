@@ -15,10 +15,10 @@ platform :mri, :truffleruby do
   gem "xorcist", require: false
 end
 
-gem "parallel", "< 1.19.0", require: false if RUBY_VERSION < "2.4"
-gem "rubocop"
-gem "rubocop-performance"
-gem "rubocop-thread_safety"
+if RUBY_VERSION >= "3.0.0"
+  gem "rubocop"
+  gem "rubocop-performance"
+end
 
 gem "rbs" if RUBY_VERSION >= "3.0"
 
