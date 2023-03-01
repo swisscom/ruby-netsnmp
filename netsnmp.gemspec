@@ -21,6 +21,9 @@ Gem::Specification.new do |gem|
   # Manifest
   gem.files = Dir["LICENSE.txt", "README.md", "AUTHORS", "lib/**/*.rb", "sig/**/*.rbs"]
   gem.require_paths = ["lib"]
+  if RUBY_ENGINE == "ruby"
+    gem.extensions = ["ext/extconf.rb"]
+  end
 
   gem.add_runtime_dependency "parslet"
   gem.metadata["rubygems_mfa_required"] = "true"

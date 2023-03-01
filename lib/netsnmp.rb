@@ -51,6 +51,7 @@ require "netsnmp/security_parameters"
 require "netsnmp/message"
 require "netsnmp/encryption/des"
 require "netsnmp/encryption/aes"
+require "netsnmp_ext" if RUBY_ENGINE == "ruby"
 
 require "netsnmp/client"
 

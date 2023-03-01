@@ -5,7 +5,7 @@ ruby RUBY_VERSION
 
 gemspec
 
-gem "rake", "~> 12.3"
+gem "rake", "~> 13"
 gem "rspec", "~> 3.5"
 
 gem "pry"
@@ -36,3 +36,8 @@ else
   end
 
 end
+
+gem "jruby-openssl", "~> 0.14", platform: :jruby
+gem "ruby-prof"
+gem "rake-compiler"
+gem "benchmark-ips"
