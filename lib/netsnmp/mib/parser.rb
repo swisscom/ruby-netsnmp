@@ -476,7 +476,7 @@ module NETSNMP::MIB
     end
 
     rule(:valueof_simple_syntax) do
-      value | lowercase_identifier | text | curly(object_identifiers_defval)
+      value | lowercase_identifier | text | curly(object_identifiers_defval.maybe)
     end
 
     rule(:object_identifiers_defval) do
