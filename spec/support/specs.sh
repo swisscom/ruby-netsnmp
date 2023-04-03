@@ -23,6 +23,18 @@ cd /home
 bundle -v
 bundle install
 
+mkdir -p /etc/ssl
+touch /etc/ssl/openssl.cnf
+cat <<EOT >> /etc/ssl/openssl.cnf
+[provider_sect]
+default = default_sect
+legacy = legacy_sect
+[default_sect]
+activate = 1
+[legacy_sect]
+activate = 1
+EOT
+
 if [[ ${RUBY_VERSION:0:1} = "3" ]]; then
   export RUBYOPT='-rbundler/setup -rrbs/test/setup'
   export RBS_TEST_RAISE=true
