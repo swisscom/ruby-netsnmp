@@ -191,22 +191,24 @@ module NETSNMP
 
     def passkey(password)
       digest.reset
-      password_index = 0
-
-      # buffer = +""
-      password_length = password.length
-      while password_index < 1048576
-        initial = password_index % password_length
-        rotated = String(password[initial..-1]) + String(password[0, initial])
-        buffer = (rotated * (64 / rotated.length)) + String(rotated[0, 64 % rotated.length])
-        password_index += 64
-        digest << buffer
-        buffer.clear
-      end
+      digest << expand_passphrase(password)
 
       dig = digest.digest
       dig = dig[0, 16] if @auth_protocol == :md5
       dig || ""
+    end
+
+    def expand_passphrase(password)
+      password_index = 0
+      buffer = "".b
+      password_length = password.length
+      while password_index < 1048576
+        initial = password_index % password_length
+        rotated = String(password.byteslice(initial..-1)) + String(password.byteslice(0, initial))
+        buffer << (rotated * (64 / rotated.length)) + String(rotated.byteslice(0, 64 % rotated.length))
+        password_index += 64
+      end
+      buffer
     end
 
     def digest
