@@ -15,6 +15,36 @@ module NETSNMP
     IPAD = "\x36" * 64
     OPAD = "\x5c" * 64
 
+    DIGEST_LENGTH = {
+      md5: 12,
+      sha: 12,
+      sha1: 12,
+      sha224: 16,
+      sha256: 24,
+      sha384: 32,
+      sha512: 48
+    }.freeze
+
+    AUTH_KEY_LENGTH = {
+      nil: 16,
+      md5: 16,
+      sha: 20,
+      sha1: 20,
+      sha224: 28,
+      sha256: 32,
+      sha384: 48,
+      sha512: 64
+    }.freeze
+
+    PRIV_KEY_LENGTH = {
+      des: 16,
+      aes: 16,
+      aes128: 16,
+      aes192: 24,
+      aes256: 32,
+      nil: 16
+    }.freeze
+
     # Timeliness is part of SNMP V3 Security
     # The topic is described very nice here https://www.snmpsharpnet.com/?page_id=28
     # https://www.ietf.org/rfc/rfc2574.txt 1.4.1 Timeliness
@@ -129,11 +159,17 @@ module NETSNMP
       return unless @auth_protocol
 
       key = auth_key.dup
+      case @auth_protocol
+      when :sha224, :sha256, :sha384, :sha512 then sign_sha2(key, message)
+      when :md5, :sha, :sha1 then sign_md5_or_sha(key, message)
+      end
+    end
 
-      # SHA256 => https://datatracker.ietf.org/doc/html/rfc7860#section-4.2.2
-      # The 24 first octets of HMAC are taken as the computed MAC value
-      return OpenSSL::HMAC.digest("SHA256", key, message)[0, 24] if @auth_protocol == :sha256
+    def sign_sha2(key, message)
+      OpenSSL::HMAC.digest(@auth_protocol.to_s.upcase, key, message)[0, digest_length]
+    end
 
+    def sign_md5_or_sha(key, message)
       # MD5 => https://datatracker.ietf.org/doc/html/rfc3414#section-6.3.2
       # SHA1 => https://datatracker.ietf.org/doc/html/rfc3414#section-7.3.2
       key << ("\x00" * (@auth_protocol == :md5 ? 48 : 44))
@@ -147,7 +183,7 @@ module NETSNMP
       digest.reset
       digest << (k2 + d1)
       # The 12 first octets of the digest are taken as the computed MAC value
-      digest.digest[0, 12]
+      digest.digest[0, digest_length]
     end
 
     # @param [String] stream the encoded incoming payload
@@ -170,17 +206,29 @@ module NETSNMP
       (Process.clock_gettime(Process::CLOCK_MONOTONIC, :second) - @timeliness) >= TIMELINESS_THRESHOLD
     end
 
+    def digest_length
+      DIGEST_LENGTH[@auth_protocol] || raise(Error, "unknown digest length for #{@auth_protocol}")
+    end
+
     private
 
+    def auth_key_length
+      AUTH_KEY_LENGTH[@auth_protocol]
+    end
+
+    def priv_key_length
+      PRIV_KEY_LENGTH[@priv_protocol]
+    end
+
     def auth_key
-      @auth_key ||= localize_key(@auth_pass_key)
+      @auth_key ||= localize_auth_key(@auth_pass_key)
     end
 
     def priv_key
-      @priv_key ||= localize_key(@priv_pass_key)
+      @priv_key ||= localize_priv_key(@priv_pass_key)
     end
 
-    def localize_key(key)
+    def localize_auth_key(key)
       digest.reset
       digest << key
       digest << @engine_id
@@ -188,6 +236,15 @@ module NETSNMP
 
       digest.digest
     end
+
+      # AES-192, AES-256 require longer localized keys,
+      # which require adding of subsequent localized_priv_keys based on the previous until the length is satisfied
+      # The only hint to this is available in the python implementation called pysnmp
+      def localize_priv_key(key)
+        dig = localize_auth_key(key)
+        dig += localize_auth_key(passkey(dig)) while dig.length < priv_key_length
+        dig
+      end
 
     def passkey(password)
       digest.reset
@@ -205,24 +262,31 @@ module NETSNMP
       end
 
       dig = digest.digest
-      dig = dig[0, 16] if @auth_protocol == :md5
+      dig = dig[0, auth_key_length] if @auth_protocol
       dig || ""
     end
 
     def digest
       @digest ||= case @auth_protocol
                   when :md5 then OpenSSL::Digest.new("MD5")
-                  when :sha then OpenSSL::Digest.new("SHA1")
+                  when :sha, :sha1 then OpenSSL::Digest.new("SHA1")
+                  when :sha224 then OpenSSL::Digest.new("SHA224")
                   when :sha256 then OpenSSL::Digest.new("SHA256")
+                  when :sha384 then OpenSSL::Digest.new("SHA384")
+                  when :sha512 then OpenSSL::Digest.new("SHA512")
                   else
                     raise Error, "unsupported auth protocol: #{@auth_protocol}"
                   end
     end
 
+
+
     def encryption
       @encryption ||= case @priv_protocol
                       when :des then Encryption::DES.new(priv_key)
-                      when :aes then Encryption::AES.new(priv_key)
+                      when :aes then Encryption::AES.new(priv_key, cipher: @priv_protocol)
+                      when :aes192 then Encryption::AES.new(priv_key, cipher: @priv_protocol)
+                      when :aes256 then Encryption::AES.new(priv_key, cipher: @priv_protocol)
                       end
     end
 

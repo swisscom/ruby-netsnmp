@@ -221,6 +221,36 @@ RSpec.describe NETSNMP::Client do
           let(:protocol_options) { version_options.merge(user_options).merge(extra_options) }
         end
       end
+      context "auth in sha224, encrypting in aes" do
+        let(:user_options) do
+          { username: "authprivsha224aes", auth_password: "maplesyrup",
+            auth_protocol: :sha224, priv_password: "maplesyrup",
+            priv_protocol: :aes }
+        end
+        it_behaves_like "an snmp client" do
+          let(:protocol_options) { version_options.merge(user_options).merge(extra_options) }
+        end
+      end
+      context "auth in sha384, encrypting in aes192" do
+        let(:user_options) do
+          { username: "authprivsha384aes192", auth_password: "maplesyrup",
+            auth_protocol: :sha384, priv_password: "maplesyrup",
+            priv_protocol: :aes192 }
+        end
+        it_behaves_like "an snmp client" do
+          let(:protocol_options) { version_options.merge(user_options).merge(extra_options) }
+        end
+      end
+      context "auth in sha512, encrypting in aes256" do
+        let(:user_options) do
+          { username: "authprivsha512aes256", auth_password: "maplesyrup",
+            auth_protocol: :sha512, priv_password: "maplesyrup",
+            priv_protocol: :aes256 }
+        end
+        it_behaves_like "an snmp client" do
+          let(:protocol_options) { version_options.merge(user_options).merge(extra_options) }
+        end
+      end
     end
   end
 end
